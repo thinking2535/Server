@@ -1,0 +1,473 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="sMDd|Win32">
+      <Configuration>sMDd</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMDd|x64">
+      <Configuration>sMDd</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMD|Win32">
+      <Configuration>sMD</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMD|x64">
+      <Configuration>sMD</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMTd|Win32">
+      <Configuration>sMTd</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMTd|x64">
+      <Configuration>sMTd</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMT|Win32">
+      <Configuration>sMT</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="sMT|x64">
+      <Configuration>sMT</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\BalloonHitControl.cpp" />
+    <ClCompile Include="Source\Battle.cpp" />
+    <ClCompile Include="Source\BattlePlayer.cpp" />
+    <ClCompile Include="Source\Bot.cpp" />
+    <ClCompile Include="Source\Character.cpp" />
+    <ClCompile Include="Source\CheatCommand.cpp" />
+    <ClCompile Include="Source\DataBase.cpp" />
+    <ClCompile Include="Source\PhysicsEngine.cpp" />
+    <ClCompile Include="Source\EngineGameMode.cpp" />
+    <ClCompile Include="Source\EngineGameModeMulti.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiDodgeSolo.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiIslandSolo.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiSolo.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiSurvival.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiSurvivalSmall.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiTeam.cpp" />
+    <ClCompile Include="Source\EngineGameModeMultiTeamSmall.cpp" />
+    <ClCompile Include="Source\EngineGlobal.cpp" />
+    <ClCompile Include="Source\EngineParachuteControl.cpp" />
+    <ClCompile Include="Source\EnginePlayer.cpp" />
+    <ClCompile Include="Source\EnginePumpControl.cpp" />
+    <ClCompile Include="Source\Gacha.cpp" />
+    <ClCompile Include="Source\GameData.cpp" />
+    <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Network.cpp" />
+    <ClCompile Include="Source\NetworkRanking.cpp" />
+    <ClCompile Include="Source\NetworkServerToServer.cpp" />
+    <ClCompile Include="Source\Player.cpp" />
+    <ClCompile Include="Source\Quest.cpp" />
+    <ClCompile Include="Source\Room.cpp" />
+    <ClCompile Include="Source\SingleBattle.cpp" />
+    <ClCompile Include="Source\SingleBattlePlayer.cpp" />
+    <ClCompile Include="Source\stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMT|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMDd|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMD|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMTd|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMT|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMD|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMDd|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='sMTd|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Source\User.cpp" />
+    <ClCompile Include="Source\Users.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\BalloonHitControl.h" />
+    <ClInclude Include="Source\Battle.h" />
+    <ClInclude Include="Source\BattlePlayer.h" />
+    <ClInclude Include="Source\Bot.h" />
+    <ClInclude Include="Source\Character.h" />
+    <ClInclude Include="Source\CheatCommand.h" />
+    <ClInclude Include="Source\DataBase.h" />
+    <ClInclude Include="Source\DBProtocol.h" />
+    <ClInclude Include="Source\PhysicsEngine.h" />
+    <ClInclude Include="Source\EngineGameMode.h" />
+    <ClInclude Include="Source\EngineGameModeMulti.h" />
+    <ClInclude Include="Source\EngineGameModeMultiDodgeSolo.h" />
+    <ClInclude Include="Source\EngineGameModeMultiIslandSolo.h" />
+    <ClInclude Include="Source\EngineGameModeMultiSolo.h" />
+    <ClInclude Include="Source\EngineGameModeMultiSurvival.h" />
+    <ClInclude Include="Source\EngineGameModeMultiSurvivalSmall.h" />
+    <ClInclude Include="Source\EngineGameModeMultiTeam.h" />
+    <ClInclude Include="Source\EngineGameModeMultiTeamSmall.h" />
+    <ClInclude Include="Source\EngineGlobal.h" />
+    <ClInclude Include="Source\EngineParachuteControl.h" />
+    <ClInclude Include="Source\EnginePlayer.h" />
+    <ClInclude Include="Source\EnginePumpControl.h" />
+    <ClInclude Include="Source\Gacha.h" />
+    <ClInclude Include="Source\GameData.h" />
+    <ClInclude Include="Source\Network.h" />
+    <ClInclude Include="Source\NetworkRanking.h" />
+    <ClInclude Include="Source\NetworkServerToServer.h" />
+    <ClInclude Include="Source\Player.h" />
+    <ClInclude Include="Source\Protocol.h" />
+    <ClInclude Include="Source\Quest.h" />
+    <ClInclude Include="Source\Room.h" />
+    <ClInclude Include="Source\SingleBattle.h" />
+    <ClInclude Include="Source\SingleBattlePlayer.h" />
+    <ClInclude Include="Source\stdafx.h" />
+    <ClInclude Include="Source\targetver.h" />
+    <ClInclude Include="Source\ToolProtocol.h" />
+    <ClInclude Include="Source\User.h" />
+    <ClInclude Include="Source\Users.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\DBProtocol.prt">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="Source\Protocol.prt">
+      <FileType>Document</FileType>
+    </ClInclude>
+    <ClInclude Include="Source\ToolProtocol.prt">
+      <FileType>Document</FileType>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Doc\Note.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{26E7B454-5C20-445D-8C10-7D26AED9E387}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>GameServer</RootNamespace>
+    <ProjectName>GameServer</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMT|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMD|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMT|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMD|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMT|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMD|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMT|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='sMD|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMT|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMD|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMT|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='sMD|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin/$(SolutionName)/$(ProjectName)/$(Platform)/</OutDir>
+    <TargetName>$(ProjectName)_$(Configuration)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMTd|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
+    <PreBuildEvent />
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMDd|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMT|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMD|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMT|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='sMD|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalOptions>/MP /bigobj</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>if exist Source\Protocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\Protocol CPP ..\..\Include\$(Platform)\)
+if exist Source\DBProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\DBProtocol CPP ..\..\Include\$(Platform)\)
+if exist Source\ToolProtocol.prt (..\..\Bin\Rso\ProtoGen\$(Platform)\ProtoGen_$(Configuration).exe Source\ToolProtocol CPP ..\..\Include\$(Platform)\)
+</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

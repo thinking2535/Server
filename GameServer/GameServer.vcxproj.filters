@@ -1,0 +1,248 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{40571513-0071-4ca3-9de9-104c62aa8f59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Doc">
+      <UniqueIdentifier>{cdaf95b4-056c-4737-a357-d6b25f977b4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\stdafx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GameData.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\User.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataBase.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Network.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CheatCommand.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\NetworkServerToServer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Player.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Battle.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Users.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BattlePlayer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Character.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Gacha.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Quest.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BalloonHitControl.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\PhysicsEngine.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGlobal.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EnginePumpControl.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineParachuteControl.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EnginePlayer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameMode.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMulti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiSolo.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiSurvival.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiTeam.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Bot.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\NetworkRanking.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiSurvivalSmall.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiTeamSmall.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SingleBattle.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SingleBattlePlayer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiDodgeSolo.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\EngineGameModeMultiIslandSolo.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Room.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\stdafx.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\targetver.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\GameData.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\User.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DBProtocol.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DataBase.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DBProtocol.prt">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Network.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CheatCommand.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\NetworkServerToServer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Player.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Protocol.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ToolProtocol.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ToolProtocol.prt">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Protocol.prt">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Battle.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Users.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\BattlePlayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Character.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Gacha.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Quest.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\BalloonHitControl.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\PhysicsEngine.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGlobal.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EnginePumpControl.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineParachuteControl.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EnginePlayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameMode.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMulti.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiSolo.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiSurvival.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiTeam.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Bot.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\NetworkRanking.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiSurvivalSmall.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiTeamSmall.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SingleBattle.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SingleBattlePlayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiDodgeSolo.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EngineGameModeMultiIslandSolo.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Room.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Doc\Note.txt">
+      <Filter>Doc</Filter>
+    </Text>
+  </ItemGroup>
+</Project>

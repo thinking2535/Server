@@ -1,0 +1,1900 @@
+include <Rso/Game/Protocol>
+include <Rso/Physics/Protocol>
+include <Rso/GameUtil/Protocol>
+
+using namespace rso
+using namespace rso::game
+using namespace rso::physics
+using namespace rso::gameutil
+
+typedef int64 TIndex
+typedef int32 TID
+typedef int32 TLevel
+typedef int32 THP
+typedef int8 TSlotNo
+typedef int32 TLeaguePoint
+typedef int32 TExp
+typedef int32 TRank
+typedef int32 TEnchant
+
+const TVer c_Ver_Main 21
+const int32 c_EdgeSize 5
+const int32 c_GridSize 4
+const int32 c_GridCnt 10
+const int32 c_FullMapSize (c_EdgeSize*2+c_GridSize*c_GridCnt)
+const int32 c_OpenedLayerCnt 6
+const int32 c_ClanBookMarkCnt_Max 20
+const int32 c_BarrierTimeReductionMinutes 20
+
+enum class EProtoNetCs
+{
+	BuyResourcesWithTopaz
+	Build
+	BuildingUpgrade
+	BuildingUpgradeCancel
+	BuildingUpgradeComplete
+	BuildingMove
+	BuildingChangeMode
+	BuildingReinstall
+	BuildingBulletChange
+	Collect
+	Train
+	TrainWithTopaz
+	BarrackSync
+	UnitUpgrade
+	UnitUpgradeComplete
+	AvatarSlotAdd
+	AvatarSaveSlot
+	AvatarActivate
+	AvatarUpgrade
+	AvatarUpgradeComplete
+	AvatarCoolEnded
+	AvatarRepairDefence
+	AvatarEnableDefence
+	BattleSingleStart
+	BattleSingleUnitDrop
+	BattleSingleClanUnitDrop
+	BattleSingleAvatarDrop
+	BattleSingleResourceGot
+	BattleSingleAvatarCoolTime
+	BattleSingleEnd
+	BattleScout
+	BattleScoutTarget
+	BattleRevenge
+	BattleCheckPoint
+	BattleUnitDrop
+	BattleClanUnitDrop
+	BattleAvatarAction
+	BattleEnd
+	BattleFinish
+	ReplayLoadAttack
+	ReplayLoadDefence
+	Chat
+	ClanCastleCoolEndWithTopaz
+	ClanCastleDelUnit
+	EnvObjectDel
+	EnvObjectDelCancel
+	EnvObjectDelComplete
+	EnvDevelopDel
+	EnvDevelopDelCancel
+	EnvDevelopDelComplete
+	BootyTake
+	BoostBuilding
+	BoostBB
+	BoostBatch
+	BankDeposit
+	BankWithdraw
+	InvitationReject
+	MailDelete
+	UserProfileInfo
+	UserVisitInfo
+	TutorialComplete
+	AchievementReward
+
+	ClanInfo
+	ClanSearch
+	ClanSearchWithFilter
+	ClanSupportRequest
+	ClanSupport
+	ClanBookMarkList
+	ClanBookMarkAdd
+	ClanBookMarkDel
+
+	ClanJoinResponse
+	ClanModify
+	ClanInvite
+	ClanChatStream2Load
+	ClanChangeGrade
+	ClanBanish
+	ClanOut
+	ClanSendMessageAll
+	ClanChatMsg
+	ClanReplayShare
+
+	FCMTokenSet
+	FCMTokenUnset
+
+	Max
+	Null
+}
+enum class EProtoNetSc
+{
+	Message
+	BattleInfo
+	UnderAttack
+	UserInfo
+	Build
+	BuildingUpgrade
+	BuildingUpgradeCancel
+	BuildingUpgradeComplete
+	BuildingMove
+	BuildingChangeMode
+	BuildingReinstall
+	BuildingBulletChange
+	Collect
+	Train
+	TrainWithTopaz
+	UnitUpgrade
+	UnitUpgradeComplete
+	AvatarSaveSlot
+	AvatarActivate
+	AvatarUpgrade
+	AvatarRepairDefence
+	BattleScout
+	BattleCheckPoint
+	BattleUnitDropOther
+	BattleClanUnitDropOther
+	BattleAvatarActionOther
+	BattleEnded
+	UserInfoSub
+	ReplayLoadAttack
+	ReplayLoadDefence
+	ReplayAttackAdded
+	Chat
+	ResourceLeft
+	UserExp
+	ClanCastleCoolEndWithTopaz
+	EnvObjectDel
+	EnvObjectDelCancel
+	EnvObjectDelComplete
+	EnvDevelopDel
+	EnvDevelopDelCancel
+	EnvDevelopDelComplete
+	BootyTake
+	BoostBuilding
+	BoostBB
+	BoostBatch
+	BankDeposit
+	BankWithdraw
+	InvitationRecv
+	MailRecv
+	UserProfileInfo
+	UserVisitInfo
+
+	ClanCreateOk
+	ClanUnset
+	ClanInfo
+	ClanSearch
+	ClanBookMarkList
+
+	ClanJoinAllowOk
+	ClanOnlineInfo
+	ClanLogin
+	ClanJoin
+	ClanModify
+	ClanChatStream2Load
+	ClanChangeGrade
+	ClanOut
+
+	ClanSupportRequest
+	ClanSupport
+	ClanReceive
+	ClanChat
+	ClanChatModify
+	ClanChatDelete
+
+	Max
+}
+enum class ERet
+{
+	Ok
+	AchievementOverLevel
+	AchievementNotEnoughCount
+	CanNotSupportToMe
+	CanNotBoost
+	CanNotChangeGrade
+	CanNotChangeMode
+	InvalidTime
+	InvalidAccess
+	InvalidAchievementType
+	InvalidCall
+	InvalidCPLevel
+	InvalidResource
+	InvalidResourceValue
+	InvalidGroupID
+	InvalidUnitID
+	InvalidUnitCnt
+	InvalidUnitLevel
+	InvalidShopID
+	InvalidColorID
+	InvalidDevObjectIndex
+	InvalidEnvObjectID
+	InvalidSlotNo
+	InvalidIndex
+	InvalidEnvObjectIndex
+	InvalidEnvObjectCompleteTime
+	InvalidBuildingIndex
+	InvalidBuildingID
+	InvalidBuildingMode
+	InvalidLevel
+	InvalidBankLevel
+	InvalidBuildingLevel
+	InvalidBuildingRotate
+	InvalidDefenceBuildingType
+	InvalidCoolTime
+	InvalidUID
+	InvalidPW
+	InvalidBulletLeft
+	InvalidSingleArea
+	InvalidSingleType
+	InvalidSingleGroup
+	InvalidSingleStage
+	InvalidStarGot
+	InvalidResourceFromCollector
+	InvalidCollectorIndex
+	InvalidBuildingPos
+	InvalidEnvObjectPos
+	InvalidDevObjectPos
+	InvalidReplayIndex
+	InvalidChatIndex
+	InvalidBootyPos
+	InvalidMailIndex
+	InvalidShuttleSize
+	InvalidShuttleNum
+	InvalidStartTime
+	InvalidForceType
+	InvalidTutorialNumber
+	InvalidDropCnt
+	InvalidCheckPoint
+	InvalidProtocol
+	UnitAllDropped
+	UnitIsNotReady
+	AlreadyCompleted
+	AlreadyCompleting
+	AlreadyCoolEnded
+	AlreadyInstalled
+	AlreadyInBoost
+	AlreadyRevenged
+	AlreadyInvited
+	AlreadyResponsed
+	AlreadyJoinRequested
+	AlreadyBookMarkedClan
+	BattleEndDelayed
+	DupLogin
+	EmptyBooty
+	EmptyBookMark
+	MustClearPrevStage
+	OverOccupied
+	OverCapacity
+	OverCount
+	OverSendCount
+	OverRecvCount
+	OverUpgrade
+	OverSlotNo
+	OverSendLimit
+	OverFlow
+	OverResource
+	OverResourceCanGet
+	OverClanDescSize
+	OverClanBookMarkCnt
+	OverAvatarSlot
+	OnlyDefencePortalCanChangeUnitGroup
+	UnderMinLeaguePoint
+	NeedTechLab
+	NeedFactory
+	NeedWeaponLab
+	NeedAvatarPlatform
+	NeedAvatarLab
+	NeedMoreRecharger
+	NeedToBattleFinish
+	NoInFieldUnits
+	NoUserToBattle
+	TargetIsGuarded
+	TargetIsLogon
+	NoBuildingToRepair
+	NoDefenceAvatar
+	NotCompleted
+	NotCompleting
+	NotEnoughTopaz
+	NotEnoughMoney
+	NotEnoughUserLevel
+	NotEnoughCPLevel
+	NotEnoughTechLabLevel
+	NotEnoughAvatarLabLevel
+	NotEnoughSupportData
+	NotEnoughFactoryLevel
+	NotEnoughWeaponLabLevel
+	NotInBattle
+	NotInBattleSingle
+	NotHaveBooty
+	NotHaveClan
+	NotHaveUnionCenter
+	NotHaveBank
+	NotReadyAvatar
+	NotReadyDefenceAvatar
+	NotUpgrading
+	NotNeedToBattleFinish
+	NotDefencePortal
+	UnderConstruction
+	MinLevel
+	MaxLevel
+	BattleIsAlreadyStarted
+	InBusy
+	InCompleting
+	InUpgrading
+	InBattleSingle
+	InScouting
+	InScout
+	InScouted
+	SingleCoolTime
+	SameClanMemberGrade
+	SameMode
+	SameBulletGroupID
+	TooFastTraining
+	ResourcesChanged
+	ClanCastleFull
+	BankIsUnderConstruction
+	BankIsNotEmpty
+	BankIsEmpty
+	SystemError
+	SystemErrorInsert
+	SPError
+
+	InvalidClanCastleLevel
+	InvalidClanLogin
+	InvalidClanName
+	InvalidClanUID
+	InvalidClanType
+	InvalidClanJoin
+	InvalidClanChatType
+	InvalidClanMember
+	InvalidClanMemberUID
+	InvalidClanMemberGrade
+	InvalidClanLevel
+	AlreadyExistClan
+	AlreadyHaveAClan
+	AlreadyJoinedClanMember
+	CoolTimeClanCastle
+	EmptyClanCastleUnit
+	ClanIsAlreadyCreated
+
+	SpNotEnoughMoney=50004
+	SpNotUnionMember=51000
+	SpAlreadyHaveAClan=51001
+	SpInvalidClanUID=51002
+	SpInvalidReplayIndex=51003
+	Max
+	Null
+}
+
+struct SCsRet
+{
+	EProtoNetCs CsProto
+	ERet Ret
+}
+
+enum class EBuilding
+{
+	CP
+	Storage
+	Collector
+	Factory
+	RechargingStation
+	UnionCenter
+	SpacePlatform
+	TechLab
+	ExploreDock
+	Armory
+	AvatarPlatform
+	AvatarLab
+	Defence
+	RnDCenter
+	Bank
+	Max
+	Null
+}
+enum class EZoneType
+{
+	Defender
+	Base
+	Factory
+	Platform
+	Max
+	Null
+}
+enum class EBuildingRotate : int8
+{
+	D0
+	D90
+	D180
+	D270
+	Max
+	Null
+}
+enum class EBuildingRotateHead : int8
+{
+	D0
+	D45
+	D90
+	D135
+	D180
+	D225
+	D270
+	D315
+	Max
+	Null
+}
+enum class EResource
+{
+	Topaz
+	Ame
+	Acid
+	Aqua
+	Dark
+	Max
+	Null
+}
+enum class EForceType
+{
+	Unit
+	Weapon
+	Max
+	Null
+}
+
+enum class ERegion : int8
+{
+	Asia
+	NorthAmerica
+	Europe
+	SouthAmerica
+	Oceania
+	Africa
+	Max
+	Null
+}
+
+typedef int32 TResource
+typedef array<TResource,5> TResources
+typedef array<int64,5> TResourcesI64
+typedef array<double,5> TResourcesDbl
+
+typedef array<int32,2> TForceCnts
+
+enum EMessageType
+{
+	SystemError
+	GameError
+	Notification
+}
+struct SMessageNetSc
+{
+	EMessageType Type
+	EProtoNetCs ProtoCs
+	ERet Ret
+	wstring Msg
+}
+
+struct SResourceTypeData
+{
+	EResource Type
+	TResource Data
+}
+
+struct SPos
+{
+	int32 X
+	int32 Y
+}
+
+struct SLeaguePoint
+{
+	TLeaguePoint LeaguePoint
+	TID LeagueCur
+	TID LeagueBest
+}
+struct SLeaguePointGot
+{
+	TLeaguePoint Win
+	TLeaguePoint Lose
+}
+struct SUserBase
+{
+	TResources Resource
+	SLeaguePoint LeaguePoint
+	TSlotNo AvatarActivatedSlotNo
+	TExp Exp
+	int8 Debug
+	time_point LastEnvObjectGenTime
+}
+struct SBooty
+{
+	TResources Resources
+	SPos Pos
+}
+struct SBankInfo
+{
+	time_point DepositTime
+	TLevel BankLevel
+	TIndex InterestIndex
+	EResource ResourceType
+	TResource ResourceValue
+}
+struct SUserCore : SUserBase
+{
+	wstring Nick
+	time_point ClanCastleCoolEndTime
+	SBooty Booty
+	STimeBoost BBBoost
+	time_point BatchBoostCoolEndTime
+	SBankInfo BankInfo
+	TIndex LastEnvObjectIndex
+	TIndex EnvObjectRewardIndex
+}
+struct SClanCore
+{
+	TUID UID
+	wstring Name
+	wstring Mark
+}
+struct SClanBase : SClanCore
+{
+	TExp Exp
+}
+struct SBattleBonus
+{
+	int32 Count
+	int32 Point
+	time_point LastCheckTime
+}
+struct SUserNet : SUserCore
+{
+	SClanBase ClanInfo
+	time_point GuardEndTime
+	time_point InsertedTimePoint
+	SBattleBonus BattleBonus
+}
+
+struct SBuildingRotate
+{
+	EBuildingRotate Rotate
+	EBuildingRotateHead RotateHead
+}
+struct SBuildingCore
+{
+	TIndex Index
+	TID GroupID
+	TLevel Level
+	SPos Pos
+	int8 Mode
+	TID BulletGroupID
+	int32 BulletLeft
+	SBuildingRotate Rotate
+	time_point BaseTime
+}
+struct SBuildingBase : SBuildingCore
+{
+	bool IsCompleted
+	time_point UpgradeEndTime
+	int64 DurationTicks
+	STimeBoost Boost
+}
+
+struct SUnitUpgradeInfo
+{
+	TLevel Level
+	bool IsCompleted
+	time_point CompleteTime
+}
+typedef map<TID,SUnitUpgradeInfo> TUpgrades
+
+struct SAvatarDB
+{
+	TRank Rank
+	TEnchant Enchant
+	bool IsCompleted
+	time_point CompleteTime
+}
+struct SAvatarPart
+{
+	TID GroupID
+	TID ColorID
+}
+typedef array<SAvatarPart,4> TAvatarParts
+struct SAvatarBase
+{
+	TAvatarParts Parts
+}
+struct SAvatarSlot : SAvatarBase
+{
+	bool IsCoolEnded
+	time_point CoolEndTime
+}
+struct SAvatarDefence : SAvatarBase
+{
+	bool GuardEnabled
+	bool Used
+}
+typedef vector<SAvatarSlot> TAvatarSlots
+typedef list<SAvatarDefence> TAvatarDefences
+typedef map<TID,SAvatarDB> TAvatarUpgrades
+
+struct SSingleStage
+{
+	TLevel Level
+	bool Cleared
+	time_point CoolEndTime
+}
+typedef map<TID,SSingleStage> TSingleGroup
+struct SSingleGroup
+{
+	TSingleGroup Group
+}
+typedef map<int32,SSingleGroup> TSingleArea
+struct SSingleArea
+{
+	TSingleArea Area
+}
+typedef map<int32,SSingleArea> TSingleWorld
+
+enum class EClanLoginType
+{
+	Create
+	Join
+	Login
+	Max
+	Null
+}
+enum class EClanType : int8
+{
+	Public
+	Invitation
+	Private
+	Max
+	Null
+}
+
+enum class EClanMemberGrade : int8
+{
+	Leader
+	CoLeader
+	Elder
+	Member
+	Max
+	Null
+}
+
+struct SClanCreateOkNetSc
+{
+	TResources Cost
+}
+struct SClanUnsetNetSc
+{
+}
+struct SClanCreateCore
+{
+	ERegion Region
+	TLeaguePoint MinLeaguePoint
+	EClanType Type
+	wstring Desc
+}
+struct SClanCreateInfo : SClanCore
+{
+	SClanCreateCore CreateCore
+}
+struct SClanCreate
+{
+	TUID UserUID
+	TAccountType AccountType
+	wstring UserID
+	wstring Name
+	wstring Mark
+	SClanCreateCore CreateCore
+}
+struct SClanJoin
+{
+	TUID UserUID
+	TAccountType AccountType
+	wstring UserID
+	int32 PassCode
+	wstring Message
+}
+struct SClanLogin
+{
+	TUID UserUID
+	TAccountType AccountType
+	wstring UserID
+}
+struct SClanMember
+{
+	TUID UID
+	TExp Exp
+	TAccountType AccountType
+	wstring ID
+	wstring Nick
+	EClanMemberGrade Grade
+	TLeaguePoint LeaguePoint
+	int32 SupportCnt
+	int32 ReceiveCnt
+	TRank OldRank
+	TRank CurRank
+}
+struct SClanInfoSearch : SClanBase
+{
+	TLeaguePoint LeaguePoint
+	int32 MemberCnt
+	EClanType Type
+}
+struct SClanInfoDetail : SClanInfoSearch
+{
+	ERegion Region
+	TLeaguePoint MinLeaguePoint
+	wstring Desc
+}
+struct SClanInfoNetSc : SClanInfoDetail
+{
+	list<SClanMember> Members
+}
+
+struct SEnvObjectDB
+{
+	TIndex Index
+	TID ObjectID
+	SPos Pos
+	time_point EndTime
+}
+typedef list<SEnvObjectDB> TEnvObjectDBs
+
+struct SBattleUserInfo
+{
+	TUID UID
+	wstring Nick
+	TExp Exp
+	TLeaguePoint LeaguePoint
+	SClanCore Clan
+}
+struct SReplayCore
+{
+	TIndex Index
+	SBattleUserInfo Attacker
+	SBattleUserInfo Defender
+	SLeaguePointGot AttackerLeaguePointGot
+	SLeaguePointGot DefenderLeaguePointGot
+	int32 Percentage
+}
+struct SReplay : SReplayCore
+{
+	bool IsCPDestroyed
+	TResources ResourcesGotLoss
+	TLeaguePoint LeaguePointReached
+	time_point BattleStartTime
+	stream Stream_SBattleUsedInfo
+}
+struct SReplayDefence : SReplay
+{
+	bool CanRevenge
+}
+enum class EMailType
+{
+	Message
+	Banish
+	Reject
+	Max
+	Null
+}
+struct SUserBrief
+{
+	TUID UID
+	wstring Name
+	TRank Rank
+}
+struct SClanBrief : SUserBrief
+{
+	wstring Mark
+}
+struct SMailCore
+{
+	time_point Time
+	SUserBrief FromUser
+	SClanBrief FromClan
+	wstring Text
+	EMailType Type
+	stream Stream
+}
+struct SMail
+{
+	TIndex Index
+	SMailCore MailCore
+}
+
+struct SShuttle
+{
+	TID GroupID
+	bool Trained
+}
+typedef vector<SShuttle> TShuttles
+
+struct SSpacePlatform
+{
+	time_point StartTime
+	int64 StartIndex
+	TShuttles Shuttles
+}
+
+struct SGroupIDLevel
+{
+	TID GroupID
+	TLevel Level
+}
+typedef map<int64,SGroupIDLevel> TClanForce
+typedef array<TClanForce,2> TClanForces
+
+typedef int8 TTutorialIndex
+typedef int64 TTutorialNumber
+typedef map<TTutorialIndex,TTutorialNumber> TTutorials
+
+typedef list<SMail> TMails
+
+struct SAchievement
+{
+	TLevel Level
+	int64 Count
+}
+typedef map<int32,SAchievement> TAchievements
+
+struct SUserInfoNetSc
+{
+	SUserNet User
+	list<SBuildingBase> Buildings
+	TEnvObjectDBs EnvObjects
+	TEnvObjectDBs EnvDevelops
+	array<SSpacePlatform,2> Units
+	TUpgrades Upgrades
+	TAvatarSlots AvatarSlots
+	TAvatarDefences AvatarDefences
+	TAvatarUpgrades AvatarUpgrades
+	TSingleWorld SingleWorld
+	TTutorials Tutorials
+	time_point ServerNowTime
+	TClanForces ClanCastleUnits
+	TAchievements Achievements
+}
+struct SBuyResourcesWithTopazNetCs : SResourceTypeData
+{
+}
+struct SBuildNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TID GroupID
+	SPos Pos
+	SBuildingRotate Rotate
+}
+struct SBuildNetSc : SBuildingBase
+{
+	TResources ResourceLeft
+}
+
+struct SBuildingUpgradeNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TIndex Index
+}
+struct SBuildingUpgradeNetSc
+{
+	TIndex Index
+	TLevel Level
+	time_point StartTime
+	TResources ResourceLeft
+}
+
+struct SBuildingUpgradeCancelNetCs
+{
+	time_point Time
+	TIndex Index
+}
+struct SBuildingUpgradeCancelNetSc
+{
+	TIndex Index
+	time_point CollectedTime
+	TResources ResourceLeft
+}
+struct SBuildingUpgradeCompleteNetCs
+{
+	time_point Time
+	TIndex Index
+	bool UseTopaz
+}
+struct SBuildingUpgradeCompleteNetSc
+{
+	TIndex Index
+	time_point CollectedTime
+	TExp Exp
+}
+struct SBuildingMoveNetCs
+{
+	TIndex Index
+	SPos Pos
+	SBuildingRotate Rotate
+}
+struct SBuildingMoveNetSc
+{
+}
+struct SBuildingChangeModeNetCs
+{
+	TIndex Index
+	int8 Mode
+}
+struct SBuildingChangeModeNetSc
+{
+}
+enum class EDefenceBuildingType
+{
+	Trap
+	Tower
+	Max
+	Null
+}
+struct SBuildingReinstallNetCs
+{
+	SResourceTypeData TopazUseInfo
+	EDefenceBuildingType Type
+	TIndex BuildingIndex
+}
+struct SBuildingReinstallNetSc
+{
+	TResources ResourceLeft
+}
+struct SBuildingBulletChangeNetCs
+{
+	SResourceTypeData TopazUseInfo
+	TIndex BuildingIndex
+	TID BulletGroupID
+}
+struct SBuildingBulletChangeNetSc
+{
+	TResources ResourceLeft
+}
+struct SCollectNetCs
+{
+	time_point Time
+	TIndex Index
+}
+struct SIndexTime
+{
+	TIndex Index
+	time_point Time
+}
+typedef list<SIndexTime> TIndexTimes
+struct SSlotNoTime
+{
+	TSlotNo SlotNo
+	time_point Time
+}
+typedef list<SSlotNoTime> TSlotNoTimes
+struct SCollectNetSc
+{
+	TResources LeftResource
+	TIndexTimes CollectedBuildingIndexTimes
+}
+
+struct STrain : SSpacePlatform
+{
+	time_point Time
+	EForceType Force
+}
+
+struct STrainNetCs : STrain
+{
+	SResourceTypeData TopazUseInfo
+}
+struct STrainNetSc
+{
+	TResources ResourceLeft
+}
+struct STrainWithTopazNetCs : STrain
+{
+}
+struct STrainWithTopazNetSc
+{
+	TResource TopazLeft
+}
+
+struct SBarrackSyncNetCs : STrain
+{
+}
+
+struct SUnitUpgradeNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TID GroupID
+}
+struct SUnitUpgradeNetSc : SUnitUpgradeInfo
+{
+	TID GroupID
+	TResources ResourcesLeft
+}
+struct SUnitUpgradeCompleteNetCs
+{
+	time_point Time
+	TID GroupID
+	bool UseTopaz
+}
+struct SUnitUpgradeCompleteNetSc
+{
+	TID GroupID
+	TExp Exp
+}
+enum class EAvatarPartsType
+{
+	HBody
+	Arm
+	Leg
+	Core
+	Max
+	Null
+}
+
+struct SAvatarSlotAddNetCs
+{
+}
+struct SAvatarSaveSlotNetCs
+{
+	TSlotNo SlotNo
+	TAvatarParts Parts
+}
+struct SAvatarSaveSlotNetSc
+{
+}
+struct SAvatarActivateNetCs
+{
+	TSlotNo SlotNo
+}
+struct SAvatarActivateNetSc
+{
+}
+struct SAvatarUpgradeNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TID GroupID
+}
+struct SAvatarUpgradeNetSc
+{
+	TResources ResourceLeft
+	TID GroupID
+	time_point CompleteTime
+}
+struct SAvatarUpgradeCompleteNetCs
+{
+	time_point Time
+	TID GroupID
+	bool UseTopaz
+}
+struct SAvatarCoolEndedNetCs
+{
+	time_point Time
+	TSlotNo SlotNo
+	bool UseTopaz
+}
+
+struct SAvatarRepairDefenceNetCs
+{
+	SResourceTypeData TopazUseInfo
+}
+struct SAvatarRepairDefenceNetSc
+{
+	TResources ResourcesLeft
+}
+struct SAvatarEnableDefenceNetCs
+{
+	bool Enable
+}
+
+struct SSingleStageCode
+{
+	int32 Area
+	int32 Group
+	TID Stage
+}
+struct SBattleSingleStartNetCs : SSingleStageCode
+{
+	time_point Time
+}
+struct SBattleSingleUnit
+{
+	TID GroupID
+	int8 Cnt
+}
+
+typedef list<int64> TIndexForce
+typedef array<TIndexForce,2> TIndexForces
+
+struct SDrop
+{
+	EForceType ForceType
+	int64 Index
+}
+typedef list<SDrop> TDrops
+
+struct SBattleSingleUnitDropNetCs
+{
+	time_point Time
+	TDrops Drops
+}
+struct SBattleSingleClanUnitDropNetCs
+{
+	time_point Time
+	TDrops Drops
+}
+struct SBattleSingleAvatarDropNetCs
+{
+	time_point Time
+}
+struct SBattleSingleResourceGotNetCs
+{
+	TResources ResourcesGot
+}
+struct SBattleSingleAvatarCoolTimeNetCs
+{
+	int32 CoolMilliseconds
+}
+struct SBattleSingleEndNetCs
+{
+	time_point Time
+	bool Cleared
+	int32 AttackAvatarCoolMilliseconds
+}
+
+struct SBattleScoutNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+}
+struct SBattleScoutTargetNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TUID TargetUID
+}
+struct SBattleRevengeNetCs
+{
+	time_point Time
+	TIndex ReplayIndex
+}
+
+struct SBattleScoutInfoBuilding : SBuildingBase
+{
+	TResources ResourcesCanGet
+}
+struct SBattleScoutInfo
+{
+	SBattleUserInfo Defender
+	TLevel DefenderCPLevel
+	TResources ResourcesCanGet
+	TResources ResourcesCanGetFromCollector
+	stream Stream_SBattleScoutCore
+}
+struct SFrame
+{
+	int32 Main
+	int32 Sub
+}
+struct SBattleAvatarAction
+{
+	SFrame Frame
+	int8 Action
+	SPoint Point
+}
+
+struct SReplayUnit
+{
+	TLevel Level
+	int32 Cnt
+}
+
+struct SForce : SGroupIDLevel
+{
+	int64 Index
+}
+typedef list<SForce> TListForce
+typedef array<TListForce,2> TListForces
+
+struct SAvatarInfo
+{
+	list<TAvatarParts> Parts
+	TAvatarUpgrades Upgrades
+}
+struct SBattleCanUseInfo
+{
+	SAvatarInfo AvatarInfo
+	TListForces Units
+	TClanForces ClanUnits
+}
+struct SBattleUsedInfo
+{
+	SAvatarInfo AvatarInfo
+	TListForces Units
+	TClanForces ClanUnits
+}
+struct SBattleScoutEnvObject
+{
+	TID ObjectID
+	SPos Pos
+}
+typedef list<SBattleScoutEnvObject> TScoutEnvObjects
+
+struct SBattleScoutEnvDevelop : SBattleScoutEnvObject
+{
+	bool IsDeleting
+}
+typedef list<SBattleScoutEnvDevelop> TScoutEnvDevelops
+struct SBattleScoutCore
+{
+	list<SBattleScoutInfoBuilding> Buildings
+	TScoutEnvObjects EnvObjects
+	TScoutEnvDevelops EnvDevelops
+	TClanForce ClanUnits
+	map<TID,TLevel> UnitUpgrades
+	SAvatarInfo AvatarInfo
+	bool GuardEnable
+	bool Used
+}
+
+struct SBattleScoutNetSc : SBattleScoutInfo
+{
+	SLeaguePointGot LeaguePointGot
+	TResources ResourceLeft
+}
+
+struct SBattleCheckPointNetCs
+{
+	SFrame Frame
+}
+struct SBattleCheckPointNetSc
+{
+	SFrame Frame
+}
+struct SDropMulti : SDrop
+{
+	SFrame Frame
+	SPoint Point
+}
+typedef list<SDropMulti> TDropMultis
+
+struct SBattleUnitDropNetCs
+{
+	TDropMultis Drops
+}
+struct SBattleUnitDropOtherNetSc : SBattleUnitDropNetCs
+{
+}
+struct SBattleClanUnitDropNetCs
+{
+	TDropMultis Drops
+}
+struct SBattleClanUnitDropOtherNetSc : SBattleClanUnitDropNetCs
+{
+}
+struct SBattleAvatarActionNetCs
+{
+	list<SBattleAvatarAction> Infos
+}
+struct SBattleAvatarActionOtherNetSc : SBattleAvatarActionNetCs
+{
+}
+
+struct SBattlePlayInfo
+{
+	list<SBattleAvatarAction> AvatarActions
+	SBattleUnitDropNetCs UnitDrops
+	SBattleClanUnitDropNetCs ClanUnitDrops
+}
+struct SBattleInfoCore : SBattleScoutInfo
+{
+	stream Stream_SBattleCanUseInfo
+	stream Stream_SBattlePlayInfo
+}
+struct SBattleInfoBase : SBattleInfoCore
+{
+	time_point BattleStartTime
+	SFrame EndFrame
+}
+struct SBattleInfoNetSc : SBattleInfoBase
+{
+}
+struct SUnderAttackNetSc : SBattleInfoCore
+{
+	SBattleUserInfo Attacker
+	SFrame Frame
+	SLeaguePointGot LeaguePointGot
+}
+
+struct SBattleEndNetCs
+{
+	SFrame EndFrame
+}
+struct SBattleEndedNetSc : SBattleEndNetCs
+{
+}
+
+typedef map<TIndex,int32> TUsedBuildings
+struct SBattleFinishNetCs
+{
+	bool IsCPDestroyed
+	TResources ResourcesGotFromStorage
+	TResources ResourcesGotFromCollector
+	map<TIndex,TResource> ResourcesGotFromCollectorDetail
+	array<TUsedBuildings,2> UsedBuildings
+	int32 Percentage
+	bool DefenceAvatarUsed
+	bool DefenderClanUnitUsed
+	int32 AttackAvatarCoolMilliseconds
+	SFrame EndFrame
+}
+struct SInvitation
+{
+	SUserBrief FromUser
+	SClanBrief FromClan
+	int32 PassCode
+	wstring Text
+	time_point Time
+}
+typedef list<SInvitation> TInvitations
+typedef set<TUID> TClanBookMarks
+struct SUserInfoSubNetSc
+{
+	list<time_point> LastLoginTimes
+	list<SReplay> AttackReplays
+	list<SReplayDefence> DefenceReplays
+	TInvitations Invitations
+	TMails Mails
+	TClanBookMarks ClanBookMarks
+}
+struct SReplayLoadAttackNetCs
+{
+	TIndex Index
+}
+struct SReplayAvailableUnit
+{
+	TID GroupID
+	TLevel Level
+	int32 Cnt
+}
+struct SReplayAvailableUnits
+{
+	list<SReplayAvailableUnit> Units
+}
+
+struct SReplayLoadAttackNetSc
+{
+	list<SBattleInfoBase> Datas
+}
+struct SReplayLoadDefenceNetCs
+{
+	TIndex Index
+}
+struct SReplayLoadDefenceNetSc
+{
+	list<SBattleInfoBase> Datas
+}
+struct SReplayAttackAddedNetSc : SReplay
+{
+}
+
+struct SChatNetCs
+{
+	wstring Msg
+}
+struct SChatUser
+{
+	TUID UID
+    wstring Nick
+    TID LeagueID
+    SClanCore Clan
+}
+struct SChatNetSc
+{
+	SChatUser User
+	wstring Msg
+}
+
+struct SResourceLeftNetSc
+{
+	TResources ResourceLeft
+}
+struct SUserExpNetSc
+{
+	TExp Exp
+}
+
+struct SClanCastleCoolEndWithTopazNetCs
+{
+	time_point Time
+}
+struct SClanCastleCoolEndWithTopazNetSc
+{
+	TResource TopazLeft
+	time_point CoolEndTime
+}
+struct SClanCastleDelUnitNetCs
+{
+	TIndexForces Deleted
+}
+
+struct SEnvObjectDelNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TIndex Index
+}
+struct SEnvObjectDelNetSc
+{
+	TResources Resources
+}
+struct SEnvObjectDelCancelNetCs
+{
+	TIndex Index
+}
+struct SEnvObjectDelCancelNetSc
+{
+	TResources ResourcesLeft
+}
+struct SEnvObjectDelCompleteNetCs
+{
+	time_point Time
+	TIndex Index
+	bool UseTopaz
+}
+struct SEnvObjectDelCompleteNetSc
+{
+	TIndex Index
+	TResources ResourcesLeft
+	TResources Reward
+	TExp ExpLeft
+}
+
+struct SEnvDevelopDelNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	TIndex Index
+}
+struct SEnvDevelopDelNetSc
+{
+	TResources Resources
+}
+struct SEnvDevelopDelCancelNetCs
+{
+	TIndex Index
+}
+struct SEnvDevelopDelCancelNetSc
+{
+	TResources ResourcesLeft
+}
+struct SEnvDevelopDelCompleteNetCs
+{
+	time_point Time
+	TIndex Index
+	bool UseTopaz
+}
+struct SEnvDevelopDelCompleteNetSc
+{
+	TIndex Index
+	TResources ResourcesLeft
+	TResources Reward
+	TExp ExpLeft
+}
+struct SBootyTakeNetCs
+{
+}
+struct SBootyTakeNetSc
+{
+	TResources ResourcesLeft
+	TResources BootyResourcesLeft
+}
+struct SBoostBuildingNetCs
+{
+	time_point Time
+	list<TIndex> Indices
+}
+struct SBoostBuildingNet
+{
+	TIndex Index
+	STimeBoost Boost
+}
+struct SBoostBuildingNetSc
+{
+	list<SBoostBuildingNet> Boosts
+	TResource TopazLeft
+}
+struct SBoostBBNetCs
+{
+	time_point Time
+}
+struct SBoostBBNetSc
+{
+	STimeBoost Boost
+	TResource TopazLeft
+}
+struct SBoostBatchNetCs
+{
+	time_point Time
+}
+struct SBoostBatchNetSc
+{
+	TResource TopazLeft
+}
+
+struct SBankDepositNetCs
+{
+	time_point Time
+	SResourceTypeData TopazUseInfo
+	EResource ResourceType
+	TIndex InterestIndex
+}
+struct SBankDepositNetSc
+{
+	SBankInfo BankInfo
+	TResources ResourcesLeft
+}
+struct SBankWithdrawNetCs
+{
+	time_point Time
+}
+struct SBankWithdrawNetSc
+{
+	TResources ResourcesLeft
+}
+struct SInvitationRejectNetCs
+{
+	TUID FromClanUID
+}
+struct SMailDeleteNetCs
+{
+	list<TIndex> Indices
+}
+struct SInvitationRecvNetSc : SInvitation
+{
+}
+struct SMailRecvNetSc : SMail
+{
+}
+struct SUserProfileInfoNetCs
+{
+	TUID UID
+}
+struct SUserProfileInfo
+{
+}
+struct SUserProfileInfoNetSc : SUserProfileInfo
+{
+}
+struct SUserVisitInfoNetCs
+{
+	TUID UID
+}
+struct SUserVisitInfo
+{
+}
+struct SUserVisitInfoNetSc : SUserVisitInfo
+{
+}
+
+struct STutorialCompleteNetCs
+{
+	TTutorialIndex Index
+	TTutorialNumber Number
+}
+
+enum class EAchievement
+{
+	MultiWinCount
+	Max
+	Null
+}
+
+struct SAchievementRewardNetCs
+{
+	EAchievement Type
+}
+enum class EClanChatType
+{
+	Msg
+	JoinRequest
+	Join
+	Out
+	ClanModify
+	ChangeGrade
+	Banish
+	SupportRequest
+	Replay
+	Challange
+	Max
+	Null
+}
+struct SClanChat
+{
+	time_point Time
+	TUID UID
+	wstring Nick
+	EClanMemberGrade Grade
+	EClanChatType Type
+	stream Stream
+}
+struct SClanChatNetSc : SClanChat
+{
+	TIndex Index
+}
+struct SClanChatModifyNetSc
+{
+	TIndex Index
+	stream Stream
+}
+struct SClanChatDeleteNetSc
+{
+	TIndex Index
+}
+
+struct SClanOnlineInfoNetSc
+{
+	int32 OnlineCnt
+	int32 TotalCnt
+}
+typedef list<SClanChatNetSc> TChats
+struct SClanLoginNetSc : SClanInfoNetSc
+{
+	EClanMemberGrade Grade
+	TChats Chats
+}
+struct SClanSearchNetCs
+{
+	int32 Counter
+	wstring Name
+}
+struct SClanSearchWithFilterNetCs
+{
+	int32 Counter
+	wstring Name
+	int32 MinMemberCnt
+	int32 MaxMemberCnt
+	ERegion Region
+	TLeaguePoint MinClanPoint
+	TLevel MinClanLevel
+	bool ShowOnlyJoinable
+}
+struct SClanSearchOut
+{
+	list<SClanInfoSearch> Clans
+}
+struct SClanSearchNetSc : SClanSearchOut
+{
+	int32 Counter
+}
+
+
+struct SClanChatStream2LoadNetCs
+{
+	TIndex Index
+}
+struct SClanChatStream2LoadNetSc
+{
+	list<stream> Datas
+}
+
+struct SClanJoinAllowOkNetSc
+{
+	TUID ClanUID
+	wstring ClanName
+}
+struct SClanInfoNetCs
+{
+	TUID ClanUID
+}
+
+struct SClanJoinResponseNetCs
+{
+	TIndex ChatIndex
+	bool Allow
+}
+struct SClanInviteNetCs
+{
+	TUID UID
+}
+struct SClanJoinNetSc : SClanMember
+{
+}
+struct SClanModifyNetCs
+{
+	EClanType Type
+	wstring Mark
+	TLeaguePoint MinLeaguePoint
+	wstring Desc
+}
+struct SClanModifyNetSc : SClanModifyNetCs
+{
+}
+
+struct SUIDGrade
+{
+	TUID UID
+	EClanMemberGrade Grade
+}
+typedef list<SUIDGrade> TUIDGrades
+
+struct SClanChangeGradeNetCs
+{
+	TUID UID
+	EClanMemberGrade Grade
+}
+struct SClanChangeGradeNetSc
+{
+	TUIDGrades Changed
+}
+struct SClanBanishNetCs
+{
+	TUID UID
+}
+struct SClanOutNetSc
+{
+	TUID UID
+}
+struct SClanSendMessageAllNetCs
+{
+	wstring Message
+}
+
+struct SClanOutNetCs
+{
+}
+struct SClanSupportRequestNetCs
+{
+	wstring Msg
+}
+struct SClanSupportRequestNetSc
+{
+	time_point CoolEndTime
+}
+
+struct SClanSupportNetCs
+{
+	TIndex ChatIndex
+	TID GroupID
+}
+struct SClanSupportNetSc
+{
+	TExp ExpLeft
+	TResources ResourcesLeft
+	TID GroupID
+}
+struct SClanReceiveNetSc
+{
+	wstring FromNick
+	int64 Index
+	SGroupIDLevel Data
+}
+
+struct SClanBookMarkListNetCs
+{
+}
+struct SClanBookMarkListNetSc : SClanSearchOut
+{
+}
+
+struct SClanBookMarkAddNetCs
+{
+	TUID ClanUID
+}
+struct SClanBookMarkDelNetCs
+{
+	TUID ClanUID
+}
+
+struct SClanReplayShareNetCs
+{
+	bool IsAttack
+	TIndex ReplayIndex
+	wstring Note
+}
+struct SClanChatMsgNetCs
+{
+	wstring Msg
+}
+
+struct SClanChatMsg
+{
+	wstring Msg
+}
+struct SClanChatJoin
+{
+	wstring ByNick
+}
+enum EClanJoinRequestState
+{
+	Allowed
+	Rejected
+	Max
+	Null
+}
+struct SClanChatJoinRequest
+{
+	EClanJoinRequestState State
+	wstring Message
+	wstring ByNick
+}
+struct SClanChatOut
+{
+}
+struct SClanChatClanModify
+{
+}
+struct SClanChatChangeGrade
+{
+	bool Up
+	wstring ChangedByNick
+}
+struct SClanChatBanish
+{
+	wstring BanishedByNick
+}
+typedef list<SGroupIDLevel> TListClanForce
+typedef array<TListClanForce,2> TListClanForces
+
+struct SClanSupportRequest
+{
+	wstring Msg
+	TForceCnts RecvLimits
+	TListClanForces ListClanForces
+}
+
+struct SSupportedCntPerMember
+{
+	map<TUID,int32> Cnts
+}
+typedef array<SSupportedCntPerMember,2> TSupportedCntPerMembers
+struct SClanChatSupportRequest : SClanSupportRequest
+{
+	TLevel ClanCastleLevel
+	TSupportedCntPerMembers SupportedCntPerMembers
+}
+struct SClanChatReplay : SReplayCore
+{
+	wstring Note
+}
+struct SClanChatReplayDB
+{
+	SClanChatReplay ClanChatReplay
+	SBattleInfoBase Data
+}
+struct SJoinAllowTargetBase
+{
+	TExp Exp
+	wstring Nick
+	TLeaguePoint LeaguePoint
+}
+struct SJoinAllowTarget : SJoinAllowTargetBase
+{
+	TUID UID
+	TAccountType AccountType
+	wstring ID
+}
+
+struct SFCMTokenSetNetCs
+{
+	wstring Token
+}
+struct SFCMTokenUnsetNetCs
+{
+}

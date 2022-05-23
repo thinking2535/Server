@@ -1,0 +1,31 @@
+include <Rso/MSSQL/Protocol>
+include <GameServer/Common/NetProtocol>
+
+namespace bb
+{
+	using namespace rso
+	using namespace net
+	using namespace mssql
+
+	struct SOption
+	{
+		TPort MonitorAgentBindPort
+		SNamePort MasterNamePort
+		int32 NetCThreadCnt
+		TPort ClientBindPort
+		SNamePort ClientBindNamePortPub
+		TPort ServerBindPort
+		string Title
+		int8 Debug
+		bool EndlessGame
+	}
+	struct SOptionRanking
+	{
+		SNamePort RankingNamePort
+	}
+	struct SDBOptions
+	{
+		SDBOption Game
+		SDBOption Log
+	}
+}

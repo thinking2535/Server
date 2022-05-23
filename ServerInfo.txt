@@ -1,0 +1,16 @@
+{
+   "TestVersion" : {
+      "GameServer" : "ec2-13-209-140-35.ap-northeast-2.compute.amazonaws.com",
+      "RankingServer" : "ec2-13-209-140-35.ap-northeast-2.compute.amazonaws.com",
+      "Main" : "99",
+      "Data" : "11061118409326103110"
+   },
+   "IsBusy" : False,
+   "EndDateTimeString" : "2019-11-11 11:22:33",
+   "LiveVersion" : {
+      "GameServer" : "ec2-15-165-24-164.ap-northeast-2.compute.amazonaws.com",
+      "RankingServer" : "ec2-15-165-24-164.ap-northeast-2.compute.amazonaws.com",
+      "Main" : "99",
+      "Data" : "11061118409326103110"
+   }
+}

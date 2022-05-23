@@ -1,0 +1,384 @@
+include NetProtocol
+
+struct SServerConfigMeta
+{
+	int32 EnvObjectRegenDurationHour
+	double CartRewardRatio
+}
+struct SBatchBoostMeta
+{
+	int32 TimeMinute
+	double Cost
+	int32 CoolTimeHour
+}
+struct SConfigMeta
+{
+	int32 battleTime
+	EClanMemberGrade UnionJoinAllowMinGrade
+	EClanMemberGrade UnionInviteMinGrade
+	EClanMemberGrade UnionEditMinGrade
+	EClanMemberGrade UnionMessageMinGrade
+	int32 UnionReJoinLimitDay
+	TResource UnionMakeValueAme
+	TSlotNo DefaultAvatarSlotCnt
+	SBatchBoostMeta BatchBoost
+	double SecToTopazFactor
+	double ResourceToTopazFactor
+	double AquaToTopazFactor
+}
+
+struct SExpMeta
+{
+	int32 Exp
+}
+
+typedef array<TLevel,10> TCPLevelCnts
+struct SBuildingMaxQuantityMeta
+{
+	TID GroupID
+	TCPLevelCnts CPLevelCnts
+}
+
+struct SBuildingRect
+{
+	int32 Width
+	int32 Height
+}
+struct SBuildingBasicMeta
+{
+	wstring bd_type
+	wstring bd_group_type
+	TID BulletGroupID
+	EZoneType ZoneType
+	SBuildingRect Rect
+	int32 gain_type
+	wstring RearmType
+	int32 BoostTimeHour
+	double BoostRatio
+	bool IsBatch
+}
+struct SKeyBuildingBasicMeta
+{
+	TID Key
+	SBuildingBasicMeta Data
+}
+struct SBuildingNormalMeta
+{
+	TID ID
+	TID bd_group_ID
+	TLevel level
+	THP HP
+	SResourceTypeData UpgradeResource
+	int32 building_time_min
+	TLevel upgrade_user_lv_limit
+	TLevel upgrade_cp_lv_limit
+	int32 ame_max_capacity
+	int32 acid_max_capacity
+	int32 aqua_max_capacity
+	int32 gain_quantity_hour
+	int32 human_limit
+	TResource BoostCost
+}
+
+struct SBuildingDefenceMeta
+{
+	TID ID
+	TID bd_group_ID
+	TLevel level
+	int8 Mode
+	THP HP
+	SResourceTypeData UpgradeResource
+	int32 building_time_min
+	TLevel upgrade_cp_lv_limit
+	int32 BulletCount
+	SResourceTypeData RearmCost
+}
+
+struct SShopBuildingMeta
+{
+	TID bd_group_id
+	int32 cost_increase
+	int32 recharger_count
+	int32 cost_trunc
+}
+
+struct SUserDataPresetMeta
+{
+	int32 Ame
+	int32 Acid
+	int32 Aqua
+	int32 Topaz
+	int32 LeaguePoint
+	int32 UserLevel
+	int32 RechargingStationCnt
+}
+struct SStartUserBuildingMeta
+{
+	SPos Pos
+	SBuildingRotate Rotate
+	bool need_to_restore
+}
+struct SKeyStartUserBuildingMeta
+{
+	TID Key
+	SStartUserBuildingMeta Data
+}
+struct SStartUserObjectMeta
+{
+	TID ID
+	SPos Pos
+}
+
+struct SUnitBasicMeta
+{
+	TLevel FactoryLevel
+	int32 CountPerSlot
+	EResource TrainingCostType
+}
+struct SKeyUnitBasicMeta
+{
+	TID Key
+	SUnitBasicMeta Data
+}
+struct SUpgradeCostMeta
+{
+	TLevel TechLabLevel
+	SResourceTypeData UpgradeCost
+	int32 UpgradeHour
+}
+struct SKeyUpgradeCostMeta
+{
+	TID Key
+	SUpgradeCostMeta Data
+}
+struct SUnitGrowUpMeta
+{
+	TID ID
+	TID GroupID
+	TLevel Level
+	int32 TrainingCost
+	int32 TrainingSec
+}
+
+struct SAvatarPartsMeta
+{
+	TID ID
+	TID GroupID
+	int32 Rank
+	int32 EnchantLevel
+	SResourceTypeData Resource
+	int32 UpgradeHour
+	TLevel AvatarlabLevel
+	int32 RechargingSec
+}
+struct SAvatarPartsCoreMeta
+{
+	TID ID
+	TID GroupID
+	int32 Rank
+	int32 EnchantLevel
+	SResourceTypeData Resource
+	int32 UpgradeHour
+	TLevel AvatarlabLevel
+}
+struct SAvatarSlotMeta
+{
+	TResource TopazCost
+}
+
+struct SLeaguePointBasicMeta
+{
+	int32 Diff
+	int32 GotPointWhenWin
+	int32 LossPointWhenLose
+}
+struct SLeaguePointTierMeta
+{
+	TID ID
+	int32 League
+	int32 Tier
+	int32 LeaguePoint
+	int32 DegradePoint
+	SResourceTypeData ScoutCost
+}
+
+struct SSingleConfigMeta
+{
+	TResource GiveTopaz
+	TResource GiveAme
+	TResource GiveAcid
+	TResource GiveAqua
+	double StageIncreaseFactor
+	double LevelIncreaseFactor
+}
+struct SSingleStageNormalMeta
+{
+	int32 CoolMinutes
+	int32 StageArea
+	int32 StageGroup
+	TLevel MaxLevel
+}
+struct SSingleReward
+{
+	TResources Basic
+}
+struct SSingleStageMeta : SSingleStageNormalMeta
+{
+	vector<SSingleReward> Rewards
+}
+
+struct SPillageResourceMeta
+{
+	TResource AmeRatio
+	TResource AcidRatio
+	TResource AquaRatio
+	TResource AmeMax
+	TResource AcidMax
+	TResource AquaMax
+}
+struct SPillagePenaltyMeta
+{
+	TResource Ratio
+}
+
+struct SAvatarDefaultSetMeta
+{
+	TAvatarParts Parts
+}
+
+struct SAvatarColorMeta
+{
+	TID Color
+}
+
+struct SUnionSupportLimitMeta
+{
+	TForceCnts SendLimits
+	TForceCnts RecvLimits
+}
+struct SUnionLevelMeta
+{
+	TExp AccExp
+	int32 BankCapacityUp
+	int32 UnionBossRewardUp
+	int32 TroopsLevelAdd
+	int32 UnionRequestTime
+	int32 UnitCountAdd
+	int32 ResourceReturn
+}
+struct SEnvObjectRewardMeta
+{
+	TResource Topaz
+}
+struct SEnvObjectMeta
+{
+	TID ID
+	int32 Size
+	bool Regen
+	int32 RemoveSec
+	SResourceTypeData RemoveCost
+	int32 Period
+	SResourceTypeData Reward
+}
+struct SKeyEnvObjectMeta
+{
+	TID Key
+	SEnvObjectMeta Data
+}
+
+struct SBootyCapacityMeta
+{
+	TResource Ame
+	TResource Acid
+	TResource Aqua
+}
+struct SBootyCartMeta
+{
+	int32 Area
+}
+struct SEnvDevelopRewardMeta
+{
+	TResources Reward
+}
+struct SDevObjectLayerMeta
+{
+	int32 RemoveSec
+	SResourceTypeData Cost
+}
+struct SEnvDevelopPresetMeta
+{
+	TID ObjectID
+	SPos Pos
+}
+
+struct SEnvDevelopObjectMeta
+{
+	int32 Size
+}
+struct SKeyEnvDevelopObjectMeta
+{
+	TID Key
+	SEnvDevelopObjectMeta Data
+}
+struct SBoostCostMeta
+{
+	int32 DurationHour
+	TResource CostTopaz
+	double Speed
+}
+struct SBoostRechargerMeta
+{
+	int32 DurationHour
+	TResource CostTopaz
+	double Speed
+}
+
+struct SBankMeta
+{
+	TResources Resources
+	TID InterestID
+}
+struct SBankInterestMeta
+{
+	int32 DurationDay
+	int32 InterestPercent
+}
+struct SKeyBankInterestMeta
+{
+	TID Key
+	SBankInterestMeta Data
+}
+
+struct SBattleBonusConfigMeta
+{
+	int32 MaxHaveCnt
+	int32 PeriodMinutes
+	int32 RewardGoalPoint
+}
+struct SBattleBonusRewardMeta
+{
+	int32 Amethyst
+	int32 Acid
+	int32 Aquajelly
+}
+struct SKeyBattleBonusRewardMeta
+{
+	TLeaguePoint Key
+	SBattleBonusRewardMeta Data
+}
+
+struct _SAchievementMeta
+{
+	int32 goal_value
+	TExp reward_exp
+	TResource reward_topaz
+}
+struct SAchievementMeta
+{
+	EAchievement type
+	_SAchievementMeta data
+}
+struct SForbiddenTextMeta
+{
+	wstring text
+}

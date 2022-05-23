@@ -1,0 +1,324 @@
+include <GameServer/Common/ServerToServerProtocol>
+
+namespace bb
+{
+	enum class EProtoDB
+	{
+		Join
+		Login
+		Logout
+		SetResources
+		SetUserExp
+		SetPoint
+		SetChar
+		UnsetChar
+		CanPushAtNight
+		ChangeLanguage
+		Buy
+		BuyChar
+		BuyPackage
+		Purchase
+		DailyReward
+		SelectChar
+		SingleStart
+		SingleEnd
+		IslandStart
+		IslandEnd
+		BattleEnd
+		Gacha
+		RankReward
+		QuestNew
+		QuestDel
+		QuestDone
+		QuestReward
+		QuestNext
+		QuestDailyCompleteReward
+		ChangeNickBegin
+		ChangeNickEnd
+		ChangeNickEndFail
+		CouponUse
+		TutorialReward
+		RankingReward
+		CheckID
+	}
+
+	struct SDummyDBOut
+	{
+	}
+
+	struct SJoinDB : SUserCore
+	{
+	}
+	struct SJoinDBIn
+	{
+		TUID UID
+		SJoinDB Info
+		time_point InsertedTimePoint
+		ELanguage Language
+		EOS OS
+		string CountryCode
+		vector<int32> CharCodes
+	}
+	struct SLoginDBIn
+	{
+		TUID UID
+		EOS OS
+		string CountryCode
+	}
+	struct SUserDB : SUserBase
+	{
+		ELanguage Language
+	}
+
+	struct SLoginDBOut
+	{
+		list<SUserDB> Users
+		TChars Chars
+		TQuestDBs Quests
+		set<wstring> Coupons
+		TPackages Packages
+	}
+	struct SLogoutDBIn
+	{
+		TUID UID
+		time_point LogoutTime
+	}
+
+	struct SUIDQuestSlotIndexCount : SQuestSlotIndexCount
+	{
+		TUID UID
+	}
+	typedef list<SUIDQuestSlotIndexCount> TDoneQuestDBs
+
+	struct SSetResourcesDBIn
+	{
+		TUID UID
+		TResources Resources
+	}
+	struct SSetUserExpDBIn
+	{
+		TUID UID
+		TExp Exp
+	}
+	struct SSetPointDBIn
+	{
+		TUID UID
+		int32 Point
+		int32 PointBest
+	}
+	struct SSetCharDBIn
+	{
+		TUID UID
+		list<int32> CharCodes
+	}
+	struct SUnsetCharDBIn
+	{
+		TUID UID
+		list<int32> CharCodes
+	}
+	struct SCanPushAtNightDBIn
+	{
+		TUID UID
+		bool CanPushAtNight
+	}
+
+	struct SChangeLanguageDBIn
+	{
+		TUID UID
+		ELanguage Language
+	}
+
+	struct SBuyDBIn : SRewardDB
+	{
+	}
+	struct SBuyCharDBIn
+	{
+		TUID UID
+		TResources ResourcesLeft
+		int32 CharCode
+	}
+	struct SBuyPackageDBIn : SRewardDB
+	{
+		int32 Code
+	}
+	struct SPurchaseDBIn
+	{
+		EOS OS
+		string OrderID
+		TUID UID
+		string CountryCode
+		int64 PurchaseTime
+		int32 PurchaseType
+		string ProductID
+		TResource DiaCount
+	}
+	struct SDailyRewardDBIn
+	{
+		TUID UID
+		TResources ResourcesLeft
+		time_point ExpiredTime
+		int32 CountLeft
+	}
+
+	struct SConnectDBIn
+	{
+		time_point TimePointLogin
+		time_point TimePointLogout
+		TUID UID
+		EOS OS
+		string CountryCode
+		bool NewRegistered
+	}
+	struct SSelectCharDBIn
+	{
+		TUID UID
+		int32 CharCode
+	}
+
+	struct SSingleStartDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 Count
+		time_point RefreshTime
+		TDoneQuestDBs DoneQuests
+	}
+	struct SSingleEndDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 PointBest
+		int32 SecondBest
+		TDoneQuestDBs DoneQuests
+	}
+
+	struct SIslandStartDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 Count
+		time_point RefreshTime
+		TDoneQuestDBs DoneQuests
+	}
+	struct SIslandEndDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 PointBest
+		int32 PassedCountBest
+		TDoneQuestDBs DoneQuests
+	}
+
+	struct SBattleEndInfo
+	{
+		TUID UID
+		TResources Resources
+		int32 Point
+		int32 PointBest
+		int32 WinCountSolo
+		int32 LoseCountSolo
+		int32 WinCountSurvival
+		int32 LoseCountSurvival
+		int32 WinCountMulti
+		int32 LoseCountMulti
+		int32 BattlePointBest
+		int32 KillTotal
+		int32 ChainKillTotal
+		int32 BlowBalloonTotal
+	}
+	struct SBattleEndDBIn
+	{
+		vector<SBattleEndInfo> BattleEndInfos
+		TDoneQuestDBs DoneQuests
+	}
+
+	struct SGachaGuarantee
+	{
+		int32 GachaIndex
+		int32 Count
+	}
+	struct SGachaDBIn
+	{
+		TUID UID
+		TResources ResourcesLeft
+		list<int32> CharsGot
+	}
+	struct SRankRewardDBIn : SRewardDB
+	{
+		int32 LastGotRewardRankIndex
+	}
+	struct SQuestNewDBIn
+	{
+		TUID UID
+		TQuestSlotIndexCodes SlotIndexCodes
+	}
+	struct SQuestDelDBIn
+	{
+		TUID UID
+		list<TQuestSlotIndex> SlotIndices
+	}
+	struct SQuestDoneDBIn
+	{
+		TUID UID
+		TQuestSlotIndex SlotIndex
+		int32 Count
+	}
+	struct SQuestRewardDBIn : SRewardDB
+	{
+		TQuestSlotIndex SlotIndex
+		time_point CoolEndTime
+		int32 DailyCompleteCount
+		time_point DailyCompleteRefreshTime
+	}
+	struct SQuestNextDBIn
+	{
+		TUID UID
+		TQuestSlotIndex SlotIndex
+		int32 NewQuestCode
+	}
+	struct SQuestDailyCompleteRewardDBIn : SRewardDB
+	{
+		time_point RefreshTime
+	}
+	struct SChangeNickBeginDBIn
+	{
+		TUID UID
+		TNick NewNick
+	}
+	struct SChangeNickEndDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 FreeCount
+	}
+	struct SChangeNickEndFailDBIn
+	{
+		TUID UID
+	}
+	struct SCouponUseDBIn : SRewardDB
+	{
+		wstring Key
+	}
+	struct SCheckIDDBIn
+	{
+		TUID UID
+	}
+
+
+
+
+	struct SCouponUseCouponDBIn
+	{
+		wstring Key
+		TUID UID
+	}
+	struct STutorialRewardDBIn
+	{
+		TUID UID
+		TResources Resources
+	}
+	struct SRankingRewardDBIn : SRewardDB
+	{
+		int64 RankingRewardedCounter
+	}
+}

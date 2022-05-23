@@ -1,0 +1,56 @@
+include <Rso/Game/Protocol>
+include <GameServer/Common/NetProtocol>
+
+namespace bb
+{
+	using namespace rso
+	using namespace game
+
+	enum class EProtoNetSm
+	{
+		FCMTokenSet
+		FCMTokenUnset
+		FCMCanPushAtNight
+		ChangeLanguage
+		Max
+		Null
+	}
+	enum class EProtoNetMs
+	{
+		ReceiptInitialize
+		ReceiptAccessToken
+		Max
+		Null
+	}
+
+	struct SReceiptInitializeNetMs
+	{
+		string PackageName
+		string AccessToken
+	}
+	struct SReceiptAccessTokenNetMs
+	{
+		string Token
+	}
+
+	struct SFCMTokenSetNetSm
+	{
+		TUID UID
+		wstring Token
+		int32 MinuteOffset
+	}
+	struct SFCMTokenUnsetNetSm
+	{
+		TUID UID
+	}
+	struct SFCMCanPushAtNightNetSm
+	{
+		TUID UID
+		bool CanPush
+	}
+	struct SChangeLanguageNetSm
+	{
+		TUID UID
+		ELanguage Language
+	}
+}

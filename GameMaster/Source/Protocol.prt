@@ -1,0 +1,20 @@
+include <Rso/MSSQL/Protocol>
+
+using namespace rso
+using namespace net
+using namespace mssql
+
+struct SOption
+{
+	TPort MonitorAgentBindPort
+	TUID MinUID
+	TUID MaxUID
+	SNamePort AuthNamePort
+	TPort ServerBindPort
+	int32 NetCThreadCnt
+	TPort ClientBindPort
+	SNamePort ClientBindNamePortPub
+	TPort MasterBindPort
+	string Title
+	bool EnableReceipt
+}

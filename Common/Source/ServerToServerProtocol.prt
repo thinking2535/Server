@@ -1,0 +1,43 @@
+include MetaProtocol
+
+namespace bb
+{
+	enum class EProtoNetSs
+	{
+		Message
+		Max
+		Null
+	}
+	enum class EProtoRankingNetSr
+	{
+		UpdateMulti
+		UpdateSingle
+		UpdateIsland
+	}
+	enum class EProtoRankingNetRs
+	{
+		RankingInfo
+		UserPointMin
+	}
+
+	struct SRankingUpdateMultiNetSr
+	{
+		TRankingUsers UsersChanged
+	}
+	struct SRankingUpdateSingleNetSr
+	{
+		SRankingUserSingle UserSingle
+	}
+	struct SRankingUpdateIslandNetSr
+	{
+		SRankingUserIsland UserIsland
+	}
+	struct SRankingRankingInfoNetRs
+	{
+		int64 Counter
+		SRankingUserPointMin UserPointMin
+		TRankingRewards Rewards
+		TRankingRewards RewardsSingle
+		TRankingRewards RewardsIsland
+	}
+}

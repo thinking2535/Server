@@ -1,0 +1,94 @@
+include <Rso/MSSQL/Protocol>
+include <GameServer/Common/NetProtocol>
+
+namespace bb
+{
+	using namespace rso
+	using namespace net
+	using namespace mssql
+
+	enum class EProtoRankingDB
+	{
+		RankingConfigLoad
+		RankingRefresh
+		RankingUpdate
+		RankingUpdateSingle
+		RankingUpdateIsland
+	}
+
+	struct SOption
+	{
+		TPort MonitorAgentBindPort
+		TPort GameServerBindPort
+		SNamePort MasterNamePort
+		int32 NetCThreadCnt
+		TPort ChildBindPort
+		TPort ClientBindPort
+		SNamePort ClientBindNamePortPub
+		string Title
+		int32 MaxList
+	}
+	struct SRankingConfigLoadDBIn
+	{
+		time_point StartTimePoint
+	}
+	struct SRankingConfigDB
+	{
+		int64 Counter
+		time_point ExpireTimePoint
+	}
+	struct SRankingConfigLoadDBOut
+	{
+		list<SRankingConfigDB> RankingConfigs
+	}
+	struct SRankingRefreshDBIn
+	{
+		SRankingConfigDB Config
+		TRankingRewards Rewards
+		TRankingRewards RewardsSingle
+		TRankingRewards RewardsIsland
+	}
+
+	struct SRankingLoadDBIn
+	{
+		int32 MaxList
+	}
+	struct SRankingLoadDBOut
+	{
+		list<SRankingUser> RankingUsers
+	}
+	struct SRankingLoadSingleDBOut
+	{
+		list<SRankingUserSingle> RankingUserSingles
+	}
+	struct SRankingLoadIslandDBOut
+	{
+		list<SRankingUserIsland> RankingUserIslands
+	}
+	struct SRewardLoadDBIn
+	{
+	}
+	struct SRewardLoadDBOut
+	{
+		map<TUID,int32> Rewards
+	}
+
+	struct SDummyDBOut
+	{
+	}
+	struct SRankingUpdateDBIn
+	{
+		TRankingUsers Merged
+		list<TUID> Deleted
+	}
+	struct SRankingUpdateSingleDBIn
+	{
+		TRankingUserSingles Merged
+		list<TUID> Deleted
+	}
+	struct SRankingUpdateIslandDBIn
+	{
+		TRankingUserIslands Merged
+		list<TUID> Deleted
+	}
+}

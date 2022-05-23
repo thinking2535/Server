@@ -1,0 +1,15 @@
+include <Rso/MSSQL/Protocol>
+
+using namespace rso
+using namespace net
+using namespace mssql
+
+struct SOption
+{
+	TPort MonitorAgentBindPort
+	TPort MasterBindPort
+	int32 NetCThreadCnt
+	TPort ClientBindPort
+	string Title
+	string FCMServerKey
+}

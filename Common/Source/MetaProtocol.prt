@@ -1,0 +1,265 @@
+include NetProtocol
+include <Rso/Physics/Protocol>
+
+namespace bb
+{
+	using namespace rso
+	using namespace core
+	using namespace physics
+
+	enum class ECashItemType
+	{
+		ResourcesPack
+		Max
+		Null
+	}
+	enum class EGoodsItemType
+	{
+		AvatarColor
+		Max
+		Null
+	}
+	enum class ERank : uint8
+	{
+		Unranked
+		Bronze
+		Silver
+		Gold
+		Diamond
+		Champion
+		Max
+	}
+	struct SServerConfigMeta
+	{
+	}
+	struct SStructure : SRectCollider2D
+	{
+		SPoint LocalPosition
+	}
+	struct SStructureMove
+	{
+		list<SRectCollider2D> Colliders
+		SPoint BeginPos
+		SPoint EndPos
+		float Velocity
+		float Delay
+	}
+	struct SConfigMeta
+	{
+		int32 BattleDurationSec
+		int32 BattleOneOnOneDurationSec
+		int32 GhostDelaySec
+		int32 InvulnerableDurationSec
+		int32 BalloonHitPoint
+		int32 ParachuteHitPoint
+		int32 FirstBalloonHitPoint
+		int32 QuestCoolMinutes
+		TResource QuestNextCostGold
+		int32 ChangeNickFreeCount
+		TResource ChangeNickCostDia
+		TResource TutorialRewardDia
+	}
+	struct SForbiddenWordMeta
+	{
+		wstring Word
+	}
+	struct SShopConfigServerMeta
+	{
+		int32 DailyRewardDurationMinute
+		int32 DailyRewardFreeCount
+		int32 DailyRewardAdCount
+	}
+	struct SShopServerMeta
+	{
+		int32 Code
+		EResource CostType
+		TResource CostValue
+		int32 RewardCode
+	}
+	struct SShopPackageServerMeta
+	{
+		int32 Code
+		EResource CostType
+		TResource CostValue
+		int32 RewardCode
+	}
+	struct SShopDailyRewardServerMeta
+	{
+		double Probability
+		EResource RewardType
+		TResource RewardValue
+	}
+	struct SShopCashServerMeta
+	{
+		wstring Pid
+		TResource DiaCount
+	}
+
+	struct SCharacterMeta
+	{
+		int32 Code
+		EGrade Grade
+		EResource Cost_Type
+		TResource Price
+		TResource CPRefund
+		float MaxVelUp
+		float MaxVelDown
+		float MaxVelXGround
+		float MaxVelXAir
+		float FlapDeltaVelX
+		float FlapDeltaVelUp
+		float RunAcc
+		float StaminaMax
+		float StaminaPerTick
+		int32 StaminaRegenDelay
+		float PumpSpeed
+	}
+	struct SCharacterServerMeta : SCharacterMeta
+	{
+		bool Default
+	}
+	struct SCharacterGradeMeta
+	{
+		EGrade Grade
+	}
+	typedef vector<SPoint> TPoses
+	struct SPlayerPos
+	{
+		TPoses Poses
+	}
+	struct SMapMulti
+	{
+		wstring PrefabName
+		map<TTeamCnt,SPlayerPos> PlayerPoses
+		SPoint PropPosition
+		list<SStructure> Structures
+		list<SStructureMove> StructureMoves
+	}
+	struct SMapMeta
+	{
+		vector<SMapMulti> MapOneOnOnes
+		vector<SMapMulti> MapMulties
+	}
+	struct SSingleMeta
+	{
+		int32 PlayCountMax
+		TResource ChargeCostGold
+		int32 ScoreFactorWave
+		int32 ScoreFactorTime
+		int32 ScoreFactorGold
+		int32 RefreshDurationMinute
+	}
+	struct SIslandMeta
+	{
+		int32 PlayCountMax
+		TResource ChargeCostGold
+		int32 ScoreFactorIsland
+		int32 ScoreFactorGold
+		int32 RefreshDurationMinute
+	}
+	struct SGachaMeta
+	{
+		EResource CostResource
+		int32 CostValue
+		EResource TenCostResource
+		int32 TenCostValue
+		int32 RewardCode
+	}
+	struct SGachaGradeMeta
+	{
+		EGrade Grade
+		double Probability
+	}
+	struct SGachaRewardMeta
+	{
+		int32 Code
+		double Probability
+		int32 CharCode
+	}
+	struct SRewardMeta
+	{
+		ERewardType Type
+		int32 Data
+	}
+	struct SKeyRewardMeta
+	{
+		int32 Code
+		SRewardMeta Reward
+	}
+
+	struct SRankMeta
+	{
+		ERank Rank
+	}
+	struct SRankTierMeta
+	{
+		ERank Rank
+		int32 Tier
+		int32 MinPoint
+	}
+	struct SRankRewardMeta
+	{
+		int32 Point
+		int32 RewardCode
+	}
+
+	struct SQuestMeta
+	{
+		EQuestType QuestType
+		int32 Code
+		int32 RequirmentCount
+		wstring Param
+		wstring Operator
+		int32 RewardCode
+	}
+	struct SQuestDailyCompleteMeta
+	{
+		int32 RequirmentCount
+		int32 RewardCode
+		int32 RefreshMinutes
+	}
+	struct SBattleRewardMeta
+	{
+		EGameMode GameMode
+		TTeamCnt TeamCount
+		int32 TeamMemberCount
+		int32 AddGold
+		int32 Unranked
+		int32 Bronze
+		int32 Silver
+		int32 Gold
+		int32 Diamond
+		int32 Champion
+	}
+
+	struct SCouponMeta
+	{
+		int32 Code
+		int32 StartYear
+		int32 StartMonth
+		int32 StartDay
+		int32 StartHour
+		int32 EndYear
+		int32 EndMonth
+		int32 EndDay
+		int32 EndHour
+		int32 RewardCode
+	}
+	struct SCouponKeyMeta
+	{
+		wstring Key
+		int32 Code
+	}
+
+	struct SRankingConfigMeta
+	{
+		int32 PeriodMinutes
+		wstring BaseTime
+	}
+	struct SRankingRewardMeta
+	{
+		wstring Mode
+		int32 End
+		int32 RewardCode
+	}
+}

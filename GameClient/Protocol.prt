@@ -1,0 +1,21 @@
+include ../Common/Source/NetProtocol
+
+using namespace rso
+using namespace net
+
+struct SServer
+{
+	SNamePort Hub
+	SNamePort RankingHub
+}
+struct SOption
+{
+	bool Auto
+	int32 DelayTick
+	TPeerCnt StartNum
+	TPeerCnt ClientCnt
+	wstring ID
+	TUID UID
+	int32 ServerNo
+	vector<SServer> Servers
+}
