@@ -15,7 +15,7 @@ struct SUserLoginInfo
 	{
 	}
 };
-class CUser : public CPlayer
+class CUser
 {
 	CTimeSync _TimeSync{ c_NetworkDelayTimeSync }; // 클라의 시간이 c_NetworkDelayTimeSync 이상 빨라지면 에러
 	TSessionsIt _itSession;
@@ -27,31 +27,31 @@ class CUser : public CPlayer
 	SUserLoginInfo _LoginInfo;
 	bool _NewRegistered = false;
 	bool _BattleJoining = false;
-	SBattleInfo _BattleInfo;
-	SBattleInfo _SingleBattleInfo;
+	CBattlePlayer* _pBattlePlayer = nullptr;
 	set<wstring> _Coupons;
 	TPackages _Packages;
-	INT32 _RoomInfo;
 
 public:
 	CUser(TSessionsIt itSession_);
-	inline TSessionsIt GetSession(void) override { return _itSession; }
-	inline TSessionsIt GetSession(void) const override { return _itSession; }
+	inline TSessionsIt GetSession(void) { return _itSession; }
+	inline TSessionsIt GetSession(void) const { return _itSession; }
 	inline int8 GetDebug(void) const { return (g_Option.Debug > _User.Debug ? g_Option.Debug : _User.Debug); }
 	inline const CKey& Key(void) const { return _LoginInfo.Key; }
 	inline SUserDB& GetUserDB(void) { return _User; }
-	inline CKey GetKey(void) const override { return _LoginInfo.Key; }
-	inline TUID GetUID(void) const override { return _itSession->first; }
+	inline CKey GetKey(void) const { return _LoginInfo.Key; }
+	inline TUID GetUID(void) const { return _itSession->first; }
 	inline const TNick& GetNick(void) const { return _itSession->second.Account.Nick; }
 	inline EOS GetOS(void) const { return _LoginInfo.Option.OS; }
 	inline TResources& GetResources(void) { return _User.Resources; }
 	inline const CCharacter* GetSelectedChar(void) const { return _pSelectedChar; }
-	inline bool InBattle(void) const { return _BattleInfo.InBattle(); }
+	inline bool InBattle(void) const { return _pBattlePlayer != nullptr; }
 	inline int32 GetSelectedCharCode(void) const { return _User.SelectedCharCode; }
 	inline wstring GetCountryCode(void) const { return MBSToWCS(_LoginInfo.CountryCodeMinuteOffset.CountryCode); }
-	INT32 GetRoomIdx(void) { return _RoomInfo; }
 	template<typename _TProto>
-	void Send(const _TProto& Proto_) { ::Send(_LoginInfo.Key, Proto_); }
+	void Send(const _TProto& Proto_)
+	{
+		::Send(_LoginInfo.Key, Proto_);
+	}
 	inline bool WillClose(void) { return g_Net->WillClose(_LoginInfo.Key, milliseconds(5000)); }
 	template<typename... _TProtos>
 	void Push(const _TProtos&... Protos_) { DBPush(_itSession, _LoginInfo.Key, Protos_...); }
@@ -64,7 +64,7 @@ public:
 	void CertifyAndLobby(void);
 	void Login(ELanguage Language_, const SUserLoginInfo& Info_);
 	void LoginAfterBattle(const SUserLoginInfo& Info_);
-	tuple<int, int> Logout(void);
+	void Logout(void);
 	inline bool IsDataLoaded(void) const { return _IsDataLoaded; }
 	inline bool IsBusy(void) const { return !_User.NewNick.empty(); }
 	inline int32 GetPoint(void) const { return _User.Point; }
@@ -108,22 +108,22 @@ public:
 	ERet ChangeLanguage(const SChangeLanguageNetCs& Proto_);
 
 	ERet SelectChar(const SSelectCharNetCs& Proto_);
-	ERet SingleStart(const SSingleStartNetCs& Proto_);
-	ERet SingleEnd(const SSingleEndNetCs& Proto_);
 	ERet IslandStart(const SIslandStartNetCs& Proto_);
 	ERet IslandEnd(const SIslandEndNetCs& Proto_);
-	ERet BattleJoin(void);
-	ERet BattleOut(void);
-	void BattleBegin(const SBattleInfo& BattleInfo_) override;
-	void SingleBattleBegin(const SBattleInfo& BattleInfo_) override;
-	SBattleEndInfo BattleEnd(const CEngineGameMode* pGameMode_, const SBattleEndPlayer& BattleEndPlayer_, bool Win_) override;
 
 	ERet BattleTouch(const SBattleTouchNetCs& Proto_);
 	ERet BattlePush(const SBattlePushNetCs& Proto_);
-	ERet BattleIcon(const SBattleIconNetCs& Proto_);
-	ERet SingleBattleIcon(const SSingleBattleIconNetCs& Proto_);
-	ERet SingleBattleScore(const SSingleBattleScoreNetCs& Proto_);
-	ERet SingleBattleItem(const SSingleBattleItemNetCs& Proto_);
+
+	void BattleBegin(CBattlePlayer* pBattlePlayer_);
+	void BattleEnd(void);
+	ERet MultiBattleJoin(void);
+	ERet MultiBattleOut(void);
+	SBattleEndInfo MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	ERet MultiBattleIcon(const SMultiBattleIconNetCs& Proto_);
+	ERet ArrowDodgeBattleJoin(void);
+	ERet ArrowDodgeBattleEndForce(const SArrowDodgeBattleEndForceNetCs& Proto_);
+	void ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
+	void ArrowDodgeBattleEnd(void);
 
 	ERet Gacha(const SGachaNetCs& Proto_);
 	ERet GachaX10(const SGachaX10NetCs& Proto_);
@@ -152,12 +152,4 @@ public:
 	ERet TutorialReward(const STutorialRewardNetCs& Proto_);
 	ERet RankingRewardInfo(const SRankingRewardInfoNetCs& Proto_);
 	ERet RankingReward(const SRankingRewardNetCs& Proto_);
-
-	ERet RoomList(const SRoomListNetCs& Proto_);
-	ERet RoomCreate(const SRoomCreateNetCs& Proto_);
-	ERet RoomJoin(const SRoomJoinNetCs& Proto_);
-	ERet RoomOut(const SRoomOutNetCs& Proto_);
-	ERet RoomReady(const SRoomReadyNetCs& Proto_);
-	ERet RoomChat(const SRoomChatNetCs& Proto_);
-	ERet RoomNoti(const SRoomNotiNetCs& Proto_);
 };

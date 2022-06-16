@@ -4,18 +4,31 @@
 using namespace rso;
 using namespace win;
 
+namespace bb
+{
+	bool operator < (const SBattleType& Lhs_, const SBattleType& Rhs_)
+	{
+		if (Lhs_.TeamCount < Rhs_.TeamCount)
+			return true;
+		else if (Lhs_.TeamCount > Rhs_.TeamCount)
+			return false;
+		else if (Lhs_.TeamMemberCount < Rhs_.TeamMemberCount)
+			return true;
+		else
+			return false;
+	}
+}
+
 extern CConsoleCtrlHandler g_ConsoleCtrlHandler;
 
 TMatches g_Matches;
-TArrowDodgeBattles g_ArrowDodgeBattles;
-TRooms g_Rooms;
 TServer::TDBCallbacks g_BinderDB;
 TRecvSsFuncs g_BinderRecvSessionHold;
 TRecvFuncs g_BinderRecvM;
 TRecvCFuncs g_BinderRecvC;
 TRecvSsFuncs g_BinderRecvSs;
 TRecvRFuncs g_BinderRecvR;
-TGameData g_GameData;
+TMetaData g_MetaData;
 TReceiptCheck g_ReceiptCheck;
 TMonitor g_Monitor;
 int32 g_CCUSended = -1; // 최초 한번 보내기 위함
@@ -32,7 +45,6 @@ CPeriod<seconds> g_TimerPeriod = seconds(1);
 CPeriod<seconds> g_CCULogPeriod = seconds(60);
 seconds g_BattleWaitDuration = seconds(30); // jjj 전투시간 처리
 TBattles g_Battles;
-TSingleBattles g_SingleBattles;
 
 TBulkCopyConnect g_BulkCopyConnect;
 CIPInfo g_IPInfo{ L"ipv4.bin" };
@@ -235,24 +247,6 @@ ELocale LanguageToLocale(ELanguage Language_)
 	}
 }
 
-bool operator < (const SBattleType& Lhs_, const SBattleType& Rhs_)
-{
-	if (Lhs_.MemberCount < Rhs_.MemberCount)
-		return true;
-	else if (Lhs_.MemberCount > Rhs_.MemberCount)
-		return false;
-	else if (Lhs_.TeamCount < Rhs_.TeamCount)
-		return true;
-	else
-		return false;
-}
-bool IsOverlapped(const SPoint& Pos0_, const SPoint& Pos1_) // 두 좌표를 % 연산후 X가 큰 것을 대상(+ Width 하지 않는)으로 하고 중첩검사
-{
-	if (Pos0_.X < Pos1_.X)
-		return IsOverlapped(Pos0_, GetCharRect(Pos1_));
-	else
-		return IsOverlapped(Pos1_, GetCharRect(Pos0_));
-}
 float GetSOverMax(float Acc_, float Vel_, float MaxVel_, float Duration_)
 {
 	auto S = 0.0f;
@@ -317,4 +311,8 @@ void Land(SCharacter& Char_, const SCharacterMeta* pMeta_)
 bool IsValidRankingInfo(void)
 {
 	return (g_RankingInfo.Counter > 0);
+}
+int32 GetAllMemberCount(const SBattleType& BattleType_)
+{
+	return BattleType_.TeamCount * BattleType_.TeamMemberCount;
 }

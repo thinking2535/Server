@@ -3,13 +3,12 @@
 #include "User.h"
 
 CUser::CUser(TSessionsIt itSession_) :
-	_itSession(itSession_),
-	_RoomInfo(-1)
+	_itSession(itSession_)
 {
 }
 TLevel CUser::GetLevel(void) const
 {
-	return g_GameData->ExpToLevel(_User.Exp);
+	return g_MetaData->ExpToLevel(_User.Exp);
 }
 void CUser::SendRet(ERet Ret_)
 {
@@ -61,47 +60,21 @@ void CUser::LoginAfterBattle(const SUserLoginInfo& Info_)
 	Certify();
 
 	if (InBattle())
-		g_Battles[_BattleInfo.BattleIndex].OnLine(_BattleInfo.BattlePlayerIndex);
+		_pBattlePlayer->OnLine();
 	else
 		Send(SLobbyNetSc());
 }
-tuple<int, int> CUser::Logout(void)
+void CUser::Logout(void)
 {
-	tuple<int, int> BattleIndexForEnd = make_tuple(-1,-1);
-	if (_BattleInfo.InBattle())
-	{
-		if (g_Battles[_BattleInfo.BattleIndex].OffLine(_BattleInfo.BattlePlayerIndex))
-			get<0>(BattleIndexForEnd) = _BattleInfo.BattleIndex;
-	}
-	if (_SingleBattleInfo.InBattle())
-	{
-		if (g_SingleBattles[_SingleBattleInfo.BattleIndex].OffLine(_SingleBattleInfo.BattlePlayerIndex))
-			get<1>(BattleIndexForEnd) = _SingleBattleInfo.BattleIndex;
-	}
-	if (_RoomInfo != -1)
-	{
-		if (g_Rooms.find(_RoomInfo) != g_Rooms.end())
-		{
-			auto& room = g_Rooms.at(_RoomInfo);
-			if (room.RoomUserCount <= 1)
-			{
-				BroadCast(SRoomChangeNetSc(_RoomInfo, SRoomInfo(room.Mode, room.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State), true));
-				g_Rooms.erase(_RoomInfo);
-			}
-			else
-			{
-				RoomOut(SRoomOutNetCs(_RoomInfo));
-			}
-		}
-	}
+	if (InBattle())
+		_pBattlePlayer->OffLine();
 
 	g_BulkCopyConnect->Push(SConnectDBIn(_LoginInfo.Time, system_clock::now(), GetUID(), _LoginInfo.Option.OS, _LoginInfo.CountryCodeMinuteOffset.CountryCode, _NewRegistered));
 	_LoginInfo.Key = CKey(); // 결제 중에 나가더라도 이후 진행 시킬 수 있으므로 _LoginInfo = SUserLoginInfo(); 로 처리하여도 상관없을듯 하나 그냥 안전하게 Key만 초기화.
-	return BattleIndexForEnd;
 }
 void CUser::AddExp(TExp Exp_)
 {
-	auto MaxExp = g_GameData->GetMaxExp();
+	auto MaxExp = g_MetaData->GetMaxExp();
 
 	if (_User.Exp + Exp_ < _User.Exp ||
 		_User.Exp + Exp_ > MaxExp)
@@ -118,7 +91,7 @@ void CUser::SetLoginDBOutCore(SLoginDBOut& Out_)
 	_User = Out_.Users.front();
 	_Chars = std::move(Out_.Chars);
 
-	_pSelectedChar = g_GameData->GetCharacter(_User.SelectedCharCode);
+	_pSelectedChar = g_MetaData->GetCharacter(_User.SelectedCharCode);
 	if (_pSelectedChar == nullptr ||
 		_Chars.find(_User.SelectedCharCode) == _Chars.end())
 	{
@@ -126,7 +99,7 @@ void CUser::SetLoginDBOutCore(SLoginDBOut& Out_)
 		if (itBeginChar == _Chars.end())
 			throw ERet::InvalidCharCode;
 
-		_pSelectedChar = g_GameData->GetCharacter(*itBeginChar);
+		_pSelectedChar = g_MetaData->GetCharacter(*itBeginChar);
 		if (_pSelectedChar == nullptr)
 			throw ERet::InvalidCharCode;
 
@@ -172,20 +145,20 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 				SUserCore(
 					TResources{},
 					0,
-					g_GameData->GetDefaultChar(),
-					g_GameData->SingleMeta.PlayCountMax,
+					g_MetaData->GetDefaultChar(),
+					g_MetaData->SingleMeta.PlayCountMax,
 					Now,
-					g_GameData->IslandMeta.PlayCountMax,
+					g_MetaData->IslandMeta.PlayCountMax,
 					Now,
 					Now,
-					g_GameData->ConfigMeta.ChangeNickFreeCount,
-					Now + minutes(g_GameData->ShopConfig.DailyRewardDurationMinute),
-					g_GameData->ShopConfig.DailyRewardFreeCount + g_GameData->ShopConfig.DailyRewardAdCount)),
+					g_MetaData->ConfigMeta.ChangeNickFreeCount,
+					Now + minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute),
+					g_MetaData->ShopConfig.DailyRewardFreeCount + g_MetaData->ShopConfig.DailyRewardAdCount)),
 				Now,
 				_User.Language,
 				_LoginInfo.Option.OS,
 				_LoginInfo.CountryCodeMinuteOffset.CountryCode,
-				g_GameData->DefaultChars));
+				g_MetaData->DefaultChars));
 	}
 	else
 	{
@@ -195,25 +168,12 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 
 void CUser::_SendLogin(void)
 {
-	_RoomInfo = -1;
-	for (auto& i : g_Rooms)
-	{
-		for (auto& b : i.second.Users)
-		{
-			if (b.first == GetUID())
-			{
-				_RoomInfo = i.first;
-				break;
-			}
-		}
-		if (_RoomInfo != -1) break;
-	}
-	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _Chars, system_clock::now(), _Quest.GetQuestDBs(), _Packages, _RoomInfo));
+	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _Chars, system_clock::now(), _Quest.GetQuestDBs(), _Packages));
 }
 ERet CUser::Buy(const SBuyNetCs& Proto_)
 {
-	auto itGoods = g_GameData->GoodsItems.find(Proto_.Code);
-	if (itGoods == g_GameData->GoodsItems.end())
+	auto itGoods = g_MetaData->GoodsItems.find(Proto_.Code);
+	if (itGoods == g_MetaData->GoodsItems.end())
 		return ERet::InvalidGoodsID;
 
 	if (!HaveCost(itGoods->second.Cost))
@@ -230,7 +190,7 @@ ERet CUser::BuyChar(const SBuyCharNetCs& Proto_)
 	if (_Chars.find(Proto_.Code) != _Chars.end())
 		return ERet::InvalidProtocol;
 
-	auto pChar = g_GameData->GetCharacter(Proto_.Code);
+	auto pChar = g_MetaData->GetCharacter(Proto_.Code);
 	if (!HaveCost(pChar->Cost_Type, pChar->Price))
 	{
 		return ERet::NotEnoughMoney;
@@ -246,8 +206,8 @@ ERet CUser::BuyChar(const SBuyCharNetCs& Proto_)
 }
 ERet CUser::BuyPackage(const SBuyPackageNetCs& Proto_)
 {
-	auto itPackage = g_GameData->Packages.find(Proto_.Code);
-	if (itPackage == g_GameData->Packages.end())
+	auto itPackage = g_MetaData->Packages.find(Proto_.Code);
+	if (itPackage == g_MetaData->Packages.end())
 		return ERet::InvalidProtocol;
 
 	//if (_Packages.find(Proto_.Code) != _Packages.end())
@@ -281,8 +241,8 @@ ERet CUser::ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 Pur
 {
 	LOG(L"Purchase ReceiptCheck Callback UID[%d] ProductID[%s] Token[%s]", GetUID(), MBSToWCS(Order_.ProductID), MBSToWCS(Order_.PurchaseToken));
 
-	auto it = g_GameData->CashItems.find(MBSToWCS(Order_.ProductID));
-	if (it == g_GameData->CashItems.end())
+	auto it = g_MetaData->CashItems.find(MBSToWCS(Order_.ProductID));
+	if (it == g_MetaData->CashItems.end())
 	{
 		LOG(L"Purchase InvalidShopID");
 
@@ -344,18 +304,18 @@ ERet CUser::DailyReward(const SDailyRewardNetCs& Proto_)
 
 	if (Now >= _User.DailyRewardExpiredTime)
 	{
-		_User.DailyRewardExpiredTime += (((Now - _User.DailyRewardExpiredTime) / minutes(g_GameData->ShopConfig.DailyRewardDurationMinute)) + 1) * minutes(g_GameData->ShopConfig.DailyRewardDurationMinute);
-		_User.DailyRewardCountLeft = g_GameData->ShopConfig.DailyRewardAdCount + g_GameData->ShopConfig.DailyRewardFreeCount;
+		_User.DailyRewardExpiredTime += (((Now - _User.DailyRewardExpiredTime) / minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute)) + 1) * minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute);
+		_User.DailyRewardCountLeft = g_MetaData->ShopConfig.DailyRewardAdCount + g_MetaData->ShopConfig.DailyRewardFreeCount;
 	}
 
-	if (_User.DailyRewardCountLeft <= 0 || (_User.DailyRewardCountLeft <= g_GameData->ShopConfig.DailyRewardAdCount && !Proto_.IsWatchedAd))
+	if (_User.DailyRewardCountLeft <= 0 || (_User.DailyRewardCountLeft <= g_MetaData->ShopConfig.DailyRewardAdCount && !Proto_.IsWatchedAd))
 	{
 		Send(SDailyRewardFailNetSc());
 		return ERet::Ok;
 	}
 
 	--_User.DailyRewardCountLeft;
-	auto& DailyRewardMeta = g_GameData->DailyReward.Get();
+	auto& DailyRewardMeta = g_MetaData->DailyReward.Get();
 
 	AddResourceCore(DailyRewardMeta.RewardType, DailyRewardMeta.RewardValue);
 	Push(SDailyRewardDBIn(GetUID(), _User.Resources, _User.DailyRewardExpiredTime, _User.DailyRewardCountLeft));
@@ -366,7 +326,7 @@ ERet CUser::DailyReward(const SDailyRewardNetCs& Proto_)
 
 void CUser::SetLevel(TLevel Level_)
 {
-	_User.Exp = g_GameData->LevelToExp(Level_);
+	_User.Exp = g_MetaData->LevelToExp(Level_);
 	Push(SSetUserExpDBIn(GetUID(), _User.Exp));
 	Send(SUserExpNetSc(_User.Exp));
 }
@@ -419,7 +379,7 @@ void CUser::SetChar(list<int32>& CharCodes_)
 {
 	if (CharCodes_.empty())
 	{
-		for (auto& i : g_GameData->GetCharacters())
+		for (auto& i : g_MetaData->GetCharacters())
 		{
 			auto ib = _Chars.emplace(i.first);
 			if (!ib.second)
@@ -525,154 +485,13 @@ ERet CUser::SelectChar(const SSelectCharNetCs& Proto_)
 	if (it == _Chars.end())
 		return ERet::InvalidCharCode;
 
-	auto pChar = g_GameData->GetCharacter(Proto_.Code);
+	auto pChar = g_MetaData->GetCharacter(Proto_.Code);
 	if (pChar == nullptr)
 		return ERet::InvalidCharCode;
 
 	_User.SelectedCharCode = Proto_.Code;
 	_pSelectedChar = pChar;
 	Push(SSelectCharDBIn(GetUID(), _User.SelectedCharCode));
-
-	return ERet::Ok;
-}
-ERet CUser::SingleStart(const SSingleStartNetCs& Proto_)
-{
-	if (_BattleJoining)
-		return ERet::AlreadyBattleJoining;
-
-	if (InBattle())
-		return ERet::AlreadyInBattle;
-
-	auto NewSinglePlayCount = _User.SinglePlayCount;
-	auto NewSingleRefreshTime = _User.SingleRefreshTime;
-	auto Now = system_clock::now();
-
-	if (NewSinglePlayCount < g_GameData->SingleMeta.PlayCountMax)
-	{
-		auto UnitDuration = minutes(g_GameData->SingleMeta.RefreshDurationMinute);
-		auto ElapsedMinutes = duration_cast<minutes>(Now - NewSingleRefreshTime);
-		auto ElapsedCount = ElapsedMinutes / UnitDuration;
-		NewSinglePlayCount += ElapsedCount;
-
-		if (NewSinglePlayCount > g_GameData->SingleMeta.PlayCountMax)
-			NewSinglePlayCount = g_GameData->SingleMeta.PlayCountMax;
-
-		if (NewSinglePlayCount >= g_GameData->SingleMeta.PlayCountMax)
-			NewSingleRefreshTime = Now;
-		else
-			NewSingleRefreshTime += (UnitDuration * ElapsedCount);
-	}
-	else if (NewSinglePlayCount >= g_GameData->SingleMeta.PlayCountMax)
-	{
-		NewSingleRefreshTime = Now;
-	}
-
-	TQuests Quests;
-	TDoneQuestDBs DoneQuestDBs;
-	TDoneQuests DoneQuests;
-
-	TResource GoldCost = 0;
-	if (NewSinglePlayCount < 1)
-	{
-		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_GameData->SingleMeta.ChargeCostGold))
-			return ERet::NotEnoughMoney;
-
-		SubResourceCore(CostType, g_GameData->SingleMeta.ChargeCostGold);
-		GoldCost = g_GameData->SingleMeta.ChargeCostGold;
-		NewSinglePlayCount = g_GameData->SingleMeta.PlayCountMax;
-		NewSingleRefreshTime = Now;
-	}
-
-	--NewSinglePlayCount;
-	_User.SinglePlayCount = NewSinglePlayCount;
-	_User.SingleRefreshTime = NewSingleRefreshTime;
-	_User.SingleStarted = true;
-
-	QuestDone(Quests, DoneQuestDBs, DoneQuests);
-	Push(SSingleStartDBIn(GetUID(), _User.Resources, _User.SinglePlayCount, _User.SingleRefreshTime, std::move(DoneQuestDBs)));
-	Send(SSingleStartNetSc(GoldCost, _User.SinglePlayCount, _User.SingleRefreshTime, std::move(DoneQuests)));
-
-	return ERet::Ok;
-}
-ERet CUser::SingleEnd(const SSingleEndNetCs& Proto_)
-{
-	if (_BattleJoining)
-		return ERet::AlreadyBattleJoining;
-
-	if (InBattle())
-		return ERet::AlreadyInBattle;
-
-	if (!_User.SingleStarted)
-		return ERet::InvalidProtocol;
-
-	// single ccc 값이 정상인지 체크
-
-	auto SinglePoint = (Proto_.Wave - 1) * g_GameData->SingleMeta.ScoreFactorWave + Proto_.Second * g_GameData->SingleMeta.ScoreFactorTime + Proto_.Gold * g_GameData->SingleMeta.ScoreFactorGold;
-
-	int32 CharCode = GetSelectedCharCode();
-
-	if (IsValidRankingInfo() &&
-		g_RankingInfo.UserPointMin.UserPointMinSingle < SinglePoint &&
-		g_NetRankingKey)
-		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateSingle,
-			SRankingUserSingle(
-				SRankingUserSingleCore(
-					SRankingUserCore(
-						GetNick(),
-						CharCode,
-						GetCountryCode()),
-					Proto_.Wave,
-					Proto_.Second,
-					Proto_.Gold),
-				GetUID(),
-				SinglePoint));
-
-	if (SinglePoint > _User.SinglePointBest)
-		_User.SinglePointBest = SinglePoint;
-
-	if (Proto_.Second > _User.SingleSecondBest)
-		_User.SingleSecondBest = Proto_.Second;
-
-	TResources Added{};
-	::AddResource(Added, EResource::Gold, Proto_.GoldAdded);
-	::AddResource(Added, EResource::Dia, Proto_.DiaAdded);
-	AddResourcesCore(Added);
-	_User.SingleStarted = false;
-
-	TQuests Quests;
-	TDoneQuestDBs DoneQuestDBs;
-	TDoneQuests DoneQuests;
-
-	Quests.emplace(EQuestType::PlaySingle, 1);
-
-	if (Proto_.Second > 0)
-		Quests.emplace(EQuestType::SingleTime, Proto_.Second);
-
-	if (Proto_.Gold > 0)
-		Quests.emplace(EQuestType::SinglePlayGoldGet, Proto_.Gold);
-
-	if (SinglePoint > 0)
-		Quests.emplace(EQuestType::SinglePlayScoreGet, SinglePoint);
-
-	switch (_pSelectedChar->Grade)
-	{
-	case EGrade::Normal:
-		Quests.emplace(EQuestType::PlayNormal, 1);
-		break;
-
-	case EGrade::Rare:
-		Quests.emplace(EQuestType::PlayRare, 1);
-		break;
-
-	case EGrade::Epic:
-		Quests.emplace(EQuestType::PlayEpic, 1);
-		break;
-	}
-
-	QuestDone(Quests, DoneQuestDBs, DoneQuests);
-	Push(SSingleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleSecondBest, std::move(DoneQuestDBs)));
-	Send(SSingleEndNetSc(std::move(DoneQuests)));
 
 	return ERet::Ok;
 }
@@ -688,22 +507,22 @@ ERet CUser::IslandStart(const SIslandStartNetCs& Proto_)
 	auto NewIslandRefreshTime = _User.IslandRefreshTime;
 	auto Now = system_clock::now();
 
-	if (NewIslandPlayCount < g_GameData->IslandMeta.PlayCountMax)
+	if (NewIslandPlayCount < g_MetaData->IslandMeta.PlayCountMax)
 	{
-		auto UnitDuration = minutes(g_GameData->IslandMeta.RefreshDurationMinute);
+		auto UnitDuration = minutes(g_MetaData->IslandMeta.RefreshDurationMinute);
 		auto ElapsedMinutes = duration_cast<minutes>(Now - NewIslandRefreshTime);
 		auto ElapsedCount = ElapsedMinutes / UnitDuration;
 		NewIslandPlayCount += ElapsedCount;
 
-		if (NewIslandPlayCount > g_GameData->IslandMeta.PlayCountMax)
-			NewIslandPlayCount = g_GameData->IslandMeta.PlayCountMax;
+		if (NewIslandPlayCount > g_MetaData->IslandMeta.PlayCountMax)
+			NewIslandPlayCount = g_MetaData->IslandMeta.PlayCountMax;
 
-		if (NewIslandPlayCount >= g_GameData->IslandMeta.PlayCountMax)
+		if (NewIslandPlayCount >= g_MetaData->IslandMeta.PlayCountMax)
 			NewIslandRefreshTime = Now;
 		else
 			NewIslandRefreshTime += (UnitDuration * ElapsedCount);
 	}
-	else if (NewIslandPlayCount >= g_GameData->IslandMeta.PlayCountMax)
+	else if (NewIslandPlayCount >= g_MetaData->IslandMeta.PlayCountMax)
 	{
 		NewIslandRefreshTime = Now;
 	}
@@ -716,12 +535,12 @@ ERet CUser::IslandStart(const SIslandStartNetCs& Proto_)
 	if (NewIslandPlayCount < 1)
 	{
 		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_GameData->IslandMeta.ChargeCostGold))
+		if (!HaveCost(CostType, g_MetaData->IslandMeta.ChargeCostGold))
 			return ERet::NotEnoughMoney;
 
-		SubResourceCore(CostType, g_GameData->IslandMeta.ChargeCostGold);
-		GoldCost = g_GameData->IslandMeta.ChargeCostGold;
-		NewIslandPlayCount = g_GameData->IslandMeta.PlayCountMax;
+		SubResourceCore(CostType, g_MetaData->IslandMeta.ChargeCostGold);
+		GoldCost = g_MetaData->IslandMeta.ChargeCostGold;
+		NewIslandPlayCount = g_MetaData->IslandMeta.PlayCountMax;
 		NewIslandRefreshTime = Now;
 	}
 
@@ -747,7 +566,7 @@ ERet CUser::IslandEnd(const SIslandEndNetCs& Proto_)
 	if (!_User.IslandStarted)
 		return ERet::InvalidProtocol;
 
-	auto IslandPoint = Proto_.PassedIslandCount * g_GameData->IslandMeta.ScoreFactorIsland + Proto_.Gold * g_GameData->IslandMeta.ScoreFactorGold;
+	auto IslandPoint = Proto_.PassedIslandCount * g_MetaData->IslandMeta.ScoreFactorIsland + Proto_.Gold * g_MetaData->IslandMeta.ScoreFactorGold;
 
 	int32 CharCode = GetSelectedCharCode();
 
@@ -814,7 +633,32 @@ ERet CUser::IslandEnd(const SIslandEndNetCs& Proto_)
 
 	return ERet::Ok;
 }
-ERet CUser::BattleJoin(void)
+
+ERet CUser::BattleTouch(const SBattleTouchNetCs& Proto_)
+{
+	if (!InBattle())
+		return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+
+	return _pBattlePlayer->Touch(Proto_);
+}
+ERet CUser::BattlePush(const SBattlePushNetCs& Proto_)
+{
+	if (!InBattle())
+		return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+
+	return _pBattlePlayer->Push(Proto_);
+}
+
+void CUser::BattleBegin(CBattlePlayer* pBattlePlayer_)
+{
+	_BattleJoining = false;
+	_pBattlePlayer = pBattlePlayer_;
+}
+void CUser::BattleEnd(void)
+{
+	_pBattlePlayer = nullptr;
+}
+ERet CUser::MultiBattleJoin(void)
 {
 	if (_BattleJoining)
 		return ERet::AlreadyBattleJoining;
@@ -823,11 +667,11 @@ ERet CUser::BattleJoin(void)
 		return ERet::AlreadyInBattle;
 
 	_BattleJoining = true;
-	Send(SBattleJoinNetSc());
+	Send(SMultiBattleJoinNetSc());
 
 	return ERet::Ok;
 }
-ERet CUser::BattleOut(void)
+ERet CUser::MultiBattleOut(void)
 {
 	if (!_BattleJoining)
 		return ERet::NotBattleJoining;
@@ -837,33 +681,28 @@ ERet CUser::BattleOut(void)
 
 	_BattleJoining = false;
 
-	Send(SBattleOutNetSc());
+	Send(SMultiBattleOutNetSc());
 
 	return ERet::Ok;
 }
-void CUser::BattleBegin(const SBattleInfo& BattleInfo_)
+SBattleEndInfo CUser::MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
 {
-	_BattleJoining = false;
-	_BattleInfo = BattleInfo_;
-}
-void CUser::SingleBattleBegin(const SBattleInfo& BattleInfo_)
-{
-	_BattleJoining = false;
-	_SingleBattleInfo = BattleInfo_;
-}
-SBattleEndInfo CUser::BattleEnd(const CEngineGameMode* pGameMode_, const SBattleEndPlayer& BattleEndPlayer_, bool Win_)
-{
-	if (BattleEndPlayer_.AddedPoint > 0)
+	TDoneQuests DoneQeusts;
+	QuestDone(DoneQuests_, DoneQuestDBs_, DoneQeusts);
+
+	auto& BattleEndPlayer = BattleEndPlayers_[_pBattlePlayer->PlayerIndex];
+
+	if (BattleEndPlayer.AddedPoint > 0)
 	{
-		if (_User.Point + BattleEndPlayer_.AddedPoint > _User.Point)
-			_User.Point += BattleEndPlayer_.AddedPoint;
+		if (_User.Point + BattleEndPlayer.AddedPoint > _User.Point)
+			_User.Point += BattleEndPlayer.AddedPoint;
 		else
 			_User.Point = MaxValue<int32>();
 	}
-	else if (BattleEndPlayer_.AddedPoint < 0)
+	else if (BattleEndPlayer.AddedPoint < 0)
 	{
-		if (_User.Point + BattleEndPlayer_.AddedPoint > 0)
-			_User.Point += BattleEndPlayer_.AddedPoint;
+		if (_User.Point + BattleEndPlayer.AddedPoint > 0)
+			_User.Point += BattleEndPlayer.AddedPoint;
 		else
 			_User.Point = 0;
 	}
@@ -871,73 +710,157 @@ SBattleEndInfo CUser::BattleEnd(const CEngineGameMode* pGameMode_, const SBattle
 	if (_User.Point > _User.PointBest)
 		_User.PointBest = _User.Point;
 
-	if (BattleEndPlayer_.BattlePoint > _User.BattlePointBest)
-		_User.BattlePointBest = BattleEndPlayer_.BattlePoint;
+	if (BattleEndPlayer.BattlePoint > _User.BattlePointBest)
+		_User.BattlePointBest = BattleEndPlayer.BattlePoint;
 
-	pGameMode_->BattleEnd(_User, Win_);
+	AddResourceCore(EResource::Gold, BattleEndPlayer.AddedGold);
+	BattleEnd();
 
-	AddResourceCore(EResource::Gold, BattleEndPlayer_.AddedGold);
-	_BattleInfo = SBattleInfo();
-	_SingleBattleInfo = SBattleInfo();
+	Send(SMultiBattleEndNetSc(BattleEndPlayers_, DoneQeusts));
 
 	return SBattleEndInfo(
 		GetUID(), _User.Resources, _User.Point, _User.PointBest,
 		_User.WinCountSolo, _User.LoseCountSolo, _User.WinCountSurvival, _User.LoseCountSurvival, _User.WinCountMulti, _User.LoseCountMulti,
 		_User.BattlePointBest, _User.KillTotal, _User.ChainKillTotal, _User.BlowBalloonTotal);
 }
-
-ERet CUser::BattleTouch(const SBattleTouchNetCs& Proto_)
+ERet CUser::MultiBattleIcon(const SMultiBattleIconNetCs& Proto_)
 {
-	auto itBattle = g_Battles.get(_BattleInfo.BattleIndex);
-	if (!itBattle)
-		return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+	if (InBattle())
+	{
+		auto* pMultiBattlePlayer = dynamic_cast<CMultiBattlePlayer*>(_pBattlePlayer);
+		if (pMultiBattlePlayer == nullptr)
+			return ERet::InvalidProtocol;
 
-	return itBattle->Touch(_BattleInfo.BattlePlayerIndex, Proto_);
-}
-ERet CUser::BattlePush(const SBattlePushNetCs& Proto_)
-{
-	auto itBattle = g_Battles.get(_BattleInfo.BattleIndex);
-	if (!itBattle)
-		return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-
-	return itBattle->Push(_BattleInfo.BattlePlayerIndex, Proto_);
-}
-ERet CUser::BattleIcon(const SBattleIconNetCs& Proto_)
-{
-	auto itBattle = g_Battles.get(_BattleInfo.BattleIndex);
-	if (itBattle)
-		return itBattle->Icon(_BattleInfo.BattlePlayerIndex, Proto_);
+		pMultiBattlePlayer->Icon(Proto_);
+	}
 
 	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
 }
-ERet CUser::SingleBattleIcon(const SSingleBattleIconNetCs& Proto_)
+ERet CUser::ArrowDodgeBattleJoin(void)
 {
-	auto isSingleBattle = g_SingleBattles.get(_SingleBattleInfo.BattleIndex);
-	if (isSingleBattle)
-		return isSingleBattle->Icon(_SingleBattleInfo.BattlePlayerIndex, Proto_);
+	if (_BattleJoining)
+		return ERet::AlreadyBattleJoining;
 
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+	if (InBattle())
+		return ERet::AlreadyInBattle;
+
+	auto NewSinglePlayCount = _User.SinglePlayCount;
+	auto NewSingleRefreshTime = _User.SingleRefreshTime;
+	auto Now = system_clock::now();
+
+	if (NewSinglePlayCount < g_MetaData->SingleMeta.PlayCountMax)
+	{
+		auto UnitDuration = minutes(g_MetaData->SingleMeta.RefreshDurationMinute);
+		auto ElapsedMinutes = duration_cast<minutes>(Now - NewSingleRefreshTime);
+		auto ElapsedCount = ElapsedMinutes / UnitDuration;
+		NewSinglePlayCount += ElapsedCount;
+
+		if (NewSinglePlayCount > g_MetaData->SingleMeta.PlayCountMax)
+			NewSinglePlayCount = g_MetaData->SingleMeta.PlayCountMax;
+
+		if (NewSinglePlayCount >= g_MetaData->SingleMeta.PlayCountMax)
+			NewSingleRefreshTime = Now;
+		else
+			NewSingleRefreshTime += (UnitDuration * ElapsedCount);
+	}
+	else if (NewSinglePlayCount >= g_MetaData->SingleMeta.PlayCountMax)
+	{
+		NewSingleRefreshTime = Now;
+	}
+
+	TQuests Quests;
+	TDoneQuestDBs DoneQuestDBs;
+	TDoneQuests DoneQuests;
+
+	TResource GoldCost = 0;
+	if (NewSinglePlayCount < 1)
+	{
+		auto CostType = EResource::Gold;
+		if (!HaveCost(CostType, g_MetaData->SingleMeta.ChargeCostGold))
+			return ERet::NotEnoughMoney;
+
+		SubResourceCore(CostType, g_MetaData->SingleMeta.ChargeCostGold);
+		GoldCost = g_MetaData->SingleMeta.ChargeCostGold;
+		NewSinglePlayCount = g_MetaData->SingleMeta.PlayCountMax;
+		NewSingleRefreshTime = Now;
+	}
+
+	--NewSinglePlayCount;
+	_User.SinglePlayCount = NewSinglePlayCount;
+	_User.SingleRefreshTime = NewSingleRefreshTime;
+
+	QuestDone(Quests, DoneQuestDBs, DoneQuests);
+	Push(SArrowDodgeBattleStartDBIn(GetUID(), _User.Resources, _User.SinglePlayCount, _User.SingleRefreshTime, std::move(DoneQuestDBs)));
+	Send(SArrowDodgeBattleJoinNetSc(GoldCost, _User.SinglePlayCount, _User.SingleRefreshTime, std::move(DoneQuests)));
+
+	auto itBattle = g_Battles.emplace(nullptr);
+	itBattle->reset(new CArrowDodgeBattle(this, itBattle));
+
+	return ERet::Ok;
 }
-ERet CUser::SingleBattleScore(const SSingleBattleScoreNetCs& Proto_)
+ERet CUser::ArrowDodgeBattleEndForce(const SArrowDodgeBattleEndForceNetCs& Proto_)
 {
-	auto isSingleBattle = g_SingleBattles.get(_SingleBattleInfo.BattleIndex);
-	if (isSingleBattle)
-		return isSingleBattle->Score(_SingleBattleInfo.BattlePlayerIndex, Proto_);
+	// 시간차로 이미 끝나있을 수 있으므로
+	if (!InBattle())
+		return ERet::Ok;
 
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+	auto* pArrowDodgeBattlePlayer = dynamic_cast<CArrowDodgeBattlePlayer*>(_pBattlePlayer);
+	if (pArrowDodgeBattlePlayer == nullptr)
+		return ERet::InvalidProtocol;
+
+	pArrowDodgeBattlePlayer->pArrowDodgeBattle->ForceEnd = true;
+	g_Battles.erase(_pBattlePlayer->itBattle);
+
+	return ERet::Ok;
 }
-ERet CUser::SingleBattleItem(const SSingleBattleItemNetCs& Proto_)
+void CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
 {
-	auto isSingleBattle = g_SingleBattles.get(_SingleBattleInfo.BattleIndex);
-	if (isSingleBattle)
-		return isSingleBattle->Item(_SingleBattleInfo.BattlePlayerIndex, Proto_);
+	int32 CharCode = GetSelectedCharCode();
 
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
+	if (IsValidRankingInfo() &&
+		g_RankingInfo.UserPointMin.UserPointMinSingle < BattleInfo_.Point &&
+		g_NetRankingKey)
+		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateSingle,
+			SRankingUserSingle(
+				SRankingUserSingleCore(
+					SRankingUserCore(
+						GetNick(),
+						CharCode,
+						GetCountryCode()),
+					BattleInfo_.Wave,
+					BattleInfo_.Second,
+					BattleInfo_.Gold),
+				GetUID(),
+				BattleInfo_.Point));
+
+	if (BattleInfo_.Point > _User.SinglePointBest)
+		_User.SinglePointBest = BattleInfo_.Point;
+
+	if (BattleInfo_.Second > _User.SingleSecondBest)
+		_User.SingleSecondBest = BattleInfo_.Second;
+
+	TResources Added{};
+	::AddResource(Added, EResource::Gold, BattleInfo_.GoldAdded);
+	::AddResource(Added, EResource::Dia, BattleInfo_.DiaAdded);
+	AddResourcesCore(Added);
+
+	TDoneQuestDBs DoneQuestDBs;
+	TDoneQuests DoneQuestNets;
+
+	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
+	BattleEnd();
+
+	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleSecondBest, std::move(DoneQuestDBs)));
+	Send(SArrowDodgeBattleEndNetSc(_User.Resources, std::move(DoneQuestNets)));
 }
-
+void CUser::ArrowDodgeBattleEnd(void)
+{
+	BattleEnd();
+	Send(SArrowDodgeBattleEndForceNetSc());
+}
 ERet CUser::Gacha(const SGachaNetCs& Proto_)
 {
-	auto Gacha = g_GameData->GetGacha(Proto_.GachaIndex);
+	auto Gacha = g_MetaData->GetGacha(Proto_.GachaIndex);
 	if (Gacha == nullptr)
 		return ERet::InvalidProtocol;
 
@@ -955,7 +878,7 @@ ERet CUser::Gacha(const SGachaNetCs& Proto_)
 }
 ERet CUser::GachaX10(const SGachaX10NetCs& Proto_)
 {
-	auto Gacha = g_GameData->GetGacha(Proto_.GachaIndex);
+	auto Gacha = g_MetaData->GetGacha(Proto_.GachaIndex);
 	if (Gacha == nullptr)
 		return ERet::InvalidProtocol;
 
@@ -1035,7 +958,7 @@ SRewardDB CUser::RewardsCore(const list<const SReward*>& Rewards_, int32 Multipl
 }
 ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 {
-	auto pRankReward = g_GameData->GetRankReward(_User.PointBest, _User.LastGotRewardRankIndex + 1);
+	auto pRankReward = g_MetaData->GetRankReward(_User.PointBest, _User.LastGotRewardRankIndex + 1);
 	if (pRankReward == nullptr)
 		return ERet::InvalidProtocol;
 
@@ -1058,16 +981,16 @@ ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 	//	미달	이상	미달성
 
 	auto Now = system_clock::now();
-	if (_User.QuestDailyCompleteCount < g_GameData->QuestDailyComplete.RequirmentCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
+	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
 	{
-		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_GameData->QuestDailyComplete.RefreshDuration)) // 다음 주기에 도래했으면
+		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_MetaData->QuestDailyComplete.RefreshDuration)) // 다음 주기에 도래했으면
 		{
-			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_GameData->QuestDailyComplete.RefreshDuration;
-			_User.QuestDailyCompleteRefreshTime += (g_GameData->QuestDailyComplete.RefreshDuration * ElapsedDurationCount);
+			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
+			_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * ElapsedDurationCount);
 			_User.QuestDailyCompleteCount = 0;
 		}
 
-		if (_User.QuestDailyCompleteCount < g_GameData->QuestDailyComplete.RequirmentCount)
+		if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount)
 			++_User.QuestDailyCompleteCount;
 	}
 
@@ -1148,22 +1071,22 @@ void CUser::QuestSet(TQuestSlotIndex SlotIndex_, int32 Code_)
 }
 ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto_)
 {
-	if (_User.QuestDailyCompleteCount < g_GameData->QuestDailyComplete.RequirmentCount)
+	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount)
 		return ERet::InvalidProtocol;
 
 	auto Now = system_clock::now();
 	if (Now < _User.QuestDailyCompleteRefreshTime) // 이미 쿨타임일지라도, 완료되었다면 시간이 어떠한 사유로 바뀌었으나, 시간 변동으로인해 보상을 더 받게되는 일이 없도록 주기를 정상 1회 증가
 	{
-		_User.QuestDailyCompleteRefreshTime += g_GameData->QuestDailyComplete.RefreshDuration;
+		_User.QuestDailyCompleteRefreshTime += g_MetaData->QuestDailyComplete.RefreshDuration;
 	}
 	else // _User.QuestDailyCompleteRefreshTime 이 과거라면, 가장 가까운 미래의 주기에 해당하는 시각으로 변경
 	{
-		auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_GameData->QuestDailyComplete.RefreshDuration;
-		_User.QuestDailyCompleteRefreshTime += (g_GameData->QuestDailyComplete.RefreshDuration * (ElapsedDurationCount + 1));
+		auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
+		_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * (ElapsedDurationCount + 1));
 	}
 
 	_User.QuestDailyCompleteCount = 0;
-	Push(SQuestDailyCompleteRewardDBIn(RewardCore(*g_GameData->QuestDailyComplete.pReward, Proto_.WatchAd ? 2 : 1), _User.QuestDailyCompleteRefreshTime));
+	Push(SQuestDailyCompleteRewardDBIn(RewardCore(*g_MetaData->QuestDailyComplete.pReward, Proto_.WatchAd ? 2 : 1), _User.QuestDailyCompleteRefreshTime));
 	Send(SQuestDailyCompleteRewardNetSc(Proto_.WatchAd, _User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
@@ -1182,7 +1105,7 @@ ERet CUser::ChangeNickRequest(const SChangeNickNetCs& Proto_)
 	auto Nick = u16string_to_wstring(Proto_.Nick);
 	wcslwr((wchar_t*)Nick.c_str());
 
-	for (auto& i : g_GameData->ForbiddenWords)
+	for (auto& i : g_MetaData->ForbiddenWords)
 	{
 		if (Nick.find(i) != string::npos)
 		{
@@ -1192,7 +1115,7 @@ ERet CUser::ChangeNickRequest(const SChangeNickNetCs& Proto_)
 	}
 
 	if (_User.ChangeNickFreeCount <= 0 &&
-		!HaveCost(EResource::Dia, g_GameData->ConfigMeta.ChangeNickCostDia))
+		!HaveCost(EResource::Dia, g_MetaData->ConfigMeta.ChangeNickCostDia))
 		return ERet::NotEnoughMoney;
 
 	_User.NewNick = Proto_.Nick;
@@ -1206,7 +1129,7 @@ void CUser::ChangeNickResult(EGameRet GameRet_)
 	{
 		if (_User.ChangeNickFreeCount <= 0)
 		{
-			SubResourceCore(EResource::Dia, g_GameData->ConfigMeta.ChangeNickCostDia);
+			SubResourceCore(EResource::Dia, g_MetaData->ConfigMeta.ChangeNickCostDia);
 		}
 		else
 		{
@@ -1229,7 +1152,7 @@ ERet CUser::CouponUse(const SCouponUseNetCs& Proto_)
 		return ERet::Ok;
 	}
 
-	auto pCoupon = g_GameData->GetCoupon(Proto_.Key);
+	auto pCoupon = g_MetaData->GetCoupon(Proto_.Key);
 	if (!pCoupon)
 	{
 		Send(SCouponUseFailNetSc(ERet::CouponInvalid)); // 유저가 잘못 입력할 확률이 있으니 접속 끊지 않도록
@@ -1242,7 +1165,7 @@ ERet CUser::CouponUse(const SCouponUseNetCs& Proto_)
 }
 void CUser::CouponUseOut(const SCouponUseCouponDBIn& In_, int32 Code_)
 {
-	auto pCoupon = g_GameData->GetCoupon(Code_);
+	auto pCoupon = g_MetaData->GetCoupon(Code_);
 	if (!pCoupon)
 		return; // 서버 기동시 체크했으므로 이론상 올 수 없음
 
@@ -1260,7 +1183,7 @@ ERet CUser::TutorialReward(const STutorialRewardNetCs& Proto_)
 		return ERet::InvalidProtocol;
 
 	_User.TutorialReward = true;
-	AddResourceCore(EResource::Dia, g_GameData->ConfigMeta.TutorialRewardDia);
+	AddResourceCore(EResource::Dia, g_MetaData->ConfigMeta.TutorialRewardDia);
 	Push(STutorialRewardDBIn(GetUID(), _User.Resources));
 
 	return ERet::Ok;
@@ -1318,8 +1241,8 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		auto itReward = g_RankingInfo.Rewards.find(GetUID());
 		if (itReward != g_RankingInfo.Rewards.end())
 		{
-			auto itRankingReward = g_GameData->RankingReward[(size_t)ERankingType::Multi].lower_bound(itReward->second);
-			if (itRankingReward != g_GameData->RankingReward[(size_t)ERankingType::Multi].end())
+			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Multi].lower_bound(itReward->second);
+			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Multi].end())
 			{
 				RewardCode = itRankingReward->second->first;
 				Rewards.emplace_back(&itRankingReward->second->second);
@@ -1329,8 +1252,8 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		auto itRewardSingle = g_RankingInfo.RewardsSingle.find(GetUID());
 		if (itRewardSingle != g_RankingInfo.RewardsSingle.end())
 		{
-			auto itRankingReward = g_GameData->RankingReward[(size_t)ERankingType::Single].lower_bound(itRewardSingle->second);
-			if (itRankingReward != g_GameData->RankingReward[(size_t)ERankingType::Single].end())
+			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Single].lower_bound(itRewardSingle->second);
+			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Single].end())
 			{
 				RewardCodeSingle = itRankingReward->second->first;
 				Rewards.emplace_back(&itRankingReward->second->second);
@@ -1340,8 +1263,8 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		auto itRewardIsland = g_RankingInfo.RewardsIsland.find(GetUID());
 		if (itRewardIsland != g_RankingInfo.RewardsIsland.end())
 		{
-			auto itRankingReward = g_GameData->RankingReward[(size_t)ERankingType::Island].lower_bound(itRewardIsland->second);
-			if (itRankingReward != g_GameData->RankingReward[(size_t)ERankingType::Island].end())
+			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Island].lower_bound(itRewardIsland->second);
+			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Island].end())
 			{
 				RewardCodeIsland = itRankingReward->second->first;
 				Rewards.emplace_back(&itRankingReward->second->second);
@@ -1362,90 +1285,4 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 	}
 
 	return ERet::Ok;
-}
-ERet CUser::RoomList(const SRoomListNetCs& Proto_)
-{
-	SRooms rooms;
-	for (auto& i : g_Rooms)
-	{
-		auto User = GetUser(i.second.MasterUserKey);
-		if(User)
-			rooms.emplace(i.first, SRoomInfo(i.second.Mode, i.second.RoomIdx, User->GetUID(), User->GetNick(), i.second.Password, (int32)i.second.Users.size(), i.second.State));
-	}
-
-	Send(SRoomListNetSc(rooms));
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomCreate(const SRoomCreateNetCs& Proto_)
-{
-	int count = 1;
-	while (true)
-	{
-		if (g_Rooms.find(count) == g_Rooms.end())
-		{
-			break;
-		}
-		count++;
-	}
-	g_Rooms.emplace(count, CRoom(Proto_.Mode, this, Proto_.Password, count));
-	_RoomInfo = count;
-	Send(SRoomCreateNetSc(SRoomInfo(Proto_.Mode, count, GetUID(), GetNick(), Proto_.Password, g_Rooms.at(count).RoomUserCount, ERoomState::RoomWait)));
-	BroadCast(SRoomChangeNetSc(count,SRoomInfo(Proto_.Mode,count, GetUID(), GetNick(), Proto_.Password, g_Rooms.at(count).RoomUserCount, ERoomState::RoomWait), false));
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomJoin(const SRoomJoinNetCs& Proto_)
-{
-	auto& room = g_Rooms.at(Proto_.RoomIdx);
-	if (room.JoinRoom(this))
-	{
-		BroadCast(SRoomChangeNetSc(Proto_.RoomIdx, SRoomInfo(room.Mode, Proto_.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State), false));
-		Send(SRoomJoinNetSc(SRoomInfo(room.Mode, Proto_.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State)));
-
-		if(room.State == ERoomState::RoomAllReady)
-			room.RoomSend(SRoomReadyNetSc(room.Mode));
-
-		_RoomInfo = Proto_.RoomIdx;
-	}
-	else
-	{
-		Send(SRoomJoinFailedNetSc());
-	}
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomOut(const SRoomOutNetCs& Proto_)
-{
-	auto& room = g_Rooms.at(Proto_.RoomIdx);
-	if (room.OutRoom(this))
-	{
-		if(room.RoomUserCount > 0)
-			BroadCast(SRoomChangeNetSc(Proto_.RoomIdx, SRoomInfo(room.Mode, Proto_.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State), false));
-		else
-		{
-			BroadCast(SRoomChangeNetSc(Proto_.RoomIdx, SRoomInfo(room.Mode, Proto_.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State), true));
-			g_Rooms.erase(Proto_.RoomIdx);
-		}
-		Send(SRoomOutNetSc());
-		_RoomInfo = -1;
-	}
-	else
-	{
-		Send(SRoomOutFailedNetSc());
-	}
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomReady(const SRoomReadyNetCs& Proto_) 
-{
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomChat(const SRoomChatNetCs& Proto_) 
-{
-	auto& room = g_Rooms.at(Proto_.RoomIdx);
-	room.ChatRoom(this, Proto_.Message);
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
-}
-ERet CUser::RoomNoti(const SRoomNotiNetCs& Proto_) 
-{
-	auto& room = g_Rooms.at(Proto_.RoomIdx);
-	BroadCast(SRoomNotiNetSc(SRoomInfo(room.Mode, Proto_.RoomIdx, room.MasterUserID, room.MasterUser, room.Password, room.RoomUserCount, room.State)));
-	return ERet::Ok; // 시간차로 게임 종료후 프로토콜 날릴 수도 있으므로 에러 통보하지 않음.
 }

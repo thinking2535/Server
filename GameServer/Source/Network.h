@@ -12,27 +12,18 @@ ERet PurchaseNetCs(CUser* User_, CStream& Stream_);
 ERet DailyRewardNetCs(CUser* User_, CStream& Stream_);
 
 ERet SelectCharNetCs(CUser* User_, CStream& Stream_);
-ERet SingleStartNetCs(CUser* User_, CStream& Stream_);
-ERet SingleEndNetCs(CUser* User_, CStream& Stream_);
 ERet IslandStartNetCs(CUser* User_, CStream& Stream_);
 ERet IslandEndNetCs(CUser* User_, CStream& Stream_);
-ERet BattleJoinNetCs(CUser* User_, CStream& Stream_);
-ERet BattleOutNetCs(CUser* User_, CStream& Stream_);
 
 ERet BattleTouchNetCs(CUser* User_, CStream& Stream_);
 ERet BattlePushNetCs(CUser* User_, CStream& Stream_);
-ERet BattleIconNetCs(CUser* User_, CStream& Stream_);
-ERet SingleBattleIconNetCs(CUser* User_, CStream& Stream_);
-ERet SingleBattleScoreNetCs(CUser* User_, CStream& Stream_);
-ERet SingleBattleItemNetCs(CUser* User_, CStream& Stream_);
 
-ERet RoomListNetCs(CUser* User_, CStream& Stream_);
-ERet RoomCreateNetCs(CUser* User_, CStream& Stream_);
-ERet RoomJoinNetCs(CUser* User_, CStream& Stream_);
-ERet RoomOutNetCs(CUser* User_, CStream& Stream_);
-ERet RoomReadyNetCs(CUser* User_, CStream& Stream_);
-ERet RoomChatNetCs(CUser* User_, CStream& Stream_);
-ERet RoomNotiNetCs(CUser* User_, CStream& Stream_);
+ERet MultiBattleJoinNetCs(CUser* User_, CStream& Stream_);
+ERet MultiBattleOutNetCs(CUser* User_, CStream& Stream_);
+ERet MultiBattleIconNetCs(CUser* User_, CStream& Stream_);
+
+ERet ArrowDodgeBattleJoinNetCs(CUser* User_, CStream& Stream_);
+ERet ArrowDodgeBattleEndForceNetCs(CUser* User_, CStream& Stream_);
 
 ERet GachaNetCs(CUser* User_, CStream& Stream_);
 ERet GachaX10NetCs(CUser* User_, CStream& Stream_);

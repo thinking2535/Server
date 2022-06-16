@@ -5,7 +5,7 @@ void CUsers::login(TSessionsIt itSession_, const CKey& Key_, const SUserCreateOp
 	auto itUser = _UsersUID.find(itSession_->first);
 	if (itUser == _UsersUID.end())
 	{
-		auto ib = _UsersUID.emplace(itSession_->first, _SUserUID(false, _TUser(new CUser(itSession_))));
+		auto ib = _UsersUID.emplace(itSession_->first, _SUserUID(_TUser(new CUser(itSession_))));
 		if (!ib.second)
 			throw 0;
 
@@ -33,24 +33,17 @@ void CUsers::login(TSessionsIt itSession_, const CKey& Key_, const SUserCreateOp
 		itUser->second.User->LoginAfterBattle(SUserLoginInfo(Key_, CreateOption_.LoginOption, CountryCodeMinuteOffset_));
 	}
 }
-tuple<int, int> CUsers::logout(TPeerCnt PeerNum_)
+void CUsers::logout(TPeerCnt PeerNum_)
 {
-	tuple<int, int> BattleIndexForEnd = make_tuple(-1,-1);
 	auto it = _Users.get(PeerNum_);
 	if (!it)
-		return BattleIndexForEnd;
+		return;
 
-	BattleIndexForEnd = (*it)->second.User->Logout();
-
-	if (!(*it)->second.InBattle)
+	(*it)->second.User->Logout();
+	if (!(*it)->second.User->InBattle())
 		_UsersUID.erase(*it);
 
 	_Users.erase(it);
-	return BattleIndexForEnd;
-}
-void CUsers::battle_begin(TPeerCnt PeerNum_)
-{
-	_Users[PeerNum_]->second.InBattle = true;
 }
 void CUsers::battle_end(TUID UID_)
 {
@@ -58,9 +51,7 @@ void CUsers::battle_end(TUID UID_)
 	if (it == _UsersUID.end())
 		return;
 
-	if (it->second.User->Key())
-		it->second.InBattle = false;
-	else
+	if (!it->second.User->Key())
 		_UsersUID.erase(it);
 }
 CUser* CUsers::get(TPeerCnt PeerNum_)

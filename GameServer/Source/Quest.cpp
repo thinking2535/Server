@@ -19,7 +19,7 @@ const SQuest& CQuest::_New(void)
 		++NewQuestIndex;
 	}
 
-	auto& Quests = g_GameData->GetQuest((EQuestType)NewQuestIndex);
+	auto& Quests = g_MetaData->GetQuest((EQuestType)NewQuestIndex);
 	return Quests[rand() % Quests.size()];
 }
 bool CQuest::_IsValid(const SQuestBase& Quest_) const
@@ -28,7 +28,7 @@ bool CQuest::_IsValid(const SQuestBase& Quest_) const
 }
 bool CQuest::Add(const TQuestDBs::value_type& itQuest_)
 {
-	auto* pQuest = g_GameData->GetQuest(itQuest_.second.Code);
+	auto* pQuest = g_MetaData->GetQuest(itQuest_.second.Code);
 	if (pQuest == nullptr)
 		return false;
 
@@ -129,7 +129,7 @@ optional<CQuest::_TReward> CQuest::Reward(TQuestSlotIndex SlotIndex_) // return 
 	}
 	else
 	{
-		return _TReward(itQuest->second.CoolEndTime = system_clock::now() + minutes(g_GameData->ConfigMeta.QuestCoolMinutes), itQuest->second.pQuest->pReward);
+		return _TReward(itQuest->second.CoolEndTime = system_clock::now() + minutes(g_MetaData->ConfigMeta.QuestCoolMinutes), itQuest->second.pQuest->pReward);
 	}
 }
 optional<const SQuest*> CQuest::Next(const SQuestNextNetCs& Proto_)
@@ -164,7 +164,7 @@ optional<const SQuest*> CQuest::Set(TQuestSlotIndex SlotIndex_, int32 NewCode_)
 	if (itQuest == _Quests.end())
 		return {};
 
-	auto pNewQuest = g_GameData->GetQuest(NewCode_);
+	auto pNewQuest = g_MetaData->GetQuest(NewCode_);
 	if (!pNewQuest)
 		return {};
 

@@ -111,15 +111,7 @@ void UnLinkC(TSessionsIt itSession_, const CKey& Key_, ENetRet NetRet_)
 	for (auto& i : g_Matches)
 		i.second->erase(Key_.PeerNum);
 
-	auto [BattleIndexForEnd, SingleBattleIndexForEnd] = g_Users.logout(Key_.PeerNum);
-	if (BattleIndexForEnd != -1) // 전투 종료 디비 쿼리 할것.
-	{
-		g_Battles.erase(BattleIndexForEnd);
-	}
-	if(SingleBattleIndexForEnd != -1)
-	{
-		g_SingleBattles.erase(SingleBattleIndexForEnd);
-	}
+	g_Users.logout(Key_.PeerNum);
 
 	DLOG(L"UnLinkC PeerNum:%d NetRet:%d", Key_.PeerNum, int32(NetRet_));
 }
@@ -271,18 +263,14 @@ void ChangeNick(const CKey& ClientKey_, EGameRet GameRet_)
 
 void Matching(TPeerCnt PeerNum_, size_t Count_)
 {
-	Send(PeerNum_, SBattleMatchingNetSc((int32)Count_));
+	Send(PeerNum_, SMultiBattleMatchingNetSc((int32)Count_));
 }
 void Matched(const TMatch::element_type::TMatchedUsers& Users_, const SBattleType& BattleType_, const SBattleTypeInfo* pBattleTypeInfo_)
 {
 	try
 	{
-
-		LOG(L"Matched Match %d", (int)BattleType_.GameMode);
-		if(BattleType_.GameMode == EGameMode::IslandSolo || BattleType_.GameMode == EGameMode::DodgeSolo)
-			g_SingleBattles.emplace(BattleType_, pBattleTypeInfo_, Users_, (TPeerCnt)g_SingleBattles.new_index(), 0);
-		else
-			g_Battles.emplace(BattleType_, pBattleTypeInfo_, Users_, (TPeerCnt)g_Battles.new_index(), 0);
+		auto itBattle = g_Battles.emplace(nullptr);
+		itBattle->reset(new CMultiBattle(BattleType_, pBattleTypeInfo_, Users_, itBattle));
 	}
 	catch (const ERet& Ret_)
 	{
@@ -335,7 +323,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		wcout.imbue(std::locale("korean"));
 
 		LOG(L"Initializing GameData");
-		g_GameData.reset(new TGameData::element_type());
+		g_MetaData.reset(new TMetaData::element_type());
 
 		LOG(L"Initializing Cheat Command");
 		g_Command.Insert(L"/help", TCommand::SCommandInfo(L"print command list", L"", CommandHelp));
@@ -357,25 +345,25 @@ int _tmain(int argc, _TCHAR* argv[])
 		COptionJson<SDBOptions> DBOptions(L"DBOptions.ini", false);
 		LOG(L"Initializing DBOptions Files");
 
-		SVersion Version(c_Ver_Main, g_GameData->CheckSumMeta);
-		LOG(L"CheckSum : %d", g_GameData->CheckSumMeta);
+		SVersion Version(c_Ver_Main, g_MetaData->CheckSumMeta);
+		LOG(L"CheckSum : %d", g_MetaData->CheckSumMeta);
 
 		g_Option = *Option;
 
 		wstring ProcName(MBSToWCS(
 			Option->Title +
 			" NetVer:" + WCSToMBS(StringFormat(L"%d", int32(Version.Main))) + 
-			" DataVer:" + to_string(g_GameData->CheckSumMeta) +
+			" DataVer:" + to_string(g_MetaData->CheckSumMeta) +
 			" ClientBindPort:" + to_string(Option->ClientBindPort)));
 		SetConsoleTitle(ProcName.c_str());
 
 		LOG(L"Initializing Match");
 
-		for (auto& i : g_GameData->GetBattleTypeInfos())
+		for (auto& i : g_MetaData->GetBattleTypeInfos())
 		{
-			auto AllMemberCount = i.second.pGameMode->GetAllMemberCount();
-			ASSERTION(AllMemberCount <= c_MaxPlayer && i.second.BattleType.TeamCount > 1);
-			g_Matches.emplace(i.first, new TMatch::element_type(AllMemberCount, Matching, Matched, seconds(5), g_GameData->GetMaxRewardPoint(), i.second.BattleType, &i.second));
+			auto AllMemberCount = GetAllMemberCount(i.first);
+			ASSERTION(AllMemberCount <= c_MaxPlayer && i.first.TeamCount > 1);
+			g_Matches.emplace(i.first, new TMatch::element_type(AllMemberCount, Matching, Matched, seconds(5), g_MetaData->GetMaxRewardPoint(), i.first, &i.second));
 		}
 
 		LOG(L"Initializing BulkCopyConnect");
@@ -435,11 +423,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SPurchaseDBIn, SDummyDBOut>(L"dbo.spPurchase", true, PurchaseDBOut);
 		DBAddCmd<SDailyRewardDBIn, SDummyDBOut>(L"dbo.spDailyReward", true, DummyDBOut);
 		DBAddCmd<SSelectCharDBIn, SDummyDBOut>(L"dbo.spSelectChar", true, DummyDBOut);
-		DBAddCmd<SSingleStartDBIn, SDummyDBOut>(L"dbo.spSingleStart", true, DummyDBOut);
-		DBAddCmd<SSingleEndDBIn, SDummyDBOut>(L"dbo.spSingleEnd", true, DummyDBOut);
 		DBAddCmd<SIslandStartDBIn, SDummyDBOut>(L"dbo.spIslandStart", true, DummyDBOut);
 		DBAddCmd<SIslandEndDBIn, SDummyDBOut>(L"dbo.spIslandEnd", true, DummyDBOut);
 		DBAddCmd<SBattleEndDBIn, SDummyDBOut>(L"dbo.spBattleEnd", true, DummyDBOut);
+		DBAddCmd<SArrowDodgeBattleStartDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleStart", true, DummyDBOut);
+		DBAddCmd<SArrowDodgeBattleEndDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleEnd", true, DummyDBOut);
 		DBAddCmd<SGachaDBIn, SDummyDBOut>(L"dbo.spGacha", true, DummyDBOut);
 		DBAddCmd<SRankRewardDBIn, SDummyDBOut>(L"dbo.spRankReward", true, DummyDBOut);
 		DBAddCmd<SQuestNewDBIn, SDummyDBOut>(L"dbo.spQuestNew", true, DummyDBOut);
@@ -476,27 +464,18 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::DailyReward, DailyRewardNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SelectChar, SelectCharNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SingleStart, SingleStartNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SingleEnd, SingleEndNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::IslandStart, IslandStartNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::IslandEnd, IslandEndNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattleJoin, BattleJoinNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattleOut, BattleOutNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattleTouch, BattleTouchNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattlePush, BattlePushNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattleIcon, BattleIconNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SingleBattleScore, SingleBattleScoreNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SingleBattleIcon, SingleBattleIconNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SingleBattleItem, SingleBattleItemNetCs);
 
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomList, RoomListNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomCreate, RoomCreateNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomJoin, RoomJoinNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomOut, RoomOutNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomReady, RoomReadyNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomChat, RoomChatNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RoomNoti, RoomNotiNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::MultiBattleJoin, MultiBattleJoinNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::MultiBattleOut, MultiBattleOutNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::MultiBattleIcon, MultiBattleIconNetCs);
+
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleJoin, ArrowDodgeBattleJoinNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleEndForce, ArrowDodgeBattleEndForceNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Gacha, GachaNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::GachaX10, GachaX10NetCs);
@@ -553,17 +532,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				auto itCheck = it;
 				++it;
 
-				if (!itCheck->Proc())
+				if (!(*itCheck)->Update())
 					g_Battles.erase(itCheck);
-			}
-
-			for (auto it = g_SingleBattles.begin(); it != g_SingleBattles.end(); )
-			{
-				auto itCheck = it;
-				++it;
-
-				if (!itCheck->Proc())
-					g_SingleBattles.erase(itCheck);
 			}
 
 			if (g_TimerPeriod.CheckAndNextLoose())
@@ -581,23 +551,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 				for (auto& i : g_Matches)
 					i.second->Proc();
-
-
-				for (auto it = g_Rooms.begin(); it != g_Rooms.end(); )
-				{
-					auto itCheck = it;
-					++it;
-
-					if (!itCheck->second.Proc())
-					{
-						BroadCast(SRoomChangeNetSc(itCheck->first, 
-												   SRoomInfo(itCheck->second.Mode, itCheck->second.RoomIdx, itCheck->second.MasterUserID, 
-															 itCheck->second.MasterUser, itCheck->second.Password, itCheck->second.RoomUserCount, 
-															 itCheck->second.State),
-												   true));
-						g_Rooms.erase(itCheck->first);
-					}
-				}
 			}
 
 			this_thread::sleep_for(milliseconds(1));

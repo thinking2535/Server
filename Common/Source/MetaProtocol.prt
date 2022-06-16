@@ -1,11 +1,13 @@
 include NetProtocol
 include <Rso/Physics/Protocol>
+include <Rso/Unity/Protocol>
 
 namespace bb
 {
 	using namespace rso
 	using namespace core
 	using namespace physics
+	using namespace unity
 
 	enum class ECashItemType
 	{
@@ -31,10 +33,6 @@ namespace bb
 	}
 	struct SServerConfigMeta
 	{
-	}
-	struct SStructure : SRectCollider2D
-	{
-		SPoint LocalPosition
 	}
 	struct SStructureMove
 	{
@@ -123,22 +121,45 @@ namespace bb
 		EGrade Grade
 	}
 	typedef vector<SPoint> TPoses
-	struct SPlayerPos
-	{
-		TPoses Poses
-	}
-	struct SMapMulti
+	struct SMultiMap
 	{
 		wstring PrefabName
-		map<TTeamCnt,SPlayerPos> PlayerPoses
+		TPoses Poses
 		SPoint PropPosition
-		list<SStructure> Structures
+		list<SBoxCollider2D> Structures
 		list<SStructureMove> StructureMoves
+	}
+	struct SArrowDodgeMap
+	{
+		wstring PrefabName
+		SPoint PropPosition
+		list<SBoxCollider2D> Structures
+	}
+	struct SPrefabNameCollider
+	{
+		wstring PrefabName
+		SRectCollider2D Collider
+	}
+	struct SArrowDodgeMapInfo
+	{
+		vector<SArrowDodgeMap> Maps
+		SPrefabNameCollider Arrow
+		SPrefabNameCollider Coin
+		SPrefabNameCollider GoldBar
+		SPrefabNameCollider Shield
+		SPrefabNameCollider Stamina
+	}
+	struct SFlyAwayMap
+	{
+		wstring PrefabName
+		SPoint PropPosition
+		list<SRectCollider2D> Structures
 	}
 	struct SMapMeta
 	{
-		vector<SMapMulti> MapOneOnOnes
-		vector<SMapMulti> MapMulties
+		vector<SMultiMap> OneOnOneMaps
+		SArrowDodgeMapInfo ArrowDodgeMapInfo
+		vector<SFlyAwayMap> FlyAwayMaps
 	}
 	struct SSingleMeta
 	{
@@ -220,9 +241,7 @@ namespace bb
 	}
 	struct SBattleRewardMeta
 	{
-		EGameMode GameMode
-		TTeamCnt TeamCount
-		int32 TeamMemberCount
+		SBattleType BattleType
 		int32 AddGold
 		int32 Unranked
 		int32 Bronze

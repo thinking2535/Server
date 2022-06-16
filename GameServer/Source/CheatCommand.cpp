@@ -46,7 +46,7 @@ void CommandSetMapIndex(wstringstream& Params_, CUser& User_)
 	Params_ >> MapIndex;
 
 	if (MapIndex >= -1 &&
-		MapIndex < g_GameData->GetMultiMapCount())
+		MapIndex < g_MetaData->GetMultiMapCount())
 		g_MapIndex = MapIndex;
 }
 void CommandSetPoint(wstringstream& Params_, CUser& User_)

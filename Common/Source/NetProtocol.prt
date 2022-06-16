@@ -24,28 +24,16 @@ namespace bb
 	const int32 c_FPS 60
 	const int64 c_NetworkTickSync 500000
 	const int64 c_NetworkTickBuffer c_NetworkTickSync+500000
-	const float c_ScreenWidth 3.448f
-	const float c_ScreenWidth_2 c_ScreenWidth*0.5f
-	const float c_2_ScreenWidth c_ScreenWidth*2.0f
-	const float c_ScreenHeight 3.5f
-	const float c_ScreenHeight_2 c_ScreenHeight*0.5f
 	const float c_ContactOffset 0.0001f
 	const float c_LandXDragPerFrame 1.0f/c_FPS
 
-	const float c_ScreenCenterX 3.448f
-	const float c_ScreenCenterY c_ScreenHeight*0.5f
-
-	const float c_Factor c_ScreenWidth*0.75f
-	const float c_DefaultVel c_Factor*0.22f
-	const float c_MaxVelDeadY c_DefaultVel*2.0f
-	const float c_FlapOnAcc c_Factor*0.25f
-	const float c_AccExt c_Factor
-	const float c_Gravity -c_FlapOnAcc
-	const float c_MaxVelParachuteX c_DefaultVel*1.2f
-	const float c_MaxVelParachuteY c_DefaultVel*0.5f
+	const float c_MaxVelDeadY 1.13784f
+	const float c_Gravity -0.6465f
+	const float c_MaxVelParachuteX 0.682704f
+	const float c_MaxVelParachuteY 0.28446f
 	const float c_GravityParachuteRatio 0.5f
 	const float c_GravityDeadRatio 2.0f
-	const float c_ParachuteAccX c_FlapOnAcc
+	const float c_ParachuteAccX 0.6465f
 	const float c_DieUpVel 0.7f
 	const float c_AirResistance 1.0f
 	const float c_GroundResistance 0.1f
@@ -88,25 +76,19 @@ namespace bb
 		Purchase
 		DailyReward
 		SelectChar
-		SingleStart
-		SingleEnd
 		IslandStart
 		IslandEnd
-		BattleJoin
-		BattleOut
+
 		BattleTouch
 		BattlePush
-		BattleIcon
-		SingleBattleScore
-		SingleBattleIcon
-		SingleBattleItem
-		RoomList
-		RoomCreate
-		RoomJoin
-		RoomOut
-		RoomReady
-		RoomChat
-		RoomNoti
+
+		MultiBattleJoin
+		MultiBattleOut
+		MultiBattleIcon
+
+		ArrowDodgeBattleJoin
+		ArrowDodgeBattleEndForce
+
 		Gacha
 		GachaX10
 		RankReward
@@ -139,37 +121,29 @@ namespace bb
 		Purchase
 		DailyReward
 		DailyRewardFail
-		SingleStart
-		SingleEnd
 		IslandStart
 		IslandEnd
-		BattleJoin
-		BattleOut
-		BattleBegin
-		BattleMatching
-		BattleStart
-		BattleEnd
+
 		BattleSync
 		BattleTouch
 		BattlePush
-		BattleIcon
-		BattleLink
-		BattleUnLink
-		SingleBattleStart
-		SingleBattleScore
-		SingleBattleIcon
-		SingleBattleItem
-		SingleBattleEnd
-		RoomList
-		RoomChange
-		RoomCreate
-		RoomJoin
-		RoomJoinFailed
-		RoomOut
-		RoomOutFailed
-		RoomReady
-		RoomChat
-		RoomNoti
+
+		MultiBattleJoin
+		MultiBattleOut
+		MultiBattleBegin
+		MultiBattleMatching
+		MultiBattleStart
+		MultiBattleEnd
+		MultiBattleIcon
+		MultiBattleLink
+		MultiBattleUnLink
+
+		ArrowDodgeBattleJoin
+		ArrowDodgeBattleBegin
+		ArrowDodgeBattleStart
+		ArrowDodgeBattleEnd
+		ArrowDodgeBattleEndForce
+
 		Gacha
 		GachaX10
 		GachaFailed
@@ -255,28 +229,6 @@ namespace bb
 		Epic
 		Unique
 		Max
-	}
-
-	enum class EGameMode
-	{
-		Single
-		Solo
-		Survival
-		Team
-		SurvivalSmall
-		TeamSmall
-		IslandSolo
-		DodgeSolo
-		Max
-		Null
-	}
-	enum class ERoomState : uint8
-	{
-		RoomWait
-		RoomAllReady
-		RoomPlay
-		RoomEndWait
-		RoomEmpty
 	}
 
 	enum class ERankingType
@@ -412,7 +364,6 @@ namespace bb
 		int32 BlowBalloonTotal
 		int32 QuestDailyCompleteCount
 		bool TutorialReward
-		bool SingleStarted
 		bool IslandStarted
 		int64 RankingRewardedCounter
 		TNick NewNick
@@ -440,7 +391,6 @@ namespace bb
 		time_point ServerTime
 		TQuestDBs Quests
 		TPackages Packages
-		int32 RoomIdx
 	}
 	struct SLobbyNetSc
 	{
@@ -545,29 +495,6 @@ namespace bb
 		int32 Code
 	}
 
-	struct SSingleStartNetCs
-	{
-	}
-	struct SSingleStartNetSc
-	{
-		TResource GoldCost
-		int32 PlayCount
-		time_point RefreshTime
-		TDoneQuests DoneQuests
-	}
-	struct SSingleEndNetCs
-	{
-		int32 Wave
-		int32 Second
-		TResource Gold
-		TResource GoldAdded
-		TResource DiaAdded
-	}
-	struct SSingleEndNetSc
-	{
-		TDoneQuests DoneQuests
-	}
-
 	struct SIslandStartNetCs
 	{
 	}
@@ -592,26 +519,44 @@ namespace bb
 
 	struct SBattleType
 	{
-		EGameMode GameMode
-		int8 MemberCount
 		TTeamCnt TeamCount
+		int8 TeamMemberCount
 	}
-	struct SBattleRecord
+
+	struct SBattleSyncNetSc
 	{
-		int32 TotalKillCount
-		int32 TotalBalloonHitCount
+		int64 Tick
 	}
-	struct SBattleJoinNetCs
+	struct SBattleTouchNetCs
+	{
+		int8 Dir
+	}
+	struct SBattleTouchNetSc
+	{
+		int64 Tick
+		int32 PlayerIndex
+		int8 Dir
+	}
+	struct SBattlePushNetCs
+	{
+	}
+	struct SBattlePushNetSc
+	{
+		int64 Tick
+		int32 PlayerIndex
+	}
+
+	struct SMultiBattleJoinNetCs
 	{
 		SBattleType BattleType
 	}
-	struct SBattleJoinNetSc
+	struct SMultiBattleJoinNetSc
 	{
 	}
-	struct SBattleOutNetCs
+	struct SMultiBattleOutNetCs
 	{
 	}
-	struct SBattleOutNetSc
+	struct SMultiBattleOutNetSc
 	{
 	}
 	struct SPumpInfo
@@ -637,7 +582,6 @@ namespace bb
 		wstring CountryCode
 		TTeamCnt TeamIndex
 		int32 CharCode
-		int32 Point
 	}
 	struct SCharacter
 	{
@@ -659,53 +603,37 @@ namespace bb
 		SPoint Pos
 		SPoint Vel
 	}
-	struct STeamBattleInfo
-	{
-	}
-	typedef vector<STeamBattleInfo> TTeamBattleInfos
 	struct SBattle
 	{
 		SBattleType BattleType
 		int32 MapIndex
 	}
-	struct SBattleBeginNetSc : SBattle
+	struct SBattleRecord
+	{
+		int32 TotalKillCount
+		int32 TotalBalloonHitCount
+	}
+	struct SMultiBattleInfo
+	{
+		int32 Point
+	}
+	struct SMultiBattleBeginNetSc : SBattle
 	{
 		vector<SBattlePlayer> Players
+		vector<SMultiBattleInfo> BattleInfos
 		SBattleRecord Record
 		vector<SCharacterNet> Characters
 		time_point EndTime
 		int64 Tick
 		vector<SStructMovePosition> StructMovePositions
 	}
-	struct SBattleMatchingNetSc
+	struct SMultiBattleMatchingNetSc
 	{
 		int32 UserCount
 	}
-	struct SBattleStartNetSc
+	struct SMultiBattleStartNetSc
 	{
 		time_point EndTime
-	}
-	struct SSingleBattleStartNetSc
-	{
-		time_point EndTime
-	}
-	struct SSingleBattleIconNetCs
-	{
-		int32 Code
-	}
-	struct SSingleBattleIconNetSc
-	{
-		int32 PlayerIndex
-		int32 Code
-	}
-	struct SSingleBattleItemNetCs
-	{
-		int32 Code
-	}
-	struct SSingleBattleItemNetSc
-	{
-		int32 PlayerIndex
-		int32 Code
 	}
 	struct SBattleEndPlayer
 	{
@@ -713,70 +641,100 @@ namespace bb
 		int32 AddedGold
 		int32 BattlePoint
 	}
-
-	struct SBattleEndNetSc
+	struct SMultiBattleEndNetSc
 	{
-		list<SBattleEndPlayer> BattleEndPlayers
-		TTeamBattleInfos TeamBattleInfos
+		vector<SBattleEndPlayer> BattleEndPlayers
 		TDoneQuests DoneQuests
 	}
-
-	struct SSingleBattleEndNetSc : SBattleEndNetSc
-	{
-		EGameMode GameMode
-	}
-
-	struct SBattleSyncNetSc
-	{
-		int64 Tick
-	}
-	struct SBattleTouchNetCs
-	{
-		int8 Dir
-	}
-	struct SBattleTouchNetSc
-	{
-		int64 Tick
-		int32 PlayerIndex
-		int8 Dir
-	}
-	struct SBattlePushNetCs
-	{
-	}
-	struct SBattlePushNetSc
-	{
-		int64 Tick
-		int32 PlayerIndex
-	}
-	struct SBattleIconNetCs
+	struct SMultiBattleIconNetCs
 	{
 		int32 Code
 	}
-	struct SBattleIconNetSc
+	struct SMultiBattleIconNetSc
 	{
 		int32 PlayerIndex
 		int32 Code
 	}
-
-	struct SSingleBattleScoreNetCs
-	{
-		int32 Score
-	}
-	struct SSingleBattleScoreNetSc
-	{
-		int32 PlayerIndex
-		int32 Score
-	}
-
-	struct SBattleLinkNetSc
+	struct SMultiBattleLinkNetSc
 	{
 		int64 Tick
 		int32 PlayerIndex
 	}
-	struct SBattleUnLinkNetSc
+	struct SMultiBattleUnLinkNetSc
 	{
 		int64 Tick
 		int32 PlayerIndex
+	}
+
+	struct SArrowDodgeBattleJoinNetCs
+	{
+	}
+	struct SArrowDodgeBattleJoinNetSc
+	{
+		TResource GoldCost
+		int32 PlayCount
+		time_point RefreshTime
+		TDoneQuests DoneQuests
+	}
+	struct SArrow
+	{
+		STransform Transform
+		SPoint Velocity
+	}
+	struct SItem
+	{
+		STransform Transform
+		int32 ItemNumber
+	}
+	struct SArrowDodgeBattleInfo
+	{
+		int32 Point
+		int32 Wave
+		int32 Second
+		TResource Gold
+		TResource GoldAdded
+		TResource DiaAdded
+	}
+	struct SArrowDodgeBattleBuf
+	{
+		bool Enabled
+		int64 EndTick
+	}
+	struct SArrowDodgeBattleBufs
+	{
+		SArrowDodgeBattleBuf Shield
+		SArrowDodgeBattleBuf Stamina
+	}
+	struct SArrowDodgeBattleBeginNetSc
+	{
+		SBattlePlayer Player
+		SArrowDodgeBattleInfo BattleInfo
+		SArrowDodgeBattleBufs Bufs
+		SCharacterNet Character
+		int64 Tick
+		uint64 RandomSeed
+		uint64 RandomCounter
+		int64 NextDownArrowTick
+		int64 NextLeftArrowTick
+		int64 NextRightArrowTick
+		int64 NextItemTick
+		vector<SArrow> Arrows
+		vector<SItem> Items
+		bool Started
+	}
+	struct SArrowDodgeBattleStartNetSc
+	{
+	}
+	struct SArrowDodgeBattleEndNetSc
+	{
+		TResources ResourcesLeft
+		TDoneQuests DoneQuests
+	}
+	struct SArrowDodgeBattleEndForceNetCs
+	{
+	}
+	struct SArrowDodgeBattleEndForceNetSc
+	{
 	}
 
 	struct SRankingUserCore
@@ -984,84 +942,5 @@ namespace bb
 	struct SRankingRewardFailNetSc
 	{
 		ERet Ret
-	}
-	struct SRoomInfo
-	{
-		EGameMode Mode
-		int32 RoomIdx
-		TUID MasterUID
-		u16string MasterUser
-		wstring Password
-		int32 UserCount
-		ERoomState State
-	}
-	typedef map<int32,SRoomInfo> SRooms
-	struct SRoomChangeNetSc
-	{
-		int32 RoomIdx
-		SRoomInfo RoomInfo
-		bool IsEmpty
-	}
-	struct SRoomListNetCs
-	{
-	}
-	struct SRoomListNetSc
-	{
-		SRooms RoomList
-	}
-	struct SRoomCreateNetCs
-	{
-		EGameMode Mode
-		wstring Password
-	}
-	struct SRoomCreateNetSc
-	{
-		SRoomInfo RoomInfo
-	}
-	struct SRoomJoinNetCs
-	{
-		int32 RoomIdx
-	}
-	struct SRoomJoinNetSc
-	{
-		SRoomInfo RoomInfo
-	}
-	struct SRoomJoinFailedNetSc
-	{
-	}
-	struct SRoomOutNetCs
-	{
-		int32 RoomIdx
-	}
-	struct SRoomOutFailedNetSc
-	{
-	}
-	struct SRoomOutNetSc
-	{
-	}
-	struct SRoomReadyNetCs
-	{
-	}
-	struct SRoomReadyNetSc
-	{
-		EGameMode Mode
-	}
-	struct SRoomChatNetCs
-	{
-		int32 RoomIdx
-		wstring Message
-	}
-	struct SRoomChatNetSc
-	{
-		u16string UserNick
-		wstring Message
-	}
-	struct SRoomNotiNetCs
-	{
-		int32 RoomIdx
-	}
-	struct SRoomNotiNetSc
-	{
-		SRoomInfo RoomInfo
 	}
 }

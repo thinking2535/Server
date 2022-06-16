@@ -11,11 +11,13 @@
 
 #include "NetProtocol.h"
 #include <Rso/Physics/Protocol.h>
+#include <Rso/Unity/Protocol.h>
 namespace bb
 {
 	using namespace rso;
 	using namespace core;
 	using namespace physics;
+	using namespace unity;
 	enum class ECashItemType
 	{
 		ResourcesPack,
@@ -59,51 +61,6 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return L"";
-		}
-	};
-	struct SStructure : public SRectCollider2D
-	{
-		SPoint LocalPosition{};
-		SStructure()
-		{
-		}
-		SStructure(const SRectCollider2D& Super_, const SPoint& LocalPosition_) : SRectCollider2D(Super_), LocalPosition(LocalPosition_)
-		{
-		}
-		SStructure(SRectCollider2D&& Super_, SPoint&& LocalPosition_) : SRectCollider2D(std::move(Super_)), LocalPosition(std::move(LocalPosition_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRectCollider2D::operator << (Stream_);
-			Stream_ >> LocalPosition;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRectCollider2D::operator << (Value_);
-			Value_["LocalPosition"] >> LocalPosition;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRectCollider2D::operator >> (Stream_);
-			Stream_ << LocalPosition;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRectCollider2D::operator >> (Value_);
-			Value_["LocalPosition"] = LocalPosition;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRectCollider2D()) + L"," + 
-				GetStdName(SPoint());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRectCollider2D(), L"") + L"," + 
-				GetMemberName(SPoint(), L"LocalPosition");
 		}
 	};
 	struct SStructureMove : public SProto
@@ -829,65 +786,26 @@ namespace bb
 		}
 	};
 	using TPoses = vector<SPoint>;
-	struct SPlayerPos : public SProto
-	{
-		TPoses Poses{};
-		SPlayerPos()
-		{
-		}
-		SPlayerPos(const TPoses& Poses_) : Poses(Poses_)
-		{
-		}
-		SPlayerPos(TPoses&& Poses_) : Poses(std::move(Poses_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Poses;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Poses"] >> Poses;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Poses;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Poses"] = Poses;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TPoses());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TPoses(), L"Poses");
-		}
-	};
-	struct SMapMulti : public SProto
+	struct SMultiMap : public SProto
 	{
 		wstring PrefabName{};
-		map<TTeamCnt,SPlayerPos> PlayerPoses{};
+		TPoses Poses{};
 		SPoint PropPosition{};
-		list<SStructure> Structures{};
+		list<SBoxCollider2D> Structures{};
 		list<SStructureMove> StructureMoves{};
-		SMapMulti()
+		SMultiMap()
 		{
 		}
-		SMapMulti(const wstring& PrefabName_, const map<TTeamCnt,SPlayerPos>& PlayerPoses_, const SPoint& PropPosition_, const list<SStructure>& Structures_, const list<SStructureMove>& StructureMoves_) : PrefabName(PrefabName_), PlayerPoses(PlayerPoses_), PropPosition(PropPosition_), Structures(Structures_), StructureMoves(StructureMoves_)
+		SMultiMap(const wstring& PrefabName_, const TPoses& Poses_, const SPoint& PropPosition_, const list<SBoxCollider2D>& Structures_, const list<SStructureMove>& StructureMoves_) : PrefabName(PrefabName_), Poses(Poses_), PropPosition(PropPosition_), Structures(Structures_), StructureMoves(StructureMoves_)
 		{
 		}
-		SMapMulti(wstring&& PrefabName_, map<TTeamCnt,SPlayerPos>&& PlayerPoses_, SPoint&& PropPosition_, list<SStructure>&& Structures_, list<SStructureMove>&& StructureMoves_) : PrefabName(std::move(PrefabName_)), PlayerPoses(std::move(PlayerPoses_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_)), StructureMoves(std::move(StructureMoves_))
+		SMultiMap(wstring&& PrefabName_, TPoses&& Poses_, SPoint&& PropPosition_, list<SBoxCollider2D>&& Structures_, list<SStructureMove>&& StructureMoves_) : PrefabName(std::move(PrefabName_)), Poses(std::move(Poses_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_)), StructureMoves(std::move(StructureMoves_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> PrefabName;
-			Stream_ >> PlayerPoses;
+			Stream_ >> Poses;
 			Stream_ >> PropPosition;
 			Stream_ >> Structures;
 			Stream_ >> StructureMoves;
@@ -895,7 +813,7 @@ namespace bb
 		void operator << (const Value& Value_) override
 		{
 			Value_["PrefabName"] >> PrefabName;
-			Value_["PlayerPoses"] >> PlayerPoses;
+			Value_["Poses"] >> Poses;
 			Value_["PropPosition"] >> PropPosition;
 			Value_["Structures"] >> Structures;
 			Value_["StructureMoves"] >> StructureMoves;
@@ -903,7 +821,7 @@ namespace bb
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << PrefabName;
-			Stream_ << PlayerPoses;
+			Stream_ << Poses;
 			Stream_ << PropPosition;
 			Stream_ << Structures;
 			Stream_ << StructureMoves;
@@ -911,7 +829,7 @@ namespace bb
 		void operator >> (Value& Value_) const override
 		{
 			Value_["PrefabName"] = PrefabName;
-			Value_["PlayerPoses"] = PlayerPoses;
+			Value_["Poses"] = Poses;
 			Value_["PropPosition"] = PropPosition;
 			Value_["Structures"] = Structures;
 			Value_["StructureMoves"] = StructureMoves;
@@ -920,65 +838,298 @@ namespace bb
 		{
 			return 
 				GetStdName(wstring()) + L"," + 
-				GetStdName(map<TTeamCnt,SPlayerPos>()) + L"," + 
+				GetStdName(TPoses()) + L"," + 
 				GetStdName(SPoint()) + L"," + 
-				GetStdName(list<SStructure>()) + L"," + 
+				GetStdName(list<SBoxCollider2D>()) + L"," + 
 				GetStdName(list<SStructureMove>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(wstring(), L"PrefabName") + L"," + 
-				GetMemberName(map<TTeamCnt,SPlayerPos>(), L"PlayerPoses") + L"," + 
+				GetMemberName(TPoses(), L"Poses") + L"," + 
 				GetMemberName(SPoint(), L"PropPosition") + L"," + 
-				GetMemberName(list<SStructure>(), L"Structures") + L"," + 
+				GetMemberName(list<SBoxCollider2D>(), L"Structures") + L"," + 
 				GetMemberName(list<SStructureMove>(), L"StructureMoves");
 		}
 	};
-	struct SMapMeta : public SProto
+	struct SArrowDodgeMap : public SProto
 	{
-		vector<SMapMulti> MapOneOnOnes{};
-		vector<SMapMulti> MapMulties{};
-		SMapMeta()
+		wstring PrefabName{};
+		SPoint PropPosition{};
+		list<SBoxCollider2D> Structures{};
+		SArrowDodgeMap()
 		{
 		}
-		SMapMeta(const vector<SMapMulti>& MapOneOnOnes_, const vector<SMapMulti>& MapMulties_) : MapOneOnOnes(MapOneOnOnes_), MapMulties(MapMulties_)
+		SArrowDodgeMap(const wstring& PrefabName_, const SPoint& PropPosition_, const list<SBoxCollider2D>& Structures_) : PrefabName(PrefabName_), PropPosition(PropPosition_), Structures(Structures_)
 		{
 		}
-		SMapMeta(vector<SMapMulti>&& MapOneOnOnes_, vector<SMapMulti>&& MapMulties_) : MapOneOnOnes(std::move(MapOneOnOnes_)), MapMulties(std::move(MapMulties_))
+		SArrowDodgeMap(wstring&& PrefabName_, SPoint&& PropPosition_, list<SBoxCollider2D>&& Structures_) : PrefabName(std::move(PrefabName_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> MapOneOnOnes;
-			Stream_ >> MapMulties;
+			Stream_ >> PrefabName;
+			Stream_ >> PropPosition;
+			Stream_ >> Structures;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["MapOneOnOnes"] >> MapOneOnOnes;
-			Value_["MapMulties"] >> MapMulties;
+			Value_["PrefabName"] >> PrefabName;
+			Value_["PropPosition"] >> PropPosition;
+			Value_["Structures"] >> Structures;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << MapOneOnOnes;
-			Stream_ << MapMulties;
+			Stream_ << PrefabName;
+			Stream_ << PropPosition;
+			Stream_ << Structures;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["MapOneOnOnes"] = MapOneOnOnes;
-			Value_["MapMulties"] = MapMulties;
+			Value_["PrefabName"] = PrefabName;
+			Value_["PropPosition"] = PropPosition;
+			Value_["Structures"] = Structures;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(vector<SMapMulti>()) + L"," + 
-				GetStdName(vector<SMapMulti>());
+				GetStdName(wstring()) + L"," + 
+				GetStdName(SPoint()) + L"," + 
+				GetStdName(list<SBoxCollider2D>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(vector<SMapMulti>(), L"MapOneOnOnes") + L"," + 
-				GetMemberName(vector<SMapMulti>(), L"MapMulties");
+				GetMemberName(wstring(), L"PrefabName") + L"," + 
+				GetMemberName(SPoint(), L"PropPosition") + L"," + 
+				GetMemberName(list<SBoxCollider2D>(), L"Structures");
+		}
+	};
+	struct SPrefabNameCollider : public SProto
+	{
+		wstring PrefabName{};
+		SRectCollider2D Collider{};
+		SPrefabNameCollider()
+		{
+		}
+		SPrefabNameCollider(const wstring& PrefabName_, const SRectCollider2D& Collider_) : PrefabName(PrefabName_), Collider(Collider_)
+		{
+		}
+		SPrefabNameCollider(wstring&& PrefabName_, SRectCollider2D&& Collider_) : PrefabName(std::move(PrefabName_)), Collider(std::move(Collider_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> PrefabName;
+			Stream_ >> Collider;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["PrefabName"] >> PrefabName;
+			Value_["Collider"] >> Collider;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << PrefabName;
+			Stream_ << Collider;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["PrefabName"] = PrefabName;
+			Value_["Collider"] = Collider;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(wstring()) + L"," + 
+				GetStdName(SRectCollider2D());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(wstring(), L"PrefabName") + L"," + 
+				GetMemberName(SRectCollider2D(), L"Collider");
+		}
+	};
+	struct SArrowDodgeMapInfo : public SProto
+	{
+		vector<SArrowDodgeMap> Maps{};
+		SPrefabNameCollider Arrow{};
+		SPrefabNameCollider Coin{};
+		SPrefabNameCollider GoldBar{};
+		SPrefabNameCollider Shield{};
+		SPrefabNameCollider Stamina{};
+		SArrowDodgeMapInfo()
+		{
+		}
+		SArrowDodgeMapInfo(const vector<SArrowDodgeMap>& Maps_, const SPrefabNameCollider& Arrow_, const SPrefabNameCollider& Coin_, const SPrefabNameCollider& GoldBar_, const SPrefabNameCollider& Shield_, const SPrefabNameCollider& Stamina_) : Maps(Maps_), Arrow(Arrow_), Coin(Coin_), GoldBar(GoldBar_), Shield(Shield_), Stamina(Stamina_)
+		{
+		}
+		SArrowDodgeMapInfo(vector<SArrowDodgeMap>&& Maps_, SPrefabNameCollider&& Arrow_, SPrefabNameCollider&& Coin_, SPrefabNameCollider&& GoldBar_, SPrefabNameCollider&& Shield_, SPrefabNameCollider&& Stamina_) : Maps(std::move(Maps_)), Arrow(std::move(Arrow_)), Coin(std::move(Coin_)), GoldBar(std::move(GoldBar_)), Shield(std::move(Shield_)), Stamina(std::move(Stamina_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> Maps;
+			Stream_ >> Arrow;
+			Stream_ >> Coin;
+			Stream_ >> GoldBar;
+			Stream_ >> Shield;
+			Stream_ >> Stamina;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["Maps"] >> Maps;
+			Value_["Arrow"] >> Arrow;
+			Value_["Coin"] >> Coin;
+			Value_["GoldBar"] >> GoldBar;
+			Value_["Shield"] >> Shield;
+			Value_["Stamina"] >> Stamina;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << Maps;
+			Stream_ << Arrow;
+			Stream_ << Coin;
+			Stream_ << GoldBar;
+			Stream_ << Shield;
+			Stream_ << Stamina;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["Maps"] = Maps;
+			Value_["Arrow"] = Arrow;
+			Value_["Coin"] = Coin;
+			Value_["GoldBar"] = GoldBar;
+			Value_["Shield"] = Shield;
+			Value_["Stamina"] = Stamina;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(vector<SArrowDodgeMap>()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(vector<SArrowDodgeMap>(), L"Maps") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Arrow") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Coin") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"GoldBar") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Shield") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Stamina");
+		}
+	};
+	struct SFlyAwayMap : public SProto
+	{
+		wstring PrefabName{};
+		SPoint PropPosition{};
+		list<SRectCollider2D> Structures{};
+		SFlyAwayMap()
+		{
+		}
+		SFlyAwayMap(const wstring& PrefabName_, const SPoint& PropPosition_, const list<SRectCollider2D>& Structures_) : PrefabName(PrefabName_), PropPosition(PropPosition_), Structures(Structures_)
+		{
+		}
+		SFlyAwayMap(wstring&& PrefabName_, SPoint&& PropPosition_, list<SRectCollider2D>&& Structures_) : PrefabName(std::move(PrefabName_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> PrefabName;
+			Stream_ >> PropPosition;
+			Stream_ >> Structures;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["PrefabName"] >> PrefabName;
+			Value_["PropPosition"] >> PropPosition;
+			Value_["Structures"] >> Structures;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << PrefabName;
+			Stream_ << PropPosition;
+			Stream_ << Structures;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["PrefabName"] = PrefabName;
+			Value_["PropPosition"] = PropPosition;
+			Value_["Structures"] = Structures;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(wstring()) + L"," + 
+				GetStdName(SPoint()) + L"," + 
+				GetStdName(list<SRectCollider2D>());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(wstring(), L"PrefabName") + L"," + 
+				GetMemberName(SPoint(), L"PropPosition") + L"," + 
+				GetMemberName(list<SRectCollider2D>(), L"Structures");
+		}
+	};
+	struct SMapMeta : public SProto
+	{
+		vector<SMultiMap> OneOnOneMaps{};
+		SArrowDodgeMapInfo ArrowDodgeMapInfo{};
+		vector<SFlyAwayMap> FlyAwayMaps{};
+		SMapMeta()
+		{
+		}
+		SMapMeta(const vector<SMultiMap>& OneOnOneMaps_, const SArrowDodgeMapInfo& ArrowDodgeMapInfo_, const vector<SFlyAwayMap>& FlyAwayMaps_) : OneOnOneMaps(OneOnOneMaps_), ArrowDodgeMapInfo(ArrowDodgeMapInfo_), FlyAwayMaps(FlyAwayMaps_)
+		{
+		}
+		SMapMeta(vector<SMultiMap>&& OneOnOneMaps_, SArrowDodgeMapInfo&& ArrowDodgeMapInfo_, vector<SFlyAwayMap>&& FlyAwayMaps_) : OneOnOneMaps(std::move(OneOnOneMaps_)), ArrowDodgeMapInfo(std::move(ArrowDodgeMapInfo_)), FlyAwayMaps(std::move(FlyAwayMaps_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> OneOnOneMaps;
+			Stream_ >> ArrowDodgeMapInfo;
+			Stream_ >> FlyAwayMaps;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["OneOnOneMaps"] >> OneOnOneMaps;
+			Value_["ArrowDodgeMapInfo"] >> ArrowDodgeMapInfo;
+			Value_["FlyAwayMaps"] >> FlyAwayMaps;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << OneOnOneMaps;
+			Stream_ << ArrowDodgeMapInfo;
+			Stream_ << FlyAwayMaps;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["OneOnOneMaps"] = OneOnOneMaps;
+			Value_["ArrowDodgeMapInfo"] = ArrowDodgeMapInfo;
+			Value_["FlyAwayMaps"] = FlyAwayMaps;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(vector<SMultiMap>()) + L"," + 
+				GetStdName(SArrowDodgeMapInfo()) + L"," + 
+				GetStdName(vector<SFlyAwayMap>());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(vector<SMultiMap>(), L"OneOnOneMaps") + L"," + 
+				GetMemberName(SArrowDodgeMapInfo(), L"ArrowDodgeMapInfo") + L"," + 
+				GetMemberName(vector<SFlyAwayMap>(), L"FlyAwayMaps");
 		}
 	};
 	struct SSingleMeta : public SProto
@@ -1647,9 +1798,7 @@ namespace bb
 	};
 	struct SBattleRewardMeta : public SProto
 	{
-		EGameMode GameMode{};
-		TTeamCnt TeamCount{};
-		int32 TeamMemberCount{};
+		SBattleType BattleType{};
 		int32 AddGold{};
 		int32 Unranked{};
 		int32 Bronze{};
@@ -1660,17 +1809,15 @@ namespace bb
 		SBattleRewardMeta()
 		{
 		}
-		SBattleRewardMeta(const EGameMode& GameMode_, const TTeamCnt& TeamCount_, const int32& TeamMemberCount_, const int32& AddGold_, const int32& Unranked_, const int32& Bronze_, const int32& Silver_, const int32& Gold_, const int32& Diamond_, const int32& Champion_) : GameMode(GameMode_), TeamCount(TeamCount_), TeamMemberCount(TeamMemberCount_), AddGold(AddGold_), Unranked(Unranked_), Bronze(Bronze_), Silver(Silver_), Gold(Gold_), Diamond(Diamond_), Champion(Champion_)
+		SBattleRewardMeta(const SBattleType& BattleType_, const int32& AddGold_, const int32& Unranked_, const int32& Bronze_, const int32& Silver_, const int32& Gold_, const int32& Diamond_, const int32& Champion_) : BattleType(BattleType_), AddGold(AddGold_), Unranked(Unranked_), Bronze(Bronze_), Silver(Silver_), Gold(Gold_), Diamond(Diamond_), Champion(Champion_)
 		{
 		}
-		SBattleRewardMeta(EGameMode&& GameMode_, TTeamCnt&& TeamCount_, int32&& TeamMemberCount_, int32&& AddGold_, int32&& Unranked_, int32&& Bronze_, int32&& Silver_, int32&& Gold_, int32&& Diamond_, int32&& Champion_) : GameMode(std::move(GameMode_)), TeamCount(std::move(TeamCount_)), TeamMemberCount(std::move(TeamMemberCount_)), AddGold(std::move(AddGold_)), Unranked(std::move(Unranked_)), Bronze(std::move(Bronze_)), Silver(std::move(Silver_)), Gold(std::move(Gold_)), Diamond(std::move(Diamond_)), Champion(std::move(Champion_))
+		SBattleRewardMeta(SBattleType&& BattleType_, int32&& AddGold_, int32&& Unranked_, int32&& Bronze_, int32&& Silver_, int32&& Gold_, int32&& Diamond_, int32&& Champion_) : BattleType(std::move(BattleType_)), AddGold(std::move(AddGold_)), Unranked(std::move(Unranked_)), Bronze(std::move(Bronze_)), Silver(std::move(Silver_)), Gold(std::move(Gold_)), Diamond(std::move(Diamond_)), Champion(std::move(Champion_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> GameMode;
-			Stream_ >> TeamCount;
-			Stream_ >> TeamMemberCount;
+			Stream_ >> BattleType;
 			Stream_ >> AddGold;
 			Stream_ >> Unranked;
 			Stream_ >> Bronze;
@@ -1681,9 +1828,7 @@ namespace bb
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["GameMode"] >> GameMode;
-			Value_["TeamCount"] >> TeamCount;
-			Value_["TeamMemberCount"] >> TeamMemberCount;
+			Value_["BattleType"] >> BattleType;
 			Value_["AddGold"] >> AddGold;
 			Value_["Unranked"] >> Unranked;
 			Value_["Bronze"] >> Bronze;
@@ -1694,9 +1839,7 @@ namespace bb
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << GameMode;
-			Stream_ << TeamCount;
-			Stream_ << TeamMemberCount;
+			Stream_ << BattleType;
 			Stream_ << AddGold;
 			Stream_ << Unranked;
 			Stream_ << Bronze;
@@ -1707,9 +1850,7 @@ namespace bb
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["GameMode"] = GameMode;
-			Value_["TeamCount"] = TeamCount;
-			Value_["TeamMemberCount"] = TeamMemberCount;
+			Value_["BattleType"] = BattleType;
 			Value_["AddGold"] = AddGold;
 			Value_["Unranked"] = Unranked;
 			Value_["Bronze"] = Bronze;
@@ -1721,9 +1862,7 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(EGameMode()) + L"," + 
-				GetStdName(TTeamCnt()) + L"," + 
-				GetStdName(int32()) + L"," + 
+				GetStdName(SBattleType()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
@@ -1735,9 +1874,7 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(EGameMode(), L"GameMode") + L"," + 
-				GetMemberName(TTeamCnt(), L"TeamCount") + L"," + 
-				GetMemberName(int32(), L"TeamMemberCount") + L"," + 
+				GetMemberName(SBattleType(), L"BattleType") + L"," + 
 				GetMemberName(int32(), L"AddGold") + L"," + 
 				GetMemberName(int32(), L"Unranked") + L"," + 
 				GetMemberName(int32(), L"Bronze") + L"," + 

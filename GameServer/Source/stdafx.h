@@ -25,6 +25,7 @@
 #include <Rso/GameUtil/Command.h>
 #include <Rso/GameUtil/Match.h>
 #include <Rso/Physics/Physics.h>
+#include <Rso/Unity/Unity.h>
 #include <Rso/Physics/ServerEngine.h>
 
 #include <Rso/MSSQL/BulkCopy.h>
@@ -43,6 +44,7 @@ using namespace util;
 using namespace gameutil;
 using namespace base;
 using namespace physics;
+using namespace unity;
 using namespace mobileutil;
 using namespace net;
 using namespace mssql;
@@ -62,16 +64,6 @@ using namespace mssql;
 #define DLOG(...) __noop(__VA_ARGS__)
 #endif
 
-struct SBattleInfo
-{
-	int32 BattleIndex = -1;
-	int32 BattlePlayerIndex = -1;
-
-	SBattleInfo() {}
-	SBattleInfo(int32 BattleIndex_, int32 BattlePlayerIndex_) :
-		BattleIndex(BattleIndex_), BattlePlayerIndex(BattlePlayerIndex_) {}
-	inline bool InBattle(void) const { return BattleIndex != -1; }
-};
 struct STeamEndInfo
 {
 	int32 Point = 0; // 전투중 얻게되는 포인트
@@ -94,6 +86,8 @@ namespace bb
 	struct SCharacterGradeMeta;
 	struct SGachaRewardMeta;
 	struct SGachaServerMeta;
+
+	bool operator < (const SBattleType& Lhs_, const SBattleType& Rhs_);
 }
 
 struct SReward;
@@ -104,37 +98,37 @@ class CGacha;
 class CGachaNormal;
 class CGachaGuarantee;
 class CQuest;
-class CGameData;
+class CMetaData;
 
-class CPlayer;
 class CUser;
-class CBot;
 class CUsers;
 class CBattlePlayer;
+class CMultiBattlePlayer;
+class CArrowDodgeBattlePlayer;
 class CBattle;
+class CMultiBattle;
 class CArrowDodgeBattle;
-class CSingleBattlePlayer;
-class CSingleBattle;
+class CArrow;
+class CArrowDodgeItem;
+class CArrowDodgeCoin;
+class CArrowDodgeGoldBar;
+class CArrowDodgeShield;
+class CArrowDodgeStamina;
 
 class CEngineGlobal;
-class CEngineGameMode;
-class CEngineGameModeMulti;
-class CEngineGameModeMultiSolo;
-class CEngineGameModeMultiSurvival;
-class CEngineGameModeMultiSurvivalSmall;
-class CEngineGameModeMultiTeam;
-class CEngineGameModeMultiIslandSolo;
-class CEngineGameModeMultiDodgeSolo;
 
 class CEnginePumpControl;
 class CEngineParachuteControl;
+class CBattlePlayerObject;
+
 class CEngineStructure;
 class CEnginePlayer;
-class CPhysicsEngine;
-class CArrowDodgePhysicsEngine;
 
-class CRoom;
+struct SArrowObject;
+struct SItemObject;
 
+using TBattles = CList<unique_ptr<CBattle>>;
+using TBattlesIt = TBattles::iterator;
 using TPoints = vector<int32>;
 struct SBattleReward
 {
@@ -149,21 +143,11 @@ struct SBattleReward
 using TBattleReward = vector<SBattleReward>;
 struct SBattleTypeInfo
 {
-	SBattleType BattleType;
 	TBattleReward BattleReward;
-	unique_ptr<CEngineGameMode> pGameMode;
-
-	SBattleTypeInfo(SBattleType BattleType_, unique_ptr<CEngineGameMode>&& pGameMode_) :
-		pGameMode(std::move(pGameMode_)),
-		BattleType(BattleType_)
-	{
-	}
 };
 using TMatch = unique_ptr<CMatch<TPeerCnt, SBattleType, const SBattleTypeInfo*>>;
-using TMatches = map<EGameMode, TMatch>;
-using TArrowDodgeBattles = map<TUID, CArrowDodgeBattle>;
-using TRooms = map<int, CRoom>;
-using TGameData = unique_ptr<CGameData>;
+using TMatches = map<SBattleType, TMatch>;
+using TMetaData = unique_ptr<CMetaData>;
 using TServer = game::CServer;
 using TSessionsIt = TServer::TSessionsIt;
 using TRecvFuncs = CList<TRecvFunc>;
@@ -178,10 +162,6 @@ using TMonitor = unique_ptr<CProc>;
 using TNet = unique_ptr<TServer>;
 using TNetRanking = unique_ptr<net::CClientKeepConnect>;
 using TOutObject = TServer::TOutObject;
-using TBattles = CList<CBattle>;
-using TSingleBattles = CList<CSingleBattle>;
-
-using TPlayerPtr = shared_ptr<CPlayer>;
 using TUser = shared_ptr<CUser>;
 
 using TBulkCopyConnect = unique_ptr<bulkcopy::CBulkCopy<SConnectDBIn>>;
@@ -196,6 +176,11 @@ using TCouponSP = CStoredProcedure<CKey>;
 using TCouponDB = unique_ptr<TCouponSP>;
 using FQuestDone = function<void(EQuestType QuestType_, int32 Count_)>;
 
+const float c_ScreenWidth = 3.448f;
+const float c_ScreenHeight = 1.8f;
+const float c_HalfScreenWidth = c_ScreenWidth * 0.5f;
+const float c_HalfScreenHeight = c_ScreenHeight * 0.5f;
+
 const TIndex c_Index_Null = -1;
 const t_duration c_TicksForHour = hours(1);
 const milliseconds c_NetworkDelayTimeSync = milliseconds(3000);
@@ -204,8 +189,6 @@ const seconds c_RegenDelay = seconds(2);
 const minutes c_TimeError = minutes(1);
 
 extern TMatches g_Matches;
-extern TArrowDodgeBattles g_ArrowDodgeBattles;
-extern TRooms g_Rooms;
 extern TServer::TDBCallbacks g_BinderDB;
 extern TRecvSsFuncs g_BinderRecvSessionHold;
 extern TRecvFuncs g_BinderRecvM;
@@ -213,7 +196,7 @@ extern TRecvCFuncs g_BinderRecvC;
 extern TRecvSsFuncs g_BinderRecvSs;
 extern TRecvRFuncs g_BinderRecvR;
 extern TReceiptCheck g_ReceiptCheck;
-extern TGameData g_GameData;
+extern TMetaData g_MetaData;
 extern TMonitor g_Monitor;
 extern int32 g_CCUSended;
 extern CKey g_MasterKey;
@@ -229,7 +212,6 @@ extern CPeriod<seconds> g_TimerPeriod;
 extern CPeriod<seconds> g_CCULogPeriod;
 extern seconds g_BattleWaitDuration; // jjj 전투시간 처리
 extern TBattles g_Battles;
-extern TSingleBattles g_SingleBattles;
 extern TBulkCopyConnect g_BulkCopyConnect;
 extern CIPInfo g_IPInfo;
 extern SOption g_Option;
@@ -240,39 +222,26 @@ extern TCouponDB g_pCouponDB;
 #include "Character.h"
 #include "Gacha.h"
 #include "Quest.h"
-#include "GameData.h"
+#include "MetaData.h"
 #include "Network.h"
 #include "NetworkServerToServer.h"
 #include "NetworkRanking.h"
-#include "Player.h"
 #include "User.h"
-#include "Bot.h"
 #include "Users.h"
 #include "DataBase.h"
 #include "BattlePlayer.h"
+#include "MultiBattlePlayer.h"
+#include "ArrowDodgeBattlePlayer.h"
 #include "Battle.h"
+#include "MultiBattle.h"
 #include "ArrowDodgeBattle.h"
-#include "SingleBattlePlayer.h"
-#include "SingleBattle.h"
+#include "Arrow.h"
+#include "ArrowDodgeItem.h"
 
-#include "EngineGameMode.h"
-#include "EngineGameModeMulti.h"
-#include "EngineGameModeMultiSolo.h"
-#include "EngineGameModeMultiSurvival.h"
-#include "EngineGameModeMultiSurvivalSmall.h"
-#include "EngineGameModeMultiTeam.h"
-#include "EngineGameModeMultiTeamSmall.h"
-#include "EngineGameModeMultiIslandSolo.h"
-#include "EngineGameModeMultiDodgeSolo.h"
 #include "EngineGlobal.h"
 #include "EnginePumpControl.h"
 #include "EngineParachuteControl.h"
-#include "EnginePlayer.h"
-#include "PhysicsEngine.h"
-#include "ArrowDodgePhysicsEngine.h"
-
-#include "Room.h"
-
+#include "BattlePlayerObject.h"
 
 template<typename _TType> struct SBinder {};
 template<> struct SBinder<SRetNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Ret); };
@@ -292,38 +261,26 @@ template<> struct SBinder<SPurchaseNetSc> { static const int32 ProtoNum = int32(
 template<> struct SBinder<SDailyRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyReward); };
 template<> struct SBinder<SDailyRewardFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyRewardFail); };
 
-template<> struct SBinder<SSingleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleStart); };
-template<> struct SBinder<SSingleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleEnd); };
 template<> struct SBinder<SIslandStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::IslandStart); };
 template<> struct SBinder<SIslandEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::IslandEnd); };
-template<> struct SBinder<SBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleJoin); };
-template<> struct SBinder<SBattleOutNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleOut); };
-template<> struct SBinder<SBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleBegin); };
-template<> struct SBinder<SBattleMatchingNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleMatching); };
-template<> struct SBinder<SBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleStart); };
-template<> struct SBinder<SBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleEnd); };
 template<> struct SBinder<SBattleSyncNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleSync); };
 template<> struct SBinder<SBattleTouchNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleTouch); };
 template<> struct SBinder<SBattlePushNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattlePush); };
-template<> struct SBinder<SBattleIconNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleIcon); };
-template<> struct SBinder<SBattleLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleLink); };
-template<> struct SBinder<SBattleUnLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleUnLink); };
-template<> struct SBinder<SSingleBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleBattleStart); };
-template<> struct SBinder<SSingleBattleScoreNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleBattleScore); };
-template<> struct SBinder<SSingleBattleIconNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleBattleIcon); };
-template<> struct SBinder<SSingleBattleItemNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleBattleItem); };
-template<> struct SBinder<SSingleBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::SingleBattleEnd); };
+template<> struct SBinder<SMultiBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleJoin); };
+template<> struct SBinder<SMultiBattleOutNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleOut); };
+template<> struct SBinder<SMultiBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleBegin); };
+template<> struct SBinder<SMultiBattleMatchingNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleMatching); };
+template<> struct SBinder<SMultiBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleStart); };
+template<> struct SBinder<SMultiBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleEnd); };
+template<> struct SBinder<SMultiBattleIconNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleIcon); };
+template<> struct SBinder<SMultiBattleLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleLink); };
+template<> struct SBinder<SMultiBattleUnLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleUnLink); };
 
-template<> struct SBinder<SRoomListNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomList); };
-template<> struct SBinder<SRoomChangeNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomChange); };
-template<> struct SBinder<SRoomCreateNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomCreate); };
-template<> struct SBinder<SRoomJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomJoin); };
-template<> struct SBinder<SRoomJoinFailedNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomJoinFailed); };
-template<> struct SBinder<SRoomOutNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomOut); };
-template<> struct SBinder<SRoomOutFailedNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomOutFailed); };
-template<> struct SBinder<SRoomReadyNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomReady); };
-template<> struct SBinder<SRoomChatNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomChat); };
-template<> struct SBinder<SRoomNotiNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RoomNoti); };
+template<> struct SBinder<SArrowDodgeBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleJoin); };
+template<> struct SBinder<SArrowDodgeBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleBegin); };
+template<> struct SBinder<SArrowDodgeBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleStart); };
+template<> struct SBinder<SArrowDodgeBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleEnd); };
+template<> struct SBinder<SArrowDodgeBattleEndForceNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleEndForce); };
 
 template<> struct SBinder<SGachaNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Gacha); };
 template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaX10); };
@@ -366,11 +323,11 @@ template<> struct SDBBinder<SPurchaseDBIn> { static const int32 SpNum = int32(EP
 template<> struct SDBBinder<SDailyRewardDBIn> { static const int32 SpNum = int32(EProtoDB::DailyReward); };
 
 template<> struct SDBBinder<SSelectCharDBIn> { static const int32 SpNum = int32(EProtoDB::SelectChar); };
-template<> struct SDBBinder<SSingleStartDBIn> { static const int32 SpNum = int32(EProtoDB::SingleStart); };
-template<> struct SDBBinder<SSingleEndDBIn> { static const int32 SpNum = int32(EProtoDB::SingleEnd); };
 template<> struct SDBBinder<SIslandStartDBIn> { static const int32 SpNum = int32(EProtoDB::IslandStart); };
 template<> struct SDBBinder<SIslandEndDBIn> { static const int32 SpNum = int32(EProtoDB::IslandEnd); };
 template<> struct SDBBinder<SBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::BattleEnd); };
+template<> struct SDBBinder<SArrowDodgeBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleStart); };
+template<> struct SDBBinder<SArrowDodgeBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleEnd); };
 
 template<> struct SDBBinder<SGachaDBIn> { static const int32 SpNum = int32(EProtoDB::Gacha); };
 template<> struct SDBBinder<SRankRewardDBIn> { static const int32 SpNum = int32(EProtoDB::RankReward); };
@@ -452,16 +409,6 @@ void BroadCast(const _TProto& Proto_)
 		i->second.User->Send(Proto_);
 }
 template<typename _TProto>
-void RoomBroadCast(INT32 RoomIdx_, const _TProto& Proto_)
-{
-	for (auto& i : g_Users.get_users())
-	{
-		if(i->second.User->GetRoomIdx() == RoomIdx_)
-			i->second.User->Send(Proto_);
-
-	}
-}
-template<typename _TProto>
 void BroadCastExcept(const _TProto& Proto_, TUID UID_)
 {
 	for (auto& i : g_Users.get_users())
@@ -507,17 +454,10 @@ void TimersCallback(wstring& Data_);
 SLoginDBIn GetLoginDBIn(TUID UID_, const SUserLoginInfo& Info_);
 ELocale LanguageToLocale(ELanguage Language_);
 
-bool operator < (const SBattleType& Lhs_, const SBattleType& Rhs_);
-
 inline SRect GetCharRect(const SPoint& Pos_)
 {
 	return SRect();
 }
-inline bool IsOverlapped(const SPoint& Player_, const SRect& Target_)
-{
-	return IsOverlappedRectRect(GetCharRect(Player_), Target_) || IsOverlappedRectRect(GetCharRect(SPoint(Player_.X + c_ScreenWidth, Player_.Y)), Target_);
-}
-bool IsOverlapped(const SPoint& Pos0_, const SPoint& Pos1_);
 
 struct SUserCompare
 {
@@ -537,3 +477,4 @@ void LeftRight(SCharacter& Char_, const SCharacterMeta* pMeta_, int8 Dir_);
 void Fly(SCharacter& Char_);
 void Land(SCharacter& Char_, const SCharacterMeta* pMeta_);
 bool IsValidRankingInfo(void);
+int32 GetAllMemberCount(const SBattleType& BattleType_);

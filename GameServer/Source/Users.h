@@ -6,11 +6,10 @@ class CUsers
 	using _TUser = shared_ptr<CUser>;
 	struct _SUserUID
 	{
-		bool InBattle = false;
 		_TUser User;
 
-		_SUserUID(bool InBattle_, _TUser&& User_) :
-			InBattle(InBattle_), User(std::move(User_))
+		_SUserUID(_TUser&& User_) :
+			User(std::move(User_))
 		{
 		}
 	};
@@ -22,8 +21,7 @@ class CUsers
 
 public:
 	void login(TSessionsIt itSession_, const CKey& Key_, const SUserCreateOption& CreateOption_, const CIPInfo::SCountryCodeMinuteOffset& CountryCodeMinuteOffset_);
-	tuple<int, int> logout(TPeerCnt PeerNum_);
-	void battle_begin(TPeerCnt PeerNum_);
+	void logout(TPeerCnt PeerNum_);
 	void battle_end(TUID UID_);
 	CUser* get(TPeerCnt PeerNum_);
 	CUser* get_with_uid(TUID UID_);

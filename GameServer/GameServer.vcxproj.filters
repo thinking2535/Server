@@ -12,9 +12,6 @@
     <ClCompile Include="Source\stdafx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\GameData.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\User.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -31,9 +28,6 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\NetworkServerToServer.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Player.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Battle.cpp">
@@ -57,9 +51,6 @@
     <ClCompile Include="Source\BalloonHitControl.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\PhysicsEngine.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\EngineGlobal.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -69,49 +60,40 @@
     <ClCompile Include="Source\EngineParachuteControl.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EnginePlayer.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\EngineGameMode.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMulti.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiSolo.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiSurvival.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiTeam.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Bot.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\NetworkRanking.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiSurvivalSmall.cpp">
+    <ClCompile Include="Source\ArrowDodgeBattle.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiTeamSmall.cpp">
+    <ClCompile Include="Source\MultiBattle.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SingleBattle.cpp">
+    <ClCompile Include="Source\MultiBattlePlayer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\SingleBattlePlayer.cpp">
+    <ClCompile Include="Source\ArrowDodgeBattlePlayer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiDodgeSolo.cpp">
+    <ClCompile Include="Source\BattlePlayerObject.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\EngineGameModeMultiIslandSolo.cpp">
+    <ClCompile Include="Source\PlayerCollider.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Room.cpp">
+    <ClCompile Include="Source\Arrow.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ArrowDodgeItem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MetaData.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ArrowDodgeArrowMaker.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ArrowDodgeItemMaker.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -120,9 +102,6 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\targetver.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\GameData.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\User.h">
@@ -144,9 +123,6 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\NetworkServerToServer.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Player.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Protocol.h">
@@ -182,9 +158,6 @@
     <ClInclude Include="Source\BalloonHitControl.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\PhysicsEngine.h">
-      <Filter>Source</Filter>
-    </ClInclude>
     <ClInclude Include="Source\EngineGlobal.h">
       <Filter>Source</Filter>
     </ClInclude>
@@ -194,49 +167,40 @@
     <ClInclude Include="Source\EngineParachuteControl.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EnginePlayer.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\EngineGameMode.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMulti.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiSolo.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiSurvival.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiTeam.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Bot.h">
-      <Filter>Source</Filter>
-    </ClInclude>
     <ClInclude Include="Source\NetworkRanking.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiSurvivalSmall.h">
+    <ClInclude Include="Source\ArrowDodgeBattle.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiTeamSmall.h">
+    <ClInclude Include="Source\MultiBattle.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SingleBattle.h">
+    <ClInclude Include="Source\ArrowDodgeBattlePlayer.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SingleBattlePlayer.h">
+    <ClInclude Include="Source\MultiBattlePlayer.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiDodgeSolo.h">
+    <ClInclude Include="Source\BattlePlayerObject.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\EngineGameModeMultiIslandSolo.h">
+    <ClInclude Include="Source\PlayerCollider.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Room.h">
+    <ClInclude Include="Source\Arrow.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ArrowDodgeItem.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MetaData.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ArrowDodgeArrowMaker.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ArrowDodgeItemMaker.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>

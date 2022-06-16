@@ -118,20 +118,6 @@ ERet SelectCharNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->SelectChar(Proto);
 }
-ERet SingleStartNetCs(CUser* User_, CStream& Stream_)
-{
-	SSingleStartNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->SingleStart(Proto);
-}
-ERet SingleEndNetCs(CUser* User_, CStream& Stream_)
-{
-	SSingleEndNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->SingleEnd(Proto);
-}
 ERet IslandStartNetCs(CUser* User_, CStream& Stream_)
 {
 	SIslandStartNetCs Proto;
@@ -145,49 +131,6 @@ ERet IslandEndNetCs(CUser* User_, CStream& Stream_)
 	Stream_ >> Proto;
 
 	return User_->IslandEnd(Proto);
-}
-ERet BattleJoinNetCs(CUser* User_, CStream& Stream_)
-{
-	SBattleJoinNetCs Proto;
-	Stream_ >> Proto;
-
-	auto it = g_Matches.find(Proto.BattleType.GameMode);
-	if (it == g_Matches.end())
-		return ERet::InvalidBattleType;
-
-	auto Ret = User_->BattleJoin();
-	if (Ret != ERet::Ok)
-		return Ret;
-
-	try
-	{
-		if (!it->second->insert((double)User_->GetPoint(), User_->Key().PeerNum))
-			throw ERet::MatchInsertFail;
-	}
-	catch (const ERet Ret_)
-	{
-		User_->BattleOut();
-		return Ret_;
-	}
-
-	return ERet::Ok;
-}
-ERet BattleOutNetCs(CUser* User_, CStream& Stream_)
-{
-	SBattleOutNetCs Proto;
-	Stream_ >> Proto;
-
-	auto Ret = User_->BattleOut();
-	if (Ret == ERet::AlreadyInBattle)
-		return ERet::Ok;
-
-	if (Ret != ERet::Ok)
-		return Ret;
-
-	for (auto& i : g_Matches)
-		i.second->erase(User_->Key().PeerNum);
-
-	return ERet::Ok;
 }
 
 ERet BattleTouchNetCs(CUser* User_, CStream& Stream_)
@@ -204,33 +147,71 @@ ERet BattlePushNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->BattlePush(Proto);
 }
-ERet BattleIconNetCs(CUser* User_, CStream& Stream_)
+
+ERet MultiBattleJoinNetCs(CUser* User_, CStream& Stream_)
 {
-	SBattleIconNetCs Proto;
+	SMultiBattleJoinNetCs Proto;
 	Stream_ >> Proto;
 
-	return User_->BattleIcon(Proto);
+	auto it = g_Matches.find(Proto.BattleType);
+	if (it == g_Matches.end())
+		return ERet::InvalidBattleType;
+
+	auto Ret = User_->MultiBattleJoin();
+	if (Ret != ERet::Ok)
+		return Ret;
+
+	try
+	{
+		if (!it->second->insert((double)User_->GetPoint(), User_->Key().PeerNum))
+			throw ERet::MatchInsertFail;
+	}
+	catch (const ERet Ret_)
+	{
+		User_->MultiBattleOut();
+		return Ret_;
+	}
+
+	return ERet::Ok;
 }
-ERet SingleBattleIconNetCs(CUser* User_, CStream& Stream_)
+ERet MultiBattleOutNetCs(CUser* User_, CStream& Stream_)
 {
-	SSingleBattleIconNetCs Proto;
+	SMultiBattleOutNetCs Proto;
 	Stream_ >> Proto;
 
-	return User_->SingleBattleIcon(Proto);
+	auto Ret = User_->MultiBattleOut();
+	if (Ret == ERet::AlreadyInBattle)
+		return ERet::Ok;
+
+	if (Ret != ERet::Ok)
+		return Ret;
+
+	for (auto& i : g_Matches)
+		i.second->erase(User_->Key().PeerNum);
+
+	return ERet::Ok;
 }
-ERet SingleBattleScoreNetCs(CUser* User_, CStream& Stream_)
+ERet MultiBattleIconNetCs(CUser* User_, CStream& Stream_)
 {
-	SSingleBattleScoreNetCs Proto;
+	SMultiBattleIconNetCs Proto;
 	Stream_ >> Proto;
 
-	return User_->SingleBattleScore(Proto);
+	return User_->MultiBattleIcon(Proto);
 }
-ERet SingleBattleItemNetCs(CUser* User_, CStream& Stream_)
+
+ERet ArrowDodgeBattleJoinNetCs(CUser* User_, CStream& Stream_)
 {
-	SSingleBattleItemNetCs Proto;
+	SArrowDodgeBattleJoinNetCs Proto;
 	Stream_ >> Proto;
 
-	return User_->SingleBattleItem(Proto);
+	return User_->ArrowDodgeBattleJoin();
+}
+ERet ArrowDodgeBattleEndForceNetCs(CUser* User_, CStream& Stream_)
+{
+	SArrowDodgeBattleEndForceNetCs Proto;
+	Stream_ >> Proto;
+
+	return User_->ArrowDodgeBattleEndForce(Proto);
 }
 
 ERet GachaNetCs(CUser* User_, CStream& Stream_)
@@ -326,54 +307,4 @@ void ReceiptAccessTokenNetMs(const CKey& /*Key_*/, CStream& Stream_)
 	Stream_ >> Proto;
 
 	g_ReceiptCheck->SetAccessToken(Proto.Token);
-}
-
-ERet RoomListNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomListNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomList(Proto);
-}
-ERet RoomCreateNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomCreateNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomCreate(Proto);
-}
-ERet RoomJoinNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomJoinNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomJoin(Proto);
-}
-ERet RoomOutNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomOutNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomOut(Proto);
-}
-ERet RoomReadyNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomReadyNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomReady(Proto);
-}
-ERet RoomChatNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomChatNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomChat(Proto);
-}
-ERet RoomNotiNetCs(CUser* User_, CStream& Stream_)
-{
-	SRoomNotiNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->RoomNoti(Proto);
 }
