@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Rso/GameUtil/FixedRandom.h>
+#include <Rso/GameUtil/FixedRandom64.h>
 
 using namespace std;
 using namespace rso;
@@ -38,7 +38,7 @@ private:
 
     static SRectCollider2D _GetArrowCollider2D(const SPoint& Velocity_);
 
-    CFixedRandom& _FixedRandom;
+    CFixedRandom64& _FixedRandom;
     int64 _NextDownArrowTick = 0;
     int64 _NextLeftArrowTick = _FirstLeftArrowTick;
     int64 _NextRightArrowTick = _FirstRightArrowTick;
@@ -46,15 +46,11 @@ public:
     int64 GetNextDownArrowTick(void) const { return _NextDownArrowTick; }
     int64 GetNextLeftArrowTick(void) const { return _NextLeftArrowTick; }
     int64 GetNextRightArrowTick(void) const { return _NextRightArrowTick; }
-    CArrowDodgeArrowMaker(CFixedRandom& FixedRandom_);
+    CArrowDodgeArrowMaker(CFixedRandom64& FixedRandom_);
     void FixedUpdate(int64 Tick_, function<void(const shared_ptr<CArrow>& pArrow_)> fAddArrow_);
     static shared_ptr<CArrow> MakeArrow(const STransform& Transform_, const SPoint& Velocity_);
     inline uint64 GetRandomSeed(void) const
     {
         return _FixedRandom.GetSeed();
-    }
-    inline uint64 GetRandomCounter(void) const
-    {
-        return _FixedRandom.GetCounter();
     }
 };

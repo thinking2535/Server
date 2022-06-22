@@ -50,9 +50,7 @@ using TMonitor = unique_ptr<CProc>;
 using TNet = unique_ptr<net::CServer>;
 using TNetBalance = unique_ptr<balance::CServer>;
 using TTimers = CTimers<wstring>;
-using TRanking = CMultiIndexMap<SRankingUserCore, unique_index<TUID>, non_unique_index<__int32, greater<__int32>>>; // UID, Point
-using TRankingSingle = CMultiIndexMap<SRankingUserSingleCore, unique_index<TUID>, non_unique_index<__int32, greater<__int32>>>; // UID, Point
-using TRankingIsland = CMultiIndexMap<SRankingUserIslandCore, unique_index<TUID>, non_unique_index<__int32, greater<__int32>>>; // UID, Point
+using TRanking = CMultiIndexMap<SRankingUser, unique_index<TUID>, non_unique_index<__int32, greater<__int32>>>; // UID, Point
 using TDB = unique_ptr<CStoredProcedure<int>>;
 using TOutObject = TDB::element_type::SOutObject;
 using TRecvCFunc = function<void(const CKey&, CStream&)>;
@@ -71,8 +69,8 @@ extern TNetBalance g_NetBalance;
 extern __int32 g_MaxList;
 extern SRankingConfigDB g_RankingConfig;
 extern TRanking g_Ranking;
-extern TRankingSingle g_RankingSingle;
-extern TRankingIsland g_RankingIsland;
+extern TRanking g_RankingSingle;
+extern TRanking g_RankingIsland;
 extern TRankingRewards g_Rewards;
 extern TRankingRewards g_RewardsSingle;
 extern TRankingRewards g_RewardsIsland;

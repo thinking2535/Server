@@ -67,7 +67,7 @@ void UpdateSingleNetSr(const CKey& Key_, CStream& Stream_)
 	}
 
 	g_RankingSingle.emplace(Proto.UserSingle, Proto.UserSingle.UID, Proto.UserSingle.Point);
-	DBPush(SRankingUpdateSingleDBIn(TRankingUserSingles{ Proto.UserSingle }, std::move(Deleted)));
+	DBPush(SRankingUpdateSingleDBIn(TRankingUsers{ Proto.UserSingle }, std::move(Deleted)));
 }
 void UpdateIslandNetSr(const CKey& Key_, CStream& Stream_)
 {
@@ -98,5 +98,5 @@ void UpdateIslandNetSr(const CKey& Key_, CStream& Stream_)
 	}
 
 	g_RankingIsland.emplace(Proto.UserIsland, Proto.UserIsland.UID, Proto.UserIsland.Point);
-	DBPush(SRankingUpdateIslandDBIn(TRankingUserIslands{ Proto.UserIsland }, std::move(Deleted)));
+	DBPush(SRankingUpdateIslandDBIn(TRankingUsers{ Proto.UserIsland }, std::move(Deleted)));
 }

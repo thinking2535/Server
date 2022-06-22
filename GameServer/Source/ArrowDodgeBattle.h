@@ -28,7 +28,7 @@ class CArrowDodgeBattle : public CBattle
     shared_ptr<CObject2D> _pRootObject;
     shared_ptr<CArrowDodgeBattlePlayer> _pArrowDodgeBattlePlayer;
 
-    CFixedRandom _FixedRandom{ (uint64)((((uint64)rand()) << 32) + rand()), 0 };
+    CFixedRandom64 _FixedRandom{ (uint64)system_clock::now().time_since_epoch().count()};
 
     CArrowDodgeArrowMaker _ArrowMaker{ _FixedRandom };
     CArrowDodgeItemMaker _ItemMaker{ _FixedRandom };
@@ -36,15 +36,12 @@ class CArrowDodgeBattle : public CBattle
     CList<SItemObject> _ItemIts;
     TTime _EndTime = (std::chrono::time_point<std::chrono::system_clock>::max)();
 
-public:
-    bool ForceEnd = false;
-
 protected:
     void _AddBattlePlayer(const shared_ptr<CArrowDodgeBattlePlayer>& pBattlePlayer_);
 private:
     void _RegenCallback(int32 PlayerIndex_);
-    void _HitArrowCallback(const shared_ptr<CArrow>& pArrow_);
-    void _GetItemCallback(const shared_ptr<CArrowDodgeItem>& pItem_);
+    void _HitArrowCallback(const shared_ptr<CArrow>& pArrow_, bool IsDefended_);
+    void _GetItemCallback(int64 Tick_, const shared_ptr<CArrowDodgeItem>& pItem_);
 public:
     CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_);
     virtual ~CArrowDodgeBattle();
@@ -55,6 +52,7 @@ public:
     void OffLine(int32 PlayerIndex_) override;
 private:
     void _FixedUpdate(int64 Tick_);
+    void _UpdateScore(int32 AddedPoint_);
     void _AddArrow(const shared_ptr<CArrow>& pArrow_);
     void _RemoveArrow(CList<SArrowObject>::iterator ArrowObjectIt_);
     void _AddItem(const shared_ptr<CArrowDodgeItem>& pItem_);

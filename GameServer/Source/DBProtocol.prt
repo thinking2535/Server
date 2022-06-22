@@ -229,7 +229,7 @@ namespace bb
 		TUID UID
 		TResources Resources
 		int32 PointBest
-		int32 SecondBest
+		int64 BestTick
 		TDoneQuestDBs DoneQuests
 	}
 

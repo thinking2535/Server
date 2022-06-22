@@ -24,17 +24,6 @@ CMetaData::CMetaData() :
 
 		ConfigMeta = ConfigMetas.front();
 
-		// Single
-		Stream.LoadFile(L"../../MetaData/Single.bin");
-		list<SSingleMeta> SingleMetas;
-		Stream >> SingleMetas;
-
-		if (SingleMetas.empty())
-			THROWEX();
-
-		SingleMeta = SingleMetas.front();
-		ASSERTIONA(SingleMeta.PlayCountMax > 0 && SingleMeta.ChargeCostGold > 0 && SingleMeta.ScoreFactorWave > 0 && SingleMeta.ScoreFactorTime > 0 && SingleMeta.ScoreFactorGold, L"Invalid SingleMeta");
-
 		// Island
 		Stream.LoadFile(L"../../MetaData/Island.bin");
 		list<SIslandMeta> IslandMetas;
@@ -235,7 +224,7 @@ CMetaData::CMetaData() :
 
 		for (auto& i : RankTierMetas)
 		{
-			auto ib = _RankTierMetas.emplace(i.MinPoint, i);
+			auto ib = _RankTierMetas.emplace(i.MaxPoint, i);
 			if (!ib.second)
 				THROWEX();
 		}
@@ -342,6 +331,59 @@ CMetaData::CMetaData() :
 			auto ib = _BattleTypeInfos.emplace(i.BattleType, SBattleTypeInfo());
 			ib.first->second.BattleReward.emplace_back(SBattleReward(i.AddGold, TPoints{ i.Unranked, i.Bronze, i.Silver, i.Gold, i.Diamond, i.Champion }));
 			ASSERTION(ib.first->second.BattleReward.back().Points.size() == (size_t)ERank::Max);
+		}
+
+		// Battle /////////////////////////
+		{
+			// ArrowDodge ///////////////////////////////////////
+			list<SArrowDodgeMeta> ArrowDodges;
+			Stream.LoadFile(L"../../MetaData/ArrowDodge.bin");
+			Stream >> ArrowDodges;
+
+			ASSERTION(!ArrowDodges.empty());
+			ArrowDodgeMeta = ArrowDodges.front();
+
+
+			// ArrowDodgeItem ///////////////////////////////////
+			vector<SArrowDodgeItemMeta> ArrowDodgeItemMetas;
+			Stream.LoadFile(L"../../MetaData/ArrowDodgeItem.bin");
+			Stream >> ArrowDodgeItemMetas;
+
+			ASSERTION(!ArrowDodgeItemMetas.empty());
+
+			uint64 WeightSum = 0;
+			for (auto& i : ArrowDodgeItemMetas)
+			{
+				int32 ItemNumber;
+				switch (i.ItemType)
+				{
+				case EArrowDodgeItemType::Coin:
+				{
+					ItemNumber = CEngineGlobal::c_CoinNumber;
+					break;
+				}
+				case EArrowDodgeItemType::GoldBar:
+				{
+					ItemNumber = CEngineGlobal::c_GoldBarNumber;
+					break;
+				}
+				case EArrowDodgeItemType::Shield:
+				{
+					ItemNumber = CEngineGlobal::c_ShieldNumber;
+					break;
+				}
+				case EArrowDodgeItemType::Stamina:
+				{
+					ItemNumber = CEngineGlobal::c_StaminaNumber;
+					break;
+				}
+				default:
+					throw exception();
+				}
+
+				WeightSum += i.Weight;
+				_ArrowItemSelector.emplace(WeightSum, ItemNumber);
+			}
 		}
 
 		// Map /////////////////////////////////////////////

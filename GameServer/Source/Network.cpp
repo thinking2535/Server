@@ -206,12 +206,12 @@ ERet ArrowDodgeBattleJoinNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->ArrowDodgeBattleJoin();
 }
-ERet ArrowDodgeBattleEndForceNetCs(CUser* User_, CStream& Stream_)
+ERet ArrowDodgeBattleEndNetCs(CUser* User_, CStream& Stream_)
 {
-	SArrowDodgeBattleEndForceNetCs Proto;
+	SArrowDodgeBattleEndNetCs Proto;
 	Stream_ >> Proto;
 
-	return User_->ArrowDodgeBattleEndForce(Proto);
+	return User_->ArrowDodgeBattleEnd(Proto);
 }
 
 ERet GachaNetCs(CUser* User_, CStream& Stream_)

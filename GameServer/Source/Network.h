@@ -23,7 +23,7 @@ ERet MultiBattleOutNetCs(CUser* User_, CStream& Stream_);
 ERet MultiBattleIconNetCs(CUser* User_, CStream& Stream_);
 
 ERet ArrowDodgeBattleJoinNetCs(CUser* User_, CStream& Stream_);
-ERet ArrowDodgeBattleEndForceNetCs(CUser* User_, CStream& Stream_);
+ERet ArrowDodgeBattleEndNetCs(CUser* User_, CStream& Stream_);
 
 ERet GachaNetCs(CUser* User_, CStream& Stream_);
 ERet GachaX10NetCs(CUser* User_, CStream& Stream_);

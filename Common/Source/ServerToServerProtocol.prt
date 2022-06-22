@@ -26,11 +26,11 @@ namespace bb
 	}
 	struct SRankingUpdateSingleNetSr
 	{
-		SRankingUserSingle UserSingle
+		SRankingUser UserSingle
 	}
 	struct SRankingUpdateIslandNetSr
 	{
-		SRankingUserIsland UserIsland
+		SRankingUser UserIsland
 	}
 	struct SRankingRankingInfoNetRs
 	{

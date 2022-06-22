@@ -14,7 +14,7 @@ public:
         CRectCollider2D(Transform_, Number_, Collider_)
     {
     }
-    virtual void Proc(int64 Tick_, CArrowDodgeBattlePlayer* pPlayer_) const = 0;
+    virtual void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const = 0;
 };
 class CArrowDodgeCoin : public CArrowDodgeItem
 {
@@ -23,9 +23,9 @@ public:
         CArrowDodgeItem(GetDefaultTransform(LocalPosition_), CEngineGlobal::c_CoinNumber, g_MetaData->MapMeta.ArrowDodgeMapInfo.Coin.Collider)
     {
     }
-    void Proc(int64 Tick_, CArrowDodgeBattlePlayer* pPlayer_) const override
+    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
-        pPlayer_->SetCoinItem(Tick_, this);
+        pPlayer_->SetCoinItem(this);
     }
 };
 class CArrowDodgeGoldBar : public CArrowDodgeItem
@@ -35,9 +35,9 @@ public:
         CArrowDodgeItem(GetDefaultTransform(LocalPosition_), CEngineGlobal::c_GoldBarNumber, g_MetaData->MapMeta.ArrowDodgeMapInfo.GoldBar.Collider)
     {
     }
-    void Proc(int64 Tick_, CArrowDodgeBattlePlayer* pPlayer_) const override
+    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
-        pPlayer_->SetGoldBarItem(Tick_, this);
+        pPlayer_->SetGoldBarItem(this);
     }
 };
 class CArrowDodgeShield : public CArrowDodgeItem
@@ -47,7 +47,7 @@ public:
         CArrowDodgeItem(GetDefaultTransform(LocalPosition_), CEngineGlobal::c_ShieldNumber, g_MetaData->MapMeta.ArrowDodgeMapInfo.Shield.Collider)
     {
     }
-    void Proc(int64 Tick_, CArrowDodgeBattlePlayer* pPlayer_) const override
+    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
         pPlayer_->SetShieldItem(Tick_, this);
     }
@@ -59,7 +59,7 @@ public:
         CArrowDodgeItem(GetDefaultTransform(LocalPosition_), CEngineGlobal::c_StaminaNumber, g_MetaData->MapMeta.ArrowDodgeMapInfo.Stamina.Collider)
     {
     }
-    void Proc(int64 Tick_, CArrowDodgeBattlePlayer* pPlayer_) const override
+    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
         pPlayer_->SetStaminaItem(Tick_, this);
     }

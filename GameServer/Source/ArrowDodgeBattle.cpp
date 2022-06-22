@@ -28,16 +28,20 @@ void CArrowDodgeBattle::_AddBattlePlayer(const shared_ptr<CArrowDodgeBattlePlaye
 void CArrowDodgeBattle::_RegenCallback(int32 PlayerIndex_)
 {
 }
-void CArrowDodgeBattle::_HitArrowCallback(const shared_ptr<CArrow>& pArrow_)
+void CArrowDodgeBattle::_HitArrowCallback(const shared_ptr<CArrow>& pArrow_, bool IsDefended_)
 {
 	_RemoveArrow(pArrow_->Iterator);
 
-	if (!_pArrowDodgeBattlePlayer->IsAlive())
+	if (IsDefended_)
+		_UpdateScore(g_MetaData->ArrowDodgeMeta.ArrowGetPoint);
+	else if (!_pArrowDodgeBattlePlayer->IsAlive())
 		_EndTime = system_clock::now() + seconds(2);
 }
-void CArrowDodgeBattle::_GetItemCallback(const shared_ptr<CArrowDodgeItem>& pItem_)
+void CArrowDodgeBattle::_GetItemCallback(int64 Tick_, const shared_ptr<CArrowDodgeItem>& pItem_)
 {
 	_RemoveItem(pItem_->Iterator);
+	_UpdateScore(g_MetaData->ArrowDodgeMeta.ItemGetPoint);
+	pItem_->Proc(Tick_, _pArrowDodgeBattlePlayer, this);
 }
 CArrowDodgeBattle::CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_) :
 	CBattle(
@@ -81,8 +85,8 @@ CArrowDodgeBattle::CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_) :
 		pCharacter,
 		itBattle_,
 		pUser_,
-		std::bind(&CArrowDodgeBattle::_HitArrowCallback, this, _1),
-		std::bind(&CArrowDodgeBattle::_GetItemCallback, this, _1),
+		std::bind(&CArrowDodgeBattle::_HitArrowCallback, this, _1, _2),
+		std::bind(&CArrowDodgeBattle::_GetItemCallback, this, _1, _2),
 		this);
 
 	_pArrowDodgeBattlePlayer->pPlayerObject->SetParent(_pRootObject);
@@ -94,7 +98,7 @@ CArrowDodgeBattle::CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_) :
 }
 CArrowDodgeBattle::~CArrowDodgeBattle()
 {
-	_pArrowDodgeBattlePlayer->BattleEnd(ForceEnd);
+	_pArrowDodgeBattlePlayer->BattleEnd(_pEngine->GetTick());
 }
 void CArrowDodgeBattle::_SyncMessage(int64 Tick_)
 {
@@ -117,7 +121,6 @@ SArrowDodgeBattleBeginNetSc CArrowDodgeBattle::GetArrowDodgeBattleBeginNetSc(voi
 		_pArrowDodgeBattlePlayer->GetCharacterNet(),
 		_pEngine->GetTick(),
 		_ArrowMaker.GetRandomSeed(),
-		_ArrowMaker.GetRandomCounter(),
 		_ArrowMaker.GetNextDownArrowTick(),
 		_ArrowMaker.GetNextLeftArrowTick(),
 		_ArrowMaker.GetNextRightArrowTick(),
@@ -157,10 +160,13 @@ void CArrowDodgeBattle::OffLine(int32 PlayerIndex_)
 }
 void CArrowDodgeBattle::_FixedUpdate(int64 Tick_)
 {
+	if (_pArrowDodgeBattlePlayer->IsAlive())
+		_pArrowDodgeBattlePlayer->BattleInfo.Tick = Tick_;
+
 	_ArrowMaker.FixedUpdate(Tick_, std::bind(&CArrowDodgeBattle::_AddArrow, this, _1));
 
-	//if (_ItemIts.size() < _MaxItemCount)
-	//	_ItemMaker.FixedUpdate(Tick_, std::bind(&CArrowDodgeBattle::_AddItem, this, _1));
+	if (_ItemIts.size() < _MaxItemCount)
+		_ItemMaker.FixedUpdate(Tick_, std::bind(&CArrowDodgeBattle::_AddItem, this, _1));
 
 	for (auto it = _ArrowIts.begin(); it;)
 	{
@@ -170,9 +176,15 @@ void CArrowDodgeBattle::_FixedUpdate(int64 Tick_)
 		if (!itCheck->pArrow->FixedUpdate())
 		{
 			_RemoveArrow(itCheck);
-			_pArrowDodgeBattlePlayer->BattleInfo.Point += 10;
+
+			if (_pArrowDodgeBattlePlayer->IsAlive())
+				_UpdateScore(g_MetaData->ArrowDodgeMeta.ArrowDodgePoint);
 		}
 	}
+}
+void CArrowDodgeBattle::_UpdateScore(int32 AddedPoint_)
+{
+	_pArrowDodgeBattlePlayer->BattleInfo.Point += AddedPoint_;
 }
 void CArrowDodgeBattle::_AddArrow(const shared_ptr<CArrow>& pArrow_)
 {

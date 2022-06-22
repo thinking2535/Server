@@ -55,15 +55,15 @@ namespace bb
 	}
 	struct SRankingLoadDBOut
 	{
-		list<SRankingUser> RankingUsers
+		list<SRankingUser> Users
 	}
 	struct SRankingLoadSingleDBOut
 	{
-		list<SRankingUserSingle> RankingUserSingles
+		list<SRankingUser> Users
 	}
 	struct SRankingLoadIslandDBOut
 	{
-		list<SRankingUserIsland> RankingUserIslands
+		list<SRankingUser> Users
 	}
 	struct SRewardLoadDBIn
 	{
@@ -83,12 +83,12 @@ namespace bb
 	}
 	struct SRankingUpdateSingleDBIn
 	{
-		TRankingUserSingles Merged
+		TRankingUsers Merged
 		list<TUID> Deleted
 	}
 	struct SRankingUpdateIslandDBIn
 	{
-		TRankingUserIslands Merged
+		TRankingUsers Merged
 		list<TUID> Deleted
 	}
 }

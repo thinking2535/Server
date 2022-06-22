@@ -16,8 +16,8 @@ TNetBalance g_NetBalance; // for Ranking Balance Group
 __int32 g_MaxList = 0;
 SRankingConfigDB g_RankingConfig;
 TRanking g_Ranking;
-TRankingSingle g_RankingSingle;
-TRankingIsland g_RankingIsland;
+TRanking g_RankingSingle;
+TRanking g_RankingIsland;
 TRankingRewards g_Rewards;
 TRankingRewards g_RewardsSingle;
 TRankingRewards g_RewardsIsland;

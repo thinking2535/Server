@@ -344,31 +344,31 @@ namespace bb
 	};
 	struct SRankingLoadDBOut : public SProto
 	{
-		list<SRankingUser> RankingUsers{};
+		list<SRankingUser> Users{};
 		SRankingLoadDBOut()
 		{
 		}
-		SRankingLoadDBOut(const list<SRankingUser>& RankingUsers_) : RankingUsers(RankingUsers_)
+		SRankingLoadDBOut(const list<SRankingUser>& Users_) : Users(Users_)
 		{
 		}
-		SRankingLoadDBOut(list<SRankingUser>&& RankingUsers_) : RankingUsers(std::move(RankingUsers_))
+		SRankingLoadDBOut(list<SRankingUser>&& Users_) : Users(std::move(Users_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> RankingUsers;
+			Stream_ >> Users;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["RankingUsers"] >> RankingUsers;
+			Value_["Users"] >> Users;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << RankingUsers;
+			Stream_ << Users;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["RankingUsers"] = RankingUsers;
+			Value_["Users"] = Users;
 		}
 		static wstring StdName(void)
 		{
@@ -378,85 +378,85 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(list<SRankingUser>(), L"RankingUsers");
+				GetMemberName(list<SRankingUser>(), L"Users");
 		}
 	};
 	struct SRankingLoadSingleDBOut : public SProto
 	{
-		list<SRankingUserSingle> RankingUserSingles{};
+		list<SRankingUser> Users{};
 		SRankingLoadSingleDBOut()
 		{
 		}
-		SRankingLoadSingleDBOut(const list<SRankingUserSingle>& RankingUserSingles_) : RankingUserSingles(RankingUserSingles_)
+		SRankingLoadSingleDBOut(const list<SRankingUser>& Users_) : Users(Users_)
 		{
 		}
-		SRankingLoadSingleDBOut(list<SRankingUserSingle>&& RankingUserSingles_) : RankingUserSingles(std::move(RankingUserSingles_))
+		SRankingLoadSingleDBOut(list<SRankingUser>&& Users_) : Users(std::move(Users_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> RankingUserSingles;
+			Stream_ >> Users;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["RankingUserSingles"] >> RankingUserSingles;
+			Value_["Users"] >> Users;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << RankingUserSingles;
+			Stream_ << Users;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["RankingUserSingles"] = RankingUserSingles;
+			Value_["Users"] = Users;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(list<SRankingUserSingle>());
+				GetStdName(list<SRankingUser>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(list<SRankingUserSingle>(), L"RankingUserSingles");
+				GetMemberName(list<SRankingUser>(), L"Users");
 		}
 	};
 	struct SRankingLoadIslandDBOut : public SProto
 	{
-		list<SRankingUserIsland> RankingUserIslands{};
+		list<SRankingUser> Users{};
 		SRankingLoadIslandDBOut()
 		{
 		}
-		SRankingLoadIslandDBOut(const list<SRankingUserIsland>& RankingUserIslands_) : RankingUserIslands(RankingUserIslands_)
+		SRankingLoadIslandDBOut(const list<SRankingUser>& Users_) : Users(Users_)
 		{
 		}
-		SRankingLoadIslandDBOut(list<SRankingUserIsland>&& RankingUserIslands_) : RankingUserIslands(std::move(RankingUserIslands_))
+		SRankingLoadIslandDBOut(list<SRankingUser>&& Users_) : Users(std::move(Users_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> RankingUserIslands;
+			Stream_ >> Users;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["RankingUserIslands"] >> RankingUserIslands;
+			Value_["Users"] >> Users;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << RankingUserIslands;
+			Stream_ << Users;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["RankingUserIslands"] = RankingUserIslands;
+			Value_["Users"] = Users;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(list<SRankingUserIsland>());
+				GetStdName(list<SRankingUser>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(list<SRankingUserIsland>(), L"RankingUserIslands");
+				GetMemberName(list<SRankingUser>(), L"Users");
 		}
 	};
 	struct SRewardLoadDBIn : public SProto
@@ -592,15 +592,15 @@ namespace bb
 	};
 	struct SRankingUpdateSingleDBIn : public SProto
 	{
-		TRankingUserSingles Merged{};
+		TRankingUsers Merged{};
 		list<TUID> Deleted{};
 		SRankingUpdateSingleDBIn()
 		{
 		}
-		SRankingUpdateSingleDBIn(const TRankingUserSingles& Merged_, const list<TUID>& Deleted_) : Merged(Merged_), Deleted(Deleted_)
+		SRankingUpdateSingleDBIn(const TRankingUsers& Merged_, const list<TUID>& Deleted_) : Merged(Merged_), Deleted(Deleted_)
 		{
 		}
-		SRankingUpdateSingleDBIn(TRankingUserSingles&& Merged_, list<TUID>&& Deleted_) : Merged(std::move(Merged_)), Deleted(std::move(Deleted_))
+		SRankingUpdateSingleDBIn(TRankingUsers&& Merged_, list<TUID>&& Deleted_) : Merged(std::move(Merged_)), Deleted(std::move(Deleted_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -626,27 +626,27 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(TRankingUserSingles()) + L"," + 
+				GetStdName(TRankingUsers()) + L"," + 
 				GetStdName(list<TUID>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(TRankingUserSingles(), L"Merged") + L"," + 
+				GetMemberName(TRankingUsers(), L"Merged") + L"," + 
 				GetMemberName(list<TUID>(), L"Deleted");
 		}
 	};
 	struct SRankingUpdateIslandDBIn : public SProto
 	{
-		TRankingUserIslands Merged{};
+		TRankingUsers Merged{};
 		list<TUID> Deleted{};
 		SRankingUpdateIslandDBIn()
 		{
 		}
-		SRankingUpdateIslandDBIn(const TRankingUserIslands& Merged_, const list<TUID>& Deleted_) : Merged(Merged_), Deleted(Deleted_)
+		SRankingUpdateIslandDBIn(const TRankingUsers& Merged_, const list<TUID>& Deleted_) : Merged(Merged_), Deleted(Deleted_)
 		{
 		}
-		SRankingUpdateIslandDBIn(TRankingUserIslands&& Merged_, list<TUID>&& Deleted_) : Merged(std::move(Merged_)), Deleted(std::move(Deleted_))
+		SRankingUpdateIslandDBIn(TRankingUsers&& Merged_, list<TUID>&& Deleted_) : Merged(std::move(Merged_)), Deleted(std::move(Deleted_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -672,13 +672,13 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(TRankingUserIslands()) + L"," + 
+				GetStdName(TRankingUsers()) + L"," + 
 				GetStdName(list<TUID>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(TRankingUserIslands(), L"Merged") + L"," + 
+				GetMemberName(TRankingUsers(), L"Merged") + L"," + 
 				GetMemberName(list<TUID>(), L"Deleted");
 		}
 	};

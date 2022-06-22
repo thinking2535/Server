@@ -280,7 +280,6 @@ template<> struct SBinder<SArrowDodgeBattleJoinNetSc> { static const int32 Proto
 template<> struct SBinder<SArrowDodgeBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleBegin); };
 template<> struct SBinder<SArrowDodgeBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleStart); };
 template<> struct SBinder<SArrowDodgeBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleEnd); };
-template<> struct SBinder<SArrowDodgeBattleEndForceNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleEndForce); };
 
 template<> struct SBinder<SGachaNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Gacha); };
 template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaX10); };

@@ -161,15 +161,6 @@ namespace bb
 		SArrowDodgeMapInfo ArrowDodgeMapInfo
 		vector<SFlyAwayMap> FlyAwayMaps
 	}
-	struct SSingleMeta
-	{
-		int32 PlayCountMax
-		TResource ChargeCostGold
-		int32 ScoreFactorWave
-		int32 ScoreFactorTime
-		int32 ScoreFactorGold
-		int32 RefreshDurationMinute
-	}
 	struct SIslandMeta
 	{
 		int32 PlayCountMax
@@ -216,7 +207,7 @@ namespace bb
 	{
 		ERank Rank
 		int32 Tier
-		int32 MinPoint
+		int32 MaxPoint
 	}
 	struct SRankRewardMeta
 	{
@@ -249,6 +240,31 @@ namespace bb
 		int32 Gold
 		int32 Diamond
 		int32 Champion
+	}
+	enum class EArrowDodgeItemType
+	{
+		Coin
+		GoldBar
+		Shield
+		Stamina
+		Max
+		Null
+	}
+	struct SArrowDodgeMeta
+	{
+		int32 ArrowDodgePoint
+		int32 ArrowGetPoint
+		int32 ItemGetPoint
+		int64 ItemDurationTick
+		int64 ItemRegenPeriodTick
+		int32 PlayCountMax
+		TResource ChargeCostGold
+		int32 RefreshDurationMinute
+	}
+	struct SArrowDodgeItemMeta
+	{
+		EArrowDodgeItemType ItemType
+		uint64 Weight
 	}
 
 	struct SCouponMeta

@@ -1132,80 +1132,6 @@ namespace bb
 				GetMemberName(vector<SFlyAwayMap>(), L"FlyAwayMaps");
 		}
 	};
-	struct SSingleMeta : public SProto
-	{
-		int32 PlayCountMax{};
-		TResource ChargeCostGold{};
-		int32 ScoreFactorWave{};
-		int32 ScoreFactorTime{};
-		int32 ScoreFactorGold{};
-		int32 RefreshDurationMinute{};
-		SSingleMeta()
-		{
-		}
-		SSingleMeta(const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& ScoreFactorWave_, const int32& ScoreFactorTime_, const int32& ScoreFactorGold_, const int32& RefreshDurationMinute_) : PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), ScoreFactorWave(ScoreFactorWave_), ScoreFactorTime(ScoreFactorTime_), ScoreFactorGold(ScoreFactorGold_), RefreshDurationMinute(RefreshDurationMinute_)
-		{
-		}
-		SSingleMeta(int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& ScoreFactorWave_, int32&& ScoreFactorTime_, int32&& ScoreFactorGold_, int32&& RefreshDurationMinute_) : PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), ScoreFactorWave(std::move(ScoreFactorWave_)), ScoreFactorTime(std::move(ScoreFactorTime_)), ScoreFactorGold(std::move(ScoreFactorGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> PlayCountMax;
-			Stream_ >> ChargeCostGold;
-			Stream_ >> ScoreFactorWave;
-			Stream_ >> ScoreFactorTime;
-			Stream_ >> ScoreFactorGold;
-			Stream_ >> RefreshDurationMinute;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["PlayCountMax"] >> PlayCountMax;
-			Value_["ChargeCostGold"] >> ChargeCostGold;
-			Value_["ScoreFactorWave"] >> ScoreFactorWave;
-			Value_["ScoreFactorTime"] >> ScoreFactorTime;
-			Value_["ScoreFactorGold"] >> ScoreFactorGold;
-			Value_["RefreshDurationMinute"] >> RefreshDurationMinute;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << PlayCountMax;
-			Stream_ << ChargeCostGold;
-			Stream_ << ScoreFactorWave;
-			Stream_ << ScoreFactorTime;
-			Stream_ << ScoreFactorGold;
-			Stream_ << RefreshDurationMinute;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["PlayCountMax"] = PlayCountMax;
-			Value_["ChargeCostGold"] = ChargeCostGold;
-			Value_["ScoreFactorWave"] = ScoreFactorWave;
-			Value_["ScoreFactorTime"] = ScoreFactorTime;
-			Value_["ScoreFactorGold"] = ScoreFactorGold;
-			Value_["RefreshDurationMinute"] = RefreshDurationMinute;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(int32()) + L"," + 
-				GetStdName(TResource()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(int32(), L"PlayCountMax") + L"," + 
-				GetMemberName(TResource(), L"ChargeCostGold") + L"," + 
-				GetMemberName(int32(), L"ScoreFactorWave") + L"," + 
-				GetMemberName(int32(), L"ScoreFactorTime") + L"," + 
-				GetMemberName(int32(), L"ScoreFactorGold") + L"," + 
-				GetMemberName(int32(), L"RefreshDurationMinute");
-		}
-	};
 	struct SIslandMeta : public SProto
 	{
 		int32 PlayCountMax{};
@@ -1574,39 +1500,39 @@ namespace bb
 	{
 		ERank Rank{};
 		int32 Tier{};
-		int32 MinPoint{};
+		int32 MaxPoint{};
 		SRankTierMeta()
 		{
 		}
-		SRankTierMeta(const ERank& Rank_, const int32& Tier_, const int32& MinPoint_) : Rank(Rank_), Tier(Tier_), MinPoint(MinPoint_)
+		SRankTierMeta(const ERank& Rank_, const int32& Tier_, const int32& MaxPoint_) : Rank(Rank_), Tier(Tier_), MaxPoint(MaxPoint_)
 		{
 		}
-		SRankTierMeta(ERank&& Rank_, int32&& Tier_, int32&& MinPoint_) : Rank(std::move(Rank_)), Tier(std::move(Tier_)), MinPoint(std::move(MinPoint_))
+		SRankTierMeta(ERank&& Rank_, int32&& Tier_, int32&& MaxPoint_) : Rank(std::move(Rank_)), Tier(std::move(Tier_)), MaxPoint(std::move(MaxPoint_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Rank;
 			Stream_ >> Tier;
-			Stream_ >> MinPoint;
+			Stream_ >> MaxPoint;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Rank"] >> Rank;
 			Value_["Tier"] >> Tier;
-			Value_["MinPoint"] >> MinPoint;
+			Value_["MaxPoint"] >> MaxPoint;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Rank;
 			Stream_ << Tier;
-			Stream_ << MinPoint;
+			Stream_ << MaxPoint;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Rank"] = Rank;
 			Value_["Tier"] = Tier;
-			Value_["MinPoint"] = MinPoint;
+			Value_["MaxPoint"] = MaxPoint;
 		}
 		static wstring StdName(void)
 		{
@@ -1620,7 +1546,7 @@ namespace bb
 			return 
 				GetMemberName(ERank(), L"Rank") + L"," + 
 				GetMemberName(int32(), L"Tier") + L"," + 
-				GetMemberName(int32(), L"MinPoint");
+				GetMemberName(int32(), L"MaxPoint");
 		}
 	};
 	struct SRankRewardMeta : public SProto
@@ -1882,6 +1808,149 @@ namespace bb
 				GetMemberName(int32(), L"Gold") + L"," + 
 				GetMemberName(int32(), L"Diamond") + L"," + 
 				GetMemberName(int32(), L"Champion");
+		}
+	};
+	enum class EArrowDodgeItemType
+	{
+		Coin,
+		GoldBar,
+		Shield,
+		Stamina,
+		Max,
+		Null,
+	};
+	struct SArrowDodgeMeta : public SProto
+	{
+		int32 ArrowDodgePoint{};
+		int32 ArrowGetPoint{};
+		int32 ItemGetPoint{};
+		int64 ItemDurationTick{};
+		int64 ItemRegenPeriodTick{};
+		int32 PlayCountMax{};
+		TResource ChargeCostGold{};
+		int32 RefreshDurationMinute{};
+		SArrowDodgeMeta()
+		{
+		}
+		SArrowDodgeMeta(const int32& ArrowDodgePoint_, const int32& ArrowGetPoint_, const int32& ItemGetPoint_, const int64& ItemDurationTick_, const int64& ItemRegenPeriodTick_, const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& RefreshDurationMinute_) : ArrowDodgePoint(ArrowDodgePoint_), ArrowGetPoint(ArrowGetPoint_), ItemGetPoint(ItemGetPoint_), ItemDurationTick(ItemDurationTick_), ItemRegenPeriodTick(ItemRegenPeriodTick_), PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), RefreshDurationMinute(RefreshDurationMinute_)
+		{
+		}
+		SArrowDodgeMeta(int32&& ArrowDodgePoint_, int32&& ArrowGetPoint_, int32&& ItemGetPoint_, int64&& ItemDurationTick_, int64&& ItemRegenPeriodTick_, int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& RefreshDurationMinute_) : ArrowDodgePoint(std::move(ArrowDodgePoint_)), ArrowGetPoint(std::move(ArrowGetPoint_)), ItemGetPoint(std::move(ItemGetPoint_)), ItemDurationTick(std::move(ItemDurationTick_)), ItemRegenPeriodTick(std::move(ItemRegenPeriodTick_)), PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> ArrowDodgePoint;
+			Stream_ >> ArrowGetPoint;
+			Stream_ >> ItemGetPoint;
+			Stream_ >> ItemDurationTick;
+			Stream_ >> ItemRegenPeriodTick;
+			Stream_ >> PlayCountMax;
+			Stream_ >> ChargeCostGold;
+			Stream_ >> RefreshDurationMinute;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["ArrowDodgePoint"] >> ArrowDodgePoint;
+			Value_["ArrowGetPoint"] >> ArrowGetPoint;
+			Value_["ItemGetPoint"] >> ItemGetPoint;
+			Value_["ItemDurationTick"] >> ItemDurationTick;
+			Value_["ItemRegenPeriodTick"] >> ItemRegenPeriodTick;
+			Value_["PlayCountMax"] >> PlayCountMax;
+			Value_["ChargeCostGold"] >> ChargeCostGold;
+			Value_["RefreshDurationMinute"] >> RefreshDurationMinute;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << ArrowDodgePoint;
+			Stream_ << ArrowGetPoint;
+			Stream_ << ItemGetPoint;
+			Stream_ << ItemDurationTick;
+			Stream_ << ItemRegenPeriodTick;
+			Stream_ << PlayCountMax;
+			Stream_ << ChargeCostGold;
+			Stream_ << RefreshDurationMinute;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["ArrowDodgePoint"] = ArrowDodgePoint;
+			Value_["ArrowGetPoint"] = ArrowGetPoint;
+			Value_["ItemGetPoint"] = ItemGetPoint;
+			Value_["ItemDurationTick"] = ItemDurationTick;
+			Value_["ItemRegenPeriodTick"] = ItemRegenPeriodTick;
+			Value_["PlayCountMax"] = PlayCountMax;
+			Value_["ChargeCostGold"] = ChargeCostGold;
+			Value_["RefreshDurationMinute"] = RefreshDurationMinute;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TResource()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"ArrowDodgePoint") + L"," + 
+				GetMemberName(int32(), L"ArrowGetPoint") + L"," + 
+				GetMemberName(int32(), L"ItemGetPoint") + L"," + 
+				GetMemberName(int64(), L"ItemDurationTick") + L"," + 
+				GetMemberName(int64(), L"ItemRegenPeriodTick") + L"," + 
+				GetMemberName(int32(), L"PlayCountMax") + L"," + 
+				GetMemberName(TResource(), L"ChargeCostGold") + L"," + 
+				GetMemberName(int32(), L"RefreshDurationMinute");
+		}
+	};
+	struct SArrowDodgeItemMeta : public SProto
+	{
+		EArrowDodgeItemType ItemType{};
+		uint64 Weight{};
+		SArrowDodgeItemMeta()
+		{
+		}
+		SArrowDodgeItemMeta(const EArrowDodgeItemType& ItemType_, const uint64& Weight_) : ItemType(ItemType_), Weight(Weight_)
+		{
+		}
+		SArrowDodgeItemMeta(EArrowDodgeItemType&& ItemType_, uint64&& Weight_) : ItemType(std::move(ItemType_)), Weight(std::move(Weight_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> ItemType;
+			Stream_ >> Weight;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["ItemType"] >> ItemType;
+			Value_["Weight"] >> Weight;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << ItemType;
+			Stream_ << Weight;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["ItemType"] = ItemType;
+			Value_["Weight"] = Weight;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(EArrowDodgeItemType()) + L"," + 
+				GetStdName(uint64());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(EArrowDodgeItemType(), L"ItemType") + L"," + 
+				GetMemberName(uint64(), L"Weight");
 		}
 	};
 	struct SCouponMeta : public SProto

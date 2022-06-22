@@ -475,7 +475,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::MultiBattleIcon, MultiBattleIconNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleJoin, ArrowDodgeBattleJoinNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleEndForce, ArrowDodgeBattleEndForceNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleEnd, ArrowDodgeBattleEndNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Gacha, GachaNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::GachaX10, GachaX10NetCs);

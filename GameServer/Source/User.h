@@ -121,9 +121,8 @@ public:
 	SBattleEndInfo MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
 	ERet MultiBattleIcon(const SMultiBattleIconNetCs& Proto_);
 	ERet ArrowDodgeBattleJoin(void);
-	ERet ArrowDodgeBattleEndForce(const SArrowDodgeBattleEndForceNetCs& Proto_);
-	void ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
-	void ArrowDodgeBattleEnd(void);
+	ERet ArrowDodgeBattleEnd(const SArrowDodgeBattleEndNetCs& Proto_);
+	void ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
 
 	ERet Gacha(const SGachaNetCs& Proto_);
 	ERet GachaX10(const SGachaX10NetCs& Proto_);

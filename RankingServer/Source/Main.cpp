@@ -59,15 +59,15 @@ void BroadCast(void)
 {
 	TRankingUsers RankingUsers;
 	for (auto& i : g_Ranking)
-		RankingUsers.emplace_back(SRankingUser(i.second, std::get<0>(i.first)->first, std::get<1>(i.first)->first));
+		RankingUsers.emplace_back(i.second);
 
-	TRankingUserSingles RankingUserSingles;
+	TRankingUsers RankingUserSingles;
 	for (auto& i : g_RankingSingle)
-		RankingUserSingles.emplace_back(SRankingUserSingle(i.second, std::get<0>(i.first)->first, std::get<1>(i.first)->first));
+		RankingUserSingles.emplace_back(i.second);
 
-	TRankingUserIslands RankingUserIslands;
+	TRankingUsers RankingUserIslands;
 	for (auto& i : g_RankingIsland)
-		RankingUserIslands.emplace_back(SRankingUserIsland(i.second, std::get<0>(i.first)->first, std::get<1>(i.first)->first));
+		RankingUserIslands.emplace_back(i.second);
 
 	g_NetBalance->BroadCast(RankingUsers, RankingUserSingles, RankingUserIslands, g_Rewards, g_RewardsSingle, g_RewardsIsland);
 }
@@ -125,7 +125,7 @@ void RecvUBroadCast(const CKey& Key_, CStream& Stream_)
 		g_Ranking.emplace(i, i.UID, i.Point);
 
 
-	TRankingUserSingles RankingUserSingles;
+	TRankingUsers RankingUserSingles;
 	Stream_ >> RankingUserSingles;
 
 	g_RankingSingle.clear();
@@ -134,7 +134,7 @@ void RecvUBroadCast(const CKey& Key_, CStream& Stream_)
 		g_RankingSingle.emplace(i, i.UID, i.Point);
 
 
-	TRankingUserIslands RankingUserIslands;
+	TRankingUsers RankingUserIslands;
 	Stream_ >> RankingUserIslands;
 
 	g_RankingIsland.clear();
@@ -207,7 +207,7 @@ void ParamCallback(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
 bool g_RankingSingleLoaded = false;
 bool RowCallbackSingle(SQLLEN RowNum_, CStream& Row_)
 {
-	SRankingUserSingle RankingUser;
+	SRankingUser RankingUser;
 	Row_ >> RankingUser;
 
 	g_RankingSingle.emplace(RankingUser, RankingUser.UID, RankingUser.Point);
@@ -222,7 +222,7 @@ void ParamCallbackSingle(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
 bool g_RankingIslandLoaded = false;
 bool RowCallbackIsland(SQLLEN RowNum_, CStream& Row_)
 {
-	SRankingUserIsland RankingUser;
+	SRankingUser RankingUser;
 	Row_ >> RankingUser;
 
 	g_RankingIsland.emplace(RankingUser, RankingUser.UID, RankingUser.Point);

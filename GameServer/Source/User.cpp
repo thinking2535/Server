@@ -146,7 +146,7 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 					TResources{},
 					0,
 					g_MetaData->GetDefaultChar(),
-					g_MetaData->SingleMeta.PlayCountMax,
+					g_MetaData->ArrowDodgeMeta.PlayCountMax,
 					Now,
 					g_MetaData->IslandMeta.PlayCountMax,
 					Now,
@@ -574,15 +574,11 @@ ERet CUser::IslandEnd(const SIslandEndNetCs& Proto_)
 		g_RankingInfo.UserPointMin.UserPointMinIsland < IslandPoint &&
 		g_NetRankingKey)
 		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateIsland,
-			SRankingUserIsland(
-				SRankingUserIslandCore(
-					SRankingUserCore(
-						GetNick(),
-						CharCode,
-						GetCountryCode()),
-					Proto_.PassedIslandCount,
-					Proto_.Gold),
+			SRankingUser(
 				GetUID(),
+				GetNick(),
+				CharCode,
+				GetCountryCode(),
 				IslandPoint));
 
 	if (IslandPoint > _User.IslandPointBest)
@@ -748,22 +744,22 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	auto NewSingleRefreshTime = _User.SingleRefreshTime;
 	auto Now = system_clock::now();
 
-	if (NewSinglePlayCount < g_MetaData->SingleMeta.PlayCountMax)
+	if (NewSinglePlayCount < g_MetaData->ArrowDodgeMeta.PlayCountMax)
 	{
-		auto UnitDuration = minutes(g_MetaData->SingleMeta.RefreshDurationMinute);
+		auto UnitDuration = minutes(g_MetaData->ArrowDodgeMeta.RefreshDurationMinute);
 		auto ElapsedMinutes = duration_cast<minutes>(Now - NewSingleRefreshTime);
 		auto ElapsedCount = ElapsedMinutes / UnitDuration;
 		NewSinglePlayCount += ElapsedCount;
 
-		if (NewSinglePlayCount > g_MetaData->SingleMeta.PlayCountMax)
-			NewSinglePlayCount = g_MetaData->SingleMeta.PlayCountMax;
+		if (NewSinglePlayCount > g_MetaData->ArrowDodgeMeta.PlayCountMax)
+			NewSinglePlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
 
-		if (NewSinglePlayCount >= g_MetaData->SingleMeta.PlayCountMax)
+		if (NewSinglePlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
 			NewSingleRefreshTime = Now;
 		else
 			NewSingleRefreshTime += (UnitDuration * ElapsedCount);
 	}
-	else if (NewSinglePlayCount >= g_MetaData->SingleMeta.PlayCountMax)
+	else if (NewSinglePlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
 	{
 		NewSingleRefreshTime = Now;
 	}
@@ -776,12 +772,12 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	if (NewSinglePlayCount < 1)
 	{
 		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_MetaData->SingleMeta.ChargeCostGold))
+		if (!HaveCost(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold))
 			return ERet::NotEnoughMoney;
 
-		SubResourceCore(CostType, g_MetaData->SingleMeta.ChargeCostGold);
-		GoldCost = g_MetaData->SingleMeta.ChargeCostGold;
-		NewSinglePlayCount = g_MetaData->SingleMeta.PlayCountMax;
+		SubResourceCore(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold);
+		GoldCost = g_MetaData->ArrowDodgeMeta.ChargeCostGold;
+		NewSinglePlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
 		NewSingleRefreshTime = Now;
 	}
 
@@ -798,7 +794,7 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 
 	return ERet::Ok;
 }
-ERet CUser::ArrowDodgeBattleEndForce(const SArrowDodgeBattleEndForceNetCs& Proto_)
+ERet CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleEndNetCs& Proto_)
 {
 	// 시간차로 이미 끝나있을 수 있으므로
 	if (!InBattle())
@@ -808,12 +804,11 @@ ERet CUser::ArrowDodgeBattleEndForce(const SArrowDodgeBattleEndForceNetCs& Proto
 	if (pArrowDodgeBattlePlayer == nullptr)
 		return ERet::InvalidProtocol;
 
-	pArrowDodgeBattlePlayer->pArrowDodgeBattle->ForceEnd = true;
 	g_Battles.erase(_pBattlePlayer->itBattle);
 
 	return ERet::Ok;
 }
-void CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
+void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
 {
 	int32 CharCode = GetSelectedCharCode();
 
@@ -821,27 +816,21 @@ void CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const 
 		g_RankingInfo.UserPointMin.UserPointMinSingle < BattleInfo_.Point &&
 		g_NetRankingKey)
 		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateSingle,
-			SRankingUserSingle(
-				SRankingUserSingleCore(
-					SRankingUserCore(
-						GetNick(),
-						CharCode,
-						GetCountryCode()),
-					BattleInfo_.Wave,
-					BattleInfo_.Second,
-					BattleInfo_.Gold),
+			SRankingUser(
 				GetUID(),
+				GetNick(),
+				CharCode,
+				GetCountryCode(),
 				BattleInfo_.Point));
 
 	if (BattleInfo_.Point > _User.SinglePointBest)
 		_User.SinglePointBest = BattleInfo_.Point;
 
-	if (BattleInfo_.Second > _User.SingleSecondBest)
-		_User.SingleSecondBest = BattleInfo_.Second;
+	if (BattleInfo_.Tick > _User.SingleBestTick)
+		_User.SingleBestTick = BattleInfo_.Tick;
 
 	TResources Added{};
-	::AddResource(Added, EResource::Gold, BattleInfo_.GoldAdded);
-	::AddResource(Added, EResource::Dia, BattleInfo_.DiaAdded);
+	::AddResource(Added, EResource::Gold, BattleInfo_.Gold);
 	AddResourcesCore(Added);
 
 	TDoneQuestDBs DoneQuestDBs;
@@ -850,13 +839,8 @@ void CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleInfo& BattleInfo_, const 
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
 	BattleEnd();
 
-	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleSecondBest, std::move(DoneQuestDBs)));
-	Send(SArrowDodgeBattleEndNetSc(_User.Resources, std::move(DoneQuestNets)));
-}
-void CUser::ArrowDodgeBattleEnd(void)
-{
-	BattleEnd();
-	Send(SArrowDodgeBattleEndForceNetSc());
+	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleBestTick, std::move(DoneQuestDBs)));
+	Send(SArrowDodgeBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
 }
 ERet CUser::Gacha(const SGachaNetCs& Proto_)
 {

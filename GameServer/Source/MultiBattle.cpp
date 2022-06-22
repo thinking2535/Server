@@ -291,11 +291,10 @@ CMultiBattle::~CMultiBattle()
 		if (IsValidRankingInfo() && BattleEndInfos[i].Point > g_RankingInfo.UserPointMin.UserPointMin)
 			RankingUsersChanged.emplace_back(
 				SRankingUser(
-					SRankingUserCore(
-						_MultiBattlePlayers[i]->Nick,
-						CharCode,
-						_MultiBattlePlayers[i]->CountryCode),
 					BattleEndInfos[i].UID,
+					_MultiBattlePlayers[i]->Nick,
+					CharCode,
+					_MultiBattlePlayers[i]->CountryCode,
 					BattleEndInfos[i].Point));
 	}
 

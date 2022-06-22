@@ -87,7 +87,7 @@ namespace bb
 		MultiBattleIcon
 
 		ArrowDodgeBattleJoin
-		ArrowDodgeBattleEndForce
+		ArrowDodgeBattleEnd
 
 		Gacha
 		GachaX10
@@ -142,7 +142,6 @@ namespace bb
 		ArrowDodgeBattleBegin
 		ArrowDodgeBattleStart
 		ArrowDodgeBattleEnd
-		ArrowDodgeBattleEndForce
 
 		Gacha
 		GachaX10
@@ -357,7 +356,7 @@ namespace bb
 		int32 BattlePointBest
 		int32 SinglePointBest
 		int32 IslandPointBest
-		int32 SingleSecondBest
+		int64 SingleBestTick
 		int32 IslandPassedCountBest
 		int32 KillTotal
 		int32 ChainKillTotal
@@ -689,11 +688,8 @@ namespace bb
 	struct SArrowDodgeBattleInfo
 	{
 		int32 Point
-		int32 Wave
-		int32 Second
+		int64 Tick
 		TResource Gold
-		TResource GoldAdded
-		TResource DiaAdded
 	}
 	struct SArrowDodgeBattleBuf
 	{
@@ -713,7 +709,6 @@ namespace bb
 		SCharacterNet Character
 		int64 Tick
 		uint64 RandomSeed
-		uint64 RandomCounter
 		int64 NextDownArrowTick
 		int64 NextLeftArrowTick
 		int64 NextRightArrowTick
@@ -725,62 +720,31 @@ namespace bb
 	struct SArrowDodgeBattleStartNetSc
 	{
 	}
+	struct SArrowDodgeBattleEndNetCs
+	{
+	}
 	struct SArrowDodgeBattleEndNetSc
 	{
+		int64 Tick
 		TResources ResourcesLeft
 		TDoneQuests DoneQuests
 	}
-	struct SArrowDodgeBattleEndForceNetCs
+	struct SRankingUser
 	{
-	}
-	struct SArrowDodgeBattleEndForceNetSc
-	{
-	}
-
-	struct SRankingUserCore
-	{
+		TUID UID
 		u16string Nick
 		int32 CharCode
 		wstring CountryCode
-	}
-	struct SRankingUser : SRankingUserCore
-	{
-		TUID UID
-		int32 Point
-	}
-
-	struct SRankingUserSingleCore : SRankingUserCore
-	{
-		int32 Wave
-		int32 Second
-		int32 Gold
-	}
-	struct SRankingUserSingle : SRankingUserSingleCore
-	{
-		TUID UID
-		int32 Point
-	}
-
-	struct SRankingUserIslandCore : SRankingUserCore
-	{
-		int32 PassedIslandCount
-		int32 Gold
-	}
-	struct SRankingUserIsland : SRankingUserIslandCore
-	{
-		TUID UID
 		int32 Point
 	}
 
 	typedef list<SRankingUser> TRankingUsers
-	typedef list<SRankingUserSingle> TRankingUserSingles
-	typedef list<SRankingUserIsland> TRankingUserIslands
 
 	struct SRanking
 	{
 		TRankingUsers RankingUsers
-		TRankingUserSingles RankingUserSingles
-		TRankingUserIslands RankingUserIslands
+		TRankingUsers RankingUserSingles
+		TRankingUsers RankingUserIslands
 	}
 	struct SRankingUserPointMin
 	{

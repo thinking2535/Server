@@ -70,14 +70,14 @@ namespace bb
 	};
 	struct SRankingUpdateSingleNetSr : public SProto
 	{
-		SRankingUserSingle UserSingle{};
+		SRankingUser UserSingle{};
 		SRankingUpdateSingleNetSr()
 		{
 		}
-		SRankingUpdateSingleNetSr(const SRankingUserSingle& UserSingle_) : UserSingle(UserSingle_)
+		SRankingUpdateSingleNetSr(const SRankingUser& UserSingle_) : UserSingle(UserSingle_)
 		{
 		}
-		SRankingUpdateSingleNetSr(SRankingUserSingle&& UserSingle_) : UserSingle(std::move(UserSingle_))
+		SRankingUpdateSingleNetSr(SRankingUser&& UserSingle_) : UserSingle(std::move(UserSingle_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -99,24 +99,24 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRankingUserSingle());
+				GetStdName(SRankingUser());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRankingUserSingle(), L"UserSingle");
+				GetMemberName(SRankingUser(), L"UserSingle");
 		}
 	};
 	struct SRankingUpdateIslandNetSr : public SProto
 	{
-		SRankingUserIsland UserIsland{};
+		SRankingUser UserIsland{};
 		SRankingUpdateIslandNetSr()
 		{
 		}
-		SRankingUpdateIslandNetSr(const SRankingUserIsland& UserIsland_) : UserIsland(UserIsland_)
+		SRankingUpdateIslandNetSr(const SRankingUser& UserIsland_) : UserIsland(UserIsland_)
 		{
 		}
-		SRankingUpdateIslandNetSr(SRankingUserIsland&& UserIsland_) : UserIsland(std::move(UserIsland_))
+		SRankingUpdateIslandNetSr(SRankingUser&& UserIsland_) : UserIsland(std::move(UserIsland_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -138,12 +138,12 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRankingUserIsland());
+				GetStdName(SRankingUser());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRankingUserIsland(), L"UserIsland");
+				GetMemberName(SRankingUser(), L"UserIsland");
 		}
 	};
 	struct SRankingRankingInfoNetRs : public SProto

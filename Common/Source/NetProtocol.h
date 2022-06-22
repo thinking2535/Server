@@ -86,7 +86,7 @@ namespace bb
 		MultiBattleOut,
 		MultiBattleIcon,
 		ArrowDodgeBattleJoin,
-		ArrowDodgeBattleEndForce,
+		ArrowDodgeBattleEnd,
 		Gacha,
 		GachaX10,
 		RankReward,
@@ -137,7 +137,6 @@ namespace bb
 		ArrowDodgeBattleBegin,
 		ArrowDodgeBattleStart,
 		ArrowDodgeBattleEnd,
-		ArrowDodgeBattleEndForce,
 		Gacha,
 		GachaX10,
 		GachaFailed,
@@ -664,7 +663,7 @@ namespace bb
 		int32 BattlePointBest{};
 		int32 SinglePointBest{};
 		int32 IslandPointBest{};
-		int32 SingleSecondBest{};
+		int64 SingleBestTick{};
 		int32 IslandPassedCountBest{};
 		int32 KillTotal{};
 		int32 ChainKillTotal{};
@@ -677,10 +676,10 @@ namespace bb
 		SUserBase()
 		{
 		}
-		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const int32& Point_, const int32& PointBest_, const int32& LastGotRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountSurvival_, const int32& LoseCountSurvival_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int32& SingleSecondBest_, const int32& IslandPassedCountBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const bool& IslandStarted_, const int64& RankingRewardedCounter_, const TNick& NewNick_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), Point(Point_), PointBest(PointBest_), LastGotRewardRankIndex(LastGotRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountSurvival(WinCountSurvival_), LoseCountSurvival(LoseCountSurvival_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), SingleSecondBest(SingleSecondBest_), IslandPassedCountBest(IslandPassedCountBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), IslandStarted(IslandStarted_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_)
+		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const int32& Point_, const int32& PointBest_, const int32& LastGotRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountSurvival_, const int32& LoseCountSurvival_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int64& SingleBestTick_, const int32& IslandPassedCountBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const bool& IslandStarted_, const int64& RankingRewardedCounter_, const TNick& NewNick_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), Point(Point_), PointBest(PointBest_), LastGotRewardRankIndex(LastGotRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountSurvival(WinCountSurvival_), LoseCountSurvival(LoseCountSurvival_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), SingleBestTick(SingleBestTick_), IslandPassedCountBest(IslandPassedCountBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), IslandStarted(IslandStarted_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_)
 		{
 		}
-		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, int32&& Point_, int32&& PointBest_, int32&& LastGotRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountSurvival_, int32&& LoseCountSurvival_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int32&& SingleSecondBest_, int32&& IslandPassedCountBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, bool&& IslandStarted_, int64&& RankingRewardedCounter_, TNick&& NewNick_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), LastGotRewardRankIndex(std::move(LastGotRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountSurvival(std::move(WinCountSurvival_)), LoseCountSurvival(std::move(LoseCountSurvival_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), SingleSecondBest(std::move(SingleSecondBest_)), IslandPassedCountBest(std::move(IslandPassedCountBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), IslandStarted(std::move(IslandStarted_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_))
+		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, int32&& Point_, int32&& PointBest_, int32&& LastGotRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountSurvival_, int32&& LoseCountSurvival_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int64&& SingleBestTick_, int32&& IslandPassedCountBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, bool&& IslandStarted_, int64&& RankingRewardedCounter_, TNick&& NewNick_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), LastGotRewardRankIndex(std::move(LastGotRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountSurvival(std::move(WinCountSurvival_)), LoseCountSurvival(std::move(LoseCountSurvival_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), SingleBestTick(std::move(SingleBestTick_)), IslandPassedCountBest(std::move(IslandPassedCountBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), IslandStarted(std::move(IslandStarted_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -700,7 +699,7 @@ namespace bb
 			Stream_ >> BattlePointBest;
 			Stream_ >> SinglePointBest;
 			Stream_ >> IslandPointBest;
-			Stream_ >> SingleSecondBest;
+			Stream_ >> SingleBestTick;
 			Stream_ >> IslandPassedCountBest;
 			Stream_ >> KillTotal;
 			Stream_ >> ChainKillTotal;
@@ -728,7 +727,7 @@ namespace bb
 			Value_["BattlePointBest"] >> BattlePointBest;
 			Value_["SinglePointBest"] >> SinglePointBest;
 			Value_["IslandPointBest"] >> IslandPointBest;
-			Value_["SingleSecondBest"] >> SingleSecondBest;
+			Value_["SingleBestTick"] >> SingleBestTick;
 			Value_["IslandPassedCountBest"] >> IslandPassedCountBest;
 			Value_["KillTotal"] >> KillTotal;
 			Value_["ChainKillTotal"] >> ChainKillTotal;
@@ -756,7 +755,7 @@ namespace bb
 			Stream_ << BattlePointBest;
 			Stream_ << SinglePointBest;
 			Stream_ << IslandPointBest;
-			Stream_ << SingleSecondBest;
+			Stream_ << SingleBestTick;
 			Stream_ << IslandPassedCountBest;
 			Stream_ << KillTotal;
 			Stream_ << ChainKillTotal;
@@ -784,7 +783,7 @@ namespace bb
 			Value_["BattlePointBest"] = BattlePointBest;
 			Value_["SinglePointBest"] = SinglePointBest;
 			Value_["IslandPointBest"] = IslandPointBest;
-			Value_["SingleSecondBest"] = SingleSecondBest;
+			Value_["SingleBestTick"] = SingleBestTick;
 			Value_["IslandPassedCountBest"] = IslandPassedCountBest;
 			Value_["KillTotal"] = KillTotal;
 			Value_["ChainKillTotal"] = ChainKillTotal;
@@ -813,7 +812,7 @@ namespace bb
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
+				GetStdName(int64()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
@@ -842,7 +841,7 @@ namespace bb
 				GetMemberName(int32(), L"BattlePointBest") + L"," + 
 				GetMemberName(int32(), L"SinglePointBest") + L"," + 
 				GetMemberName(int32(), L"IslandPointBest") + L"," + 
-				GetMemberName(int32(), L"SingleSecondBest") + L"," + 
+				GetMemberName(int64(), L"SingleBestTick") + L"," + 
 				GetMemberName(int32(), L"IslandPassedCountBest") + L"," + 
 				GetMemberName(int32(), L"KillTotal") + L"," + 
 				GetMemberName(int32(), L"ChainKillTotal") + L"," + 
@@ -3604,75 +3603,54 @@ namespace bb
 	struct SArrowDodgeBattleInfo : public SProto
 	{
 		int32 Point{};
-		int32 Wave{};
-		int32 Second{};
+		int64 Tick{};
 		TResource Gold{};
-		TResource GoldAdded{};
-		TResource DiaAdded{};
 		SArrowDodgeBattleInfo()
 		{
 		}
-		SArrowDodgeBattleInfo(const int32& Point_, const int32& Wave_, const int32& Second_, const TResource& Gold_, const TResource& GoldAdded_, const TResource& DiaAdded_) : Point(Point_), Wave(Wave_), Second(Second_), Gold(Gold_), GoldAdded(GoldAdded_), DiaAdded(DiaAdded_)
+		SArrowDodgeBattleInfo(const int32& Point_, const int64& Tick_, const TResource& Gold_) : Point(Point_), Tick(Tick_), Gold(Gold_)
 		{
 		}
-		SArrowDodgeBattleInfo(int32&& Point_, int32&& Wave_, int32&& Second_, TResource&& Gold_, TResource&& GoldAdded_, TResource&& DiaAdded_) : Point(std::move(Point_)), Wave(std::move(Wave_)), Second(std::move(Second_)), Gold(std::move(Gold_)), GoldAdded(std::move(GoldAdded_)), DiaAdded(std::move(DiaAdded_))
+		SArrowDodgeBattleInfo(int32&& Point_, int64&& Tick_, TResource&& Gold_) : Point(std::move(Point_)), Tick(std::move(Tick_)), Gold(std::move(Gold_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Point;
-			Stream_ >> Wave;
-			Stream_ >> Second;
+			Stream_ >> Tick;
 			Stream_ >> Gold;
-			Stream_ >> GoldAdded;
-			Stream_ >> DiaAdded;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Point"] >> Point;
-			Value_["Wave"] >> Wave;
-			Value_["Second"] >> Second;
+			Value_["Tick"] >> Tick;
 			Value_["Gold"] >> Gold;
-			Value_["GoldAdded"] >> GoldAdded;
-			Value_["DiaAdded"] >> DiaAdded;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Point;
-			Stream_ << Wave;
-			Stream_ << Second;
+			Stream_ << Tick;
 			Stream_ << Gold;
-			Stream_ << GoldAdded;
-			Stream_ << DiaAdded;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Point"] = Point;
-			Value_["Wave"] = Wave;
-			Value_["Second"] = Second;
+			Value_["Tick"] = Tick;
 			Value_["Gold"] = Gold;
-			Value_["GoldAdded"] = GoldAdded;
-			Value_["DiaAdded"] = DiaAdded;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(TResource()) + L"," + 
-				GetStdName(TResource()) + L"," + 
+				GetStdName(int64()) + L"," + 
 				GetStdName(TResource());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(int32(), L"Point") + L"," + 
-				GetMemberName(int32(), L"Wave") + L"," + 
-				GetMemberName(int32(), L"Second") + L"," + 
-				GetMemberName(TResource(), L"Gold") + L"," + 
-				GetMemberName(TResource(), L"GoldAdded") + L"," + 
-				GetMemberName(TResource(), L"DiaAdded");
+				GetMemberName(int64(), L"Tick") + L"," + 
+				GetMemberName(TResource(), L"Gold");
 		}
 	};
 	struct SArrowDodgeBattleBuf : public SProto
@@ -3775,7 +3753,6 @@ namespace bb
 		SCharacterNet Character{};
 		int64 Tick{};
 		uint64 RandomSeed{};
-		uint64 RandomCounter{};
 		int64 NextDownArrowTick{};
 		int64 NextLeftArrowTick{};
 		int64 NextRightArrowTick{};
@@ -3786,10 +3763,10 @@ namespace bb
 		SArrowDodgeBattleBeginNetSc()
 		{
 		}
-		SArrowDodgeBattleBeginNetSc(const SBattlePlayer& Player_, const SArrowDodgeBattleInfo& BattleInfo_, const SArrowDodgeBattleBufs& Bufs_, const SCharacterNet& Character_, const int64& Tick_, const uint64& RandomSeed_, const uint64& RandomCounter_, const int64& NextDownArrowTick_, const int64& NextLeftArrowTick_, const int64& NextRightArrowTick_, const int64& NextItemTick_, const vector<SArrow>& Arrows_, const vector<SItem>& Items_, const bool& Started_) : Player(Player_), BattleInfo(BattleInfo_), Bufs(Bufs_), Character(Character_), Tick(Tick_), RandomSeed(RandomSeed_), RandomCounter(RandomCounter_), NextDownArrowTick(NextDownArrowTick_), NextLeftArrowTick(NextLeftArrowTick_), NextRightArrowTick(NextRightArrowTick_), NextItemTick(NextItemTick_), Arrows(Arrows_), Items(Items_), Started(Started_)
+		SArrowDodgeBattleBeginNetSc(const SBattlePlayer& Player_, const SArrowDodgeBattleInfo& BattleInfo_, const SArrowDodgeBattleBufs& Bufs_, const SCharacterNet& Character_, const int64& Tick_, const uint64& RandomSeed_, const int64& NextDownArrowTick_, const int64& NextLeftArrowTick_, const int64& NextRightArrowTick_, const int64& NextItemTick_, const vector<SArrow>& Arrows_, const vector<SItem>& Items_, const bool& Started_) : Player(Player_), BattleInfo(BattleInfo_), Bufs(Bufs_), Character(Character_), Tick(Tick_), RandomSeed(RandomSeed_), NextDownArrowTick(NextDownArrowTick_), NextLeftArrowTick(NextLeftArrowTick_), NextRightArrowTick(NextRightArrowTick_), NextItemTick(NextItemTick_), Arrows(Arrows_), Items(Items_), Started(Started_)
 		{
 		}
-		SArrowDodgeBattleBeginNetSc(SBattlePlayer&& Player_, SArrowDodgeBattleInfo&& BattleInfo_, SArrowDodgeBattleBufs&& Bufs_, SCharacterNet&& Character_, int64&& Tick_, uint64&& RandomSeed_, uint64&& RandomCounter_, int64&& NextDownArrowTick_, int64&& NextLeftArrowTick_, int64&& NextRightArrowTick_, int64&& NextItemTick_, vector<SArrow>&& Arrows_, vector<SItem>&& Items_, bool&& Started_) : Player(std::move(Player_)), BattleInfo(std::move(BattleInfo_)), Bufs(std::move(Bufs_)), Character(std::move(Character_)), Tick(std::move(Tick_)), RandomSeed(std::move(RandomSeed_)), RandomCounter(std::move(RandomCounter_)), NextDownArrowTick(std::move(NextDownArrowTick_)), NextLeftArrowTick(std::move(NextLeftArrowTick_)), NextRightArrowTick(std::move(NextRightArrowTick_)), NextItemTick(std::move(NextItemTick_)), Arrows(std::move(Arrows_)), Items(std::move(Items_)), Started(std::move(Started_))
+		SArrowDodgeBattleBeginNetSc(SBattlePlayer&& Player_, SArrowDodgeBattleInfo&& BattleInfo_, SArrowDodgeBattleBufs&& Bufs_, SCharacterNet&& Character_, int64&& Tick_, uint64&& RandomSeed_, int64&& NextDownArrowTick_, int64&& NextLeftArrowTick_, int64&& NextRightArrowTick_, int64&& NextItemTick_, vector<SArrow>&& Arrows_, vector<SItem>&& Items_, bool&& Started_) : Player(std::move(Player_)), BattleInfo(std::move(BattleInfo_)), Bufs(std::move(Bufs_)), Character(std::move(Character_)), Tick(std::move(Tick_)), RandomSeed(std::move(RandomSeed_)), NextDownArrowTick(std::move(NextDownArrowTick_)), NextLeftArrowTick(std::move(NextLeftArrowTick_)), NextRightArrowTick(std::move(NextRightArrowTick_)), NextItemTick(std::move(NextItemTick_)), Arrows(std::move(Arrows_)), Items(std::move(Items_)), Started(std::move(Started_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -3800,7 +3777,6 @@ namespace bb
 			Stream_ >> Character;
 			Stream_ >> Tick;
 			Stream_ >> RandomSeed;
-			Stream_ >> RandomCounter;
 			Stream_ >> NextDownArrowTick;
 			Stream_ >> NextLeftArrowTick;
 			Stream_ >> NextRightArrowTick;
@@ -3817,7 +3793,6 @@ namespace bb
 			Value_["Character"] >> Character;
 			Value_["Tick"] >> Tick;
 			Value_["RandomSeed"] >> RandomSeed;
-			Value_["RandomCounter"] >> RandomCounter;
 			Value_["NextDownArrowTick"] >> NextDownArrowTick;
 			Value_["NextLeftArrowTick"] >> NextLeftArrowTick;
 			Value_["NextRightArrowTick"] >> NextRightArrowTick;
@@ -3834,7 +3809,6 @@ namespace bb
 			Stream_ << Character;
 			Stream_ << Tick;
 			Stream_ << RandomSeed;
-			Stream_ << RandomCounter;
 			Stream_ << NextDownArrowTick;
 			Stream_ << NextLeftArrowTick;
 			Stream_ << NextRightArrowTick;
@@ -3851,7 +3825,6 @@ namespace bb
 			Value_["Character"] = Character;
 			Value_["Tick"] = Tick;
 			Value_["RandomSeed"] = RandomSeed;
-			Value_["RandomCounter"] = RandomCounter;
 			Value_["NextDownArrowTick"] = NextDownArrowTick;
 			Value_["NextLeftArrowTick"] = NextLeftArrowTick;
 			Value_["NextRightArrowTick"] = NextRightArrowTick;
@@ -3868,7 +3841,6 @@ namespace bb
 				GetStdName(SArrowDodgeBattleBufs()) + L"," + 
 				GetStdName(SCharacterNet()) + L"," + 
 				GetStdName(int64()) + L"," + 
-				GetStdName(uint64()) + L"," + 
 				GetStdName(uint64()) + L"," + 
 				GetStdName(int64()) + L"," + 
 				GetStdName(int64()) + L"," + 
@@ -3887,7 +3859,6 @@ namespace bb
 				GetMemberName(SCharacterNet(), L"Character") + L"," + 
 				GetMemberName(int64(), L"Tick") + L"," + 
 				GetMemberName(uint64(), L"RandomSeed") + L"," + 
-				GetMemberName(uint64(), L"RandomCounter") + L"," + 
 				GetMemberName(int64(), L"NextDownArrowTick") + L"," + 
 				GetMemberName(int64(), L"NextLeftArrowTick") + L"," + 
 				GetMemberName(int64(), L"NextRightArrowTick") + L"," + 
@@ -3920,433 +3891,162 @@ namespace bb
 			return L"";
 		}
 	};
+	struct SArrowDodgeBattleEndNetCs : public SProto
+	{
+		void operator << (CStream&) override
+		{
+		}
+		void operator << (const Value&) override
+		{
+		}
+		void operator >> (CStream&) const override
+		{
+		}
+		void operator >> (Value&) const override
+		{
+		}
+		static wstring StdName(void)
+		{
+			return L"";
+		}
+		static wstring MemberName(void)
+		{
+			return L"";
+		}
+	};
 	struct SArrowDodgeBattleEndNetSc : public SProto
 	{
+		int64 Tick{};
 		TResources ResourcesLeft{};
 		TDoneQuests DoneQuests{};
 		SArrowDodgeBattleEndNetSc()
 		{
 		}
-		SArrowDodgeBattleEndNetSc(const TResources& ResourcesLeft_, const TDoneQuests& DoneQuests_) : ResourcesLeft(ResourcesLeft_), DoneQuests(DoneQuests_)
+		SArrowDodgeBattleEndNetSc(const int64& Tick_, const TResources& ResourcesLeft_, const TDoneQuests& DoneQuests_) : Tick(Tick_), ResourcesLeft(ResourcesLeft_), DoneQuests(DoneQuests_)
 		{
 		}
-		SArrowDodgeBattleEndNetSc(TResources&& ResourcesLeft_, TDoneQuests&& DoneQuests_) : ResourcesLeft(std::move(ResourcesLeft_)), DoneQuests(std::move(DoneQuests_))
+		SArrowDodgeBattleEndNetSc(int64&& Tick_, TResources&& ResourcesLeft_, TDoneQuests&& DoneQuests_) : Tick(std::move(Tick_)), ResourcesLeft(std::move(ResourcesLeft_)), DoneQuests(std::move(DoneQuests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
+			Stream_ >> Tick;
 			Stream_ >> ResourcesLeft;
 			Stream_ >> DoneQuests;
 		}
 		void operator << (const Value& Value_) override
 		{
+			Value_["Tick"] >> Tick;
 			Value_["ResourcesLeft"] >> ResourcesLeft;
 			Value_["DoneQuests"] >> DoneQuests;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
+			Stream_ << Tick;
 			Stream_ << ResourcesLeft;
 			Stream_ << DoneQuests;
 		}
 		void operator >> (Value& Value_) const override
 		{
+			Value_["Tick"] = Tick;
 			Value_["ResourcesLeft"] = ResourcesLeft;
 			Value_["DoneQuests"] = DoneQuests;
 		}
 		static wstring StdName(void)
 		{
 			return 
+				GetStdName(int64()) + L"," + 
 				GetStdName(TResources()) + L"," + 
 				GetStdName(TDoneQuests());
 		}
 		static wstring MemberName(void)
 		{
 			return 
+				GetMemberName(int64(), L"Tick") + L"," + 
 				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
 				GetMemberName(TDoneQuests(), L"DoneQuests");
 		}
 	};
-	struct SArrowDodgeBattleEndForceNetCs : public SProto
+	struct SRankingUser : public SProto
 	{
-		void operator << (CStream&) override
-		{
-		}
-		void operator << (const Value&) override
-		{
-		}
-		void operator >> (CStream&) const override
-		{
-		}
-		void operator >> (Value&) const override
-		{
-		}
-		static wstring StdName(void)
-		{
-			return L"";
-		}
-		static wstring MemberName(void)
-		{
-			return L"";
-		}
-	};
-	struct SArrowDodgeBattleEndForceNetSc : public SProto
-	{
-		void operator << (CStream&) override
-		{
-		}
-		void operator << (const Value&) override
-		{
-		}
-		void operator >> (CStream&) const override
-		{
-		}
-		void operator >> (Value&) const override
-		{
-		}
-		static wstring StdName(void)
-		{
-			return L"";
-		}
-		static wstring MemberName(void)
-		{
-			return L"";
-		}
-	};
-	struct SRankingUserCore : public SProto
-	{
+		TUID UID{};
 		u16string Nick{};
 		int32 CharCode{};
 		wstring CountryCode{};
-		SRankingUserCore()
-		{
-		}
-		SRankingUserCore(const u16string& Nick_, const int32& CharCode_, const wstring& CountryCode_) : Nick(Nick_), CharCode(CharCode_), CountryCode(CountryCode_)
-		{
-		}
-		SRankingUserCore(u16string&& Nick_, int32&& CharCode_, wstring&& CountryCode_) : Nick(std::move(Nick_)), CharCode(std::move(CharCode_)), CountryCode(std::move(CountryCode_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Nick;
-			Stream_ >> CharCode;
-			Stream_ >> CountryCode;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Nick"] >> Nick;
-			Value_["CharCode"] >> CharCode;
-			Value_["CountryCode"] >> CountryCode;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Nick;
-			Stream_ << CharCode;
-			Stream_ << CountryCode;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Nick"] = Nick;
-			Value_["CharCode"] = CharCode;
-			Value_["CountryCode"] = CountryCode;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(u16string()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(wstring());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(u16string(), L"Nick") + L"," + 
-				GetMemberName(int32(), L"CharCode") + L"," + 
-				GetMemberName(wstring(), L"CountryCode");
-		}
-	};
-	struct SRankingUser : public SRankingUserCore
-	{
-		TUID UID{};
 		int32 Point{};
 		SRankingUser()
 		{
 		}
-		SRankingUser(const SRankingUserCore& Super_, const TUID& UID_, const int32& Point_) : SRankingUserCore(Super_), UID(UID_), Point(Point_)
+		SRankingUser(const TUID& UID_, const u16string& Nick_, const int32& CharCode_, const wstring& CountryCode_, const int32& Point_) : UID(UID_), Nick(Nick_), CharCode(CharCode_), CountryCode(CountryCode_), Point(Point_)
 		{
 		}
-		SRankingUser(SRankingUserCore&& Super_, TUID&& UID_, int32&& Point_) : SRankingUserCore(std::move(Super_)), UID(std::move(UID_)), Point(std::move(Point_))
+		SRankingUser(TUID&& UID_, u16string&& Nick_, int32&& CharCode_, wstring&& CountryCode_, int32&& Point_) : UID(std::move(UID_)), Nick(std::move(Nick_)), CharCode(std::move(CharCode_)), CountryCode(std::move(CountryCode_)), Point(std::move(Point_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRankingUserCore::operator << (Stream_);
 			Stream_ >> UID;
+			Stream_ >> Nick;
+			Stream_ >> CharCode;
+			Stream_ >> CountryCode;
 			Stream_ >> Point;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRankingUserCore::operator << (Value_);
 			Value_["UID"] >> UID;
+			Value_["Nick"] >> Nick;
+			Value_["CharCode"] >> CharCode;
+			Value_["CountryCode"] >> CountryCode;
 			Value_["Point"] >> Point;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRankingUserCore::operator >> (Stream_);
 			Stream_ << UID;
+			Stream_ << Nick;
+			Stream_ << CharCode;
+			Stream_ << CountryCode;
 			Stream_ << Point;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRankingUserCore::operator >> (Value_);
 			Value_["UID"] = UID;
+			Value_["Nick"] = Nick;
+			Value_["CharCode"] = CharCode;
+			Value_["CountryCode"] = CountryCode;
 			Value_["Point"] = Point;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRankingUserCore()) + L"," + 
 				GetStdName(TUID()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRankingUserCore(), L"") + L"," + 
-				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(int32(), L"Point");
-		}
-	};
-	struct SRankingUserSingleCore : public SRankingUserCore
-	{
-		int32 Wave{};
-		int32 Second{};
-		int32 Gold{};
-		SRankingUserSingleCore()
-		{
-		}
-		SRankingUserSingleCore(const SRankingUserCore& Super_, const int32& Wave_, const int32& Second_, const int32& Gold_) : SRankingUserCore(Super_), Wave(Wave_), Second(Second_), Gold(Gold_)
-		{
-		}
-		SRankingUserSingleCore(SRankingUserCore&& Super_, int32&& Wave_, int32&& Second_, int32&& Gold_) : SRankingUserCore(std::move(Super_)), Wave(std::move(Wave_)), Second(std::move(Second_)), Gold(std::move(Gold_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRankingUserCore::operator << (Stream_);
-			Stream_ >> Wave;
-			Stream_ >> Second;
-			Stream_ >> Gold;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRankingUserCore::operator << (Value_);
-			Value_["Wave"] >> Wave;
-			Value_["Second"] >> Second;
-			Value_["Gold"] >> Gold;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRankingUserCore::operator >> (Stream_);
-			Stream_ << Wave;
-			Stream_ << Second;
-			Stream_ << Gold;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRankingUserCore::operator >> (Value_);
-			Value_["Wave"] = Wave;
-			Value_["Second"] = Second;
-			Value_["Gold"] = Gold;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRankingUserCore()) + L"," + 
+				GetStdName(u16string()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
+				GetStdName(wstring()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRankingUserCore(), L"") + L"," + 
-				GetMemberName(int32(), L"Wave") + L"," + 
-				GetMemberName(int32(), L"Second") + L"," + 
-				GetMemberName(int32(), L"Gold");
-		}
-	};
-	struct SRankingUserSingle : public SRankingUserSingleCore
-	{
-		TUID UID{};
-		int32 Point{};
-		SRankingUserSingle()
-		{
-		}
-		SRankingUserSingle(const SRankingUserSingleCore& Super_, const TUID& UID_, const int32& Point_) : SRankingUserSingleCore(Super_), UID(UID_), Point(Point_)
-		{
-		}
-		SRankingUserSingle(SRankingUserSingleCore&& Super_, TUID&& UID_, int32&& Point_) : SRankingUserSingleCore(std::move(Super_)), UID(std::move(UID_)), Point(std::move(Point_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRankingUserSingleCore::operator << (Stream_);
-			Stream_ >> UID;
-			Stream_ >> Point;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRankingUserSingleCore::operator << (Value_);
-			Value_["UID"] >> UID;
-			Value_["Point"] >> Point;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRankingUserSingleCore::operator >> (Stream_);
-			Stream_ << UID;
-			Stream_ << Point;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRankingUserSingleCore::operator >> (Value_);
-			Value_["UID"] = UID;
-			Value_["Point"] = Point;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRankingUserSingleCore()) + L"," + 
-				GetStdName(TUID()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRankingUserSingleCore(), L"") + L"," + 
 				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(int32(), L"Point");
-		}
-	};
-	struct SRankingUserIslandCore : public SRankingUserCore
-	{
-		int32 PassedIslandCount{};
-		int32 Gold{};
-		SRankingUserIslandCore()
-		{
-		}
-		SRankingUserIslandCore(const SRankingUserCore& Super_, const int32& PassedIslandCount_, const int32& Gold_) : SRankingUserCore(Super_), PassedIslandCount(PassedIslandCount_), Gold(Gold_)
-		{
-		}
-		SRankingUserIslandCore(SRankingUserCore&& Super_, int32&& PassedIslandCount_, int32&& Gold_) : SRankingUserCore(std::move(Super_)), PassedIslandCount(std::move(PassedIslandCount_)), Gold(std::move(Gold_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRankingUserCore::operator << (Stream_);
-			Stream_ >> PassedIslandCount;
-			Stream_ >> Gold;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRankingUserCore::operator << (Value_);
-			Value_["PassedIslandCount"] >> PassedIslandCount;
-			Value_["Gold"] >> Gold;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRankingUserCore::operator >> (Stream_);
-			Stream_ << PassedIslandCount;
-			Stream_ << Gold;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRankingUserCore::operator >> (Value_);
-			Value_["PassedIslandCount"] = PassedIslandCount;
-			Value_["Gold"] = Gold;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRankingUserCore()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRankingUserCore(), L"") + L"," + 
-				GetMemberName(int32(), L"PassedIslandCount") + L"," + 
-				GetMemberName(int32(), L"Gold");
-		}
-	};
-	struct SRankingUserIsland : public SRankingUserIslandCore
-	{
-		TUID UID{};
-		int32 Point{};
-		SRankingUserIsland()
-		{
-		}
-		SRankingUserIsland(const SRankingUserIslandCore& Super_, const TUID& UID_, const int32& Point_) : SRankingUserIslandCore(Super_), UID(UID_), Point(Point_)
-		{
-		}
-		SRankingUserIsland(SRankingUserIslandCore&& Super_, TUID&& UID_, int32&& Point_) : SRankingUserIslandCore(std::move(Super_)), UID(std::move(UID_)), Point(std::move(Point_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRankingUserIslandCore::operator << (Stream_);
-			Stream_ >> UID;
-			Stream_ >> Point;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRankingUserIslandCore::operator << (Value_);
-			Value_["UID"] >> UID;
-			Value_["Point"] >> Point;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRankingUserIslandCore::operator >> (Stream_);
-			Stream_ << UID;
-			Stream_ << Point;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRankingUserIslandCore::operator >> (Value_);
-			Value_["UID"] = UID;
-			Value_["Point"] = Point;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRankingUserIslandCore()) + L"," + 
-				GetStdName(TUID()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRankingUserIslandCore(), L"") + L"," + 
-				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(u16string(), L"Nick") + L"," + 
+				GetMemberName(int32(), L"CharCode") + L"," + 
+				GetMemberName(wstring(), L"CountryCode") + L"," + 
 				GetMemberName(int32(), L"Point");
 		}
 	};
 	using TRankingUsers = list<SRankingUser>;
-	using TRankingUserSingles = list<SRankingUserSingle>;
-	using TRankingUserIslands = list<SRankingUserIsland>;
 	struct SRanking : public SProto
 	{
 		TRankingUsers RankingUsers{};
-		TRankingUserSingles RankingUserSingles{};
-		TRankingUserIslands RankingUserIslands{};
+		TRankingUsers RankingUserSingles{};
+		TRankingUsers RankingUserIslands{};
 		SRanking()
 		{
 		}
-		SRanking(const TRankingUsers& RankingUsers_, const TRankingUserSingles& RankingUserSingles_, const TRankingUserIslands& RankingUserIslands_) : RankingUsers(RankingUsers_), RankingUserSingles(RankingUserSingles_), RankingUserIslands(RankingUserIslands_)
+		SRanking(const TRankingUsers& RankingUsers_, const TRankingUsers& RankingUserSingles_, const TRankingUsers& RankingUserIslands_) : RankingUsers(RankingUsers_), RankingUserSingles(RankingUserSingles_), RankingUserIslands(RankingUserIslands_)
 		{
 		}
-		SRanking(TRankingUsers&& RankingUsers_, TRankingUserSingles&& RankingUserSingles_, TRankingUserIslands&& RankingUserIslands_) : RankingUsers(std::move(RankingUsers_)), RankingUserSingles(std::move(RankingUserSingles_)), RankingUserIslands(std::move(RankingUserIslands_))
+		SRanking(TRankingUsers&& RankingUsers_, TRankingUsers&& RankingUserSingles_, TRankingUsers&& RankingUserIslands_) : RankingUsers(std::move(RankingUsers_)), RankingUserSingles(std::move(RankingUserSingles_)), RankingUserIslands(std::move(RankingUserIslands_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -4377,15 +4077,15 @@ namespace bb
 		{
 			return 
 				GetStdName(TRankingUsers()) + L"," + 
-				GetStdName(TRankingUserSingles()) + L"," + 
-				GetStdName(TRankingUserIslands());
+				GetStdName(TRankingUsers()) + L"," + 
+				GetStdName(TRankingUsers());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(TRankingUsers(), L"RankingUsers") + L"," + 
-				GetMemberName(TRankingUserSingles(), L"RankingUserSingles") + L"," + 
-				GetMemberName(TRankingUserIslands(), L"RankingUserIslands");
+				GetMemberName(TRankingUsers(), L"RankingUserSingles") + L"," + 
+				GetMemberName(TRankingUsers(), L"RankingUserIslands");
 		}
 	};
 	struct SRankingUserPointMin : public SProto

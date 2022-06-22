@@ -2,7 +2,6 @@
 
 const float CArrowDodgeItemMaker::_PositionPrecision = 1000.0f;
 const float CArrowDodgeItemMaker::_PositionMultiplier = 1.0f / _PositionPrecision;
-const int64 CArrowDodgeItemMaker::_ItemDurationTick = 70000000;
 const float CArrowDodgeItemMaker::_ItemScreenWidth = c_ScreenWidth * 0.8f;
 const float CArrowDodgeItemMaker::_ItemScreenHeight = c_ScreenHeight * 0.8f;
 const float CArrowDodgeItemMaker::_HalfItemScreenWidth = _ItemScreenWidth * 0.5f;
@@ -10,7 +9,7 @@ const float CArrowDodgeItemMaker::_HalfItemScreenHeight = _ItemScreenHeight * 0.
 const uint64 CArrowDodgeItemMaker::_IntItemScreenWidth = (uint64)(_ItemScreenWidth * _PositionPrecision);
 const uint64 CArrowDodgeItemMaker::_IntItemScreenHeight = (uint64)(_ItemScreenHeight * _PositionPrecision);
 
-CArrowDodgeItemMaker::CArrowDodgeItemMaker(CFixedRandom& FixedRandom_) :
+CArrowDodgeItemMaker::CArrowDodgeItemMaker(CFixedRandom64& FixedRandom_) :
 	_FixedRandom(FixedRandom_)
 {
 }
@@ -18,25 +17,9 @@ void CArrowDodgeItemMaker::FixedUpdate(int64 Tick_, function<void(const shared_p
 {
 	if (Tick_ > _NextItemTick)
 	{
-		_NextItemTick += _ItemDurationTick;
+		_NextItemTick += g_MetaData->ArrowDodgeMeta.ItemRegenPeriodTick;
 
-		int32 ItemNumber;
-		switch (_FixedRandom.Get() % 4)
-		{
-		case 0:
-			ItemNumber = CEngineGlobal::c_CoinNumber;
-			break;
-		case 1:
-			ItemNumber = CEngineGlobal::c_GoldBarNumber;
-			break;
-		case 2:
-			ItemNumber = CEngineGlobal::c_ShieldNumber;
-			break;
-		default:
-			ItemNumber = CEngineGlobal::c_StaminaNumber;
-			break;
-		}
-
+		auto ItemNumber = g_MetaData->GetRandomArrowDodgeItemNumber(_FixedRandom.Get());
 		fAddItem_(MakeItem(_GetItemRandomPosition(), ItemNumber));
 	}
 }

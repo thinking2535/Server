@@ -113,6 +113,14 @@ class CMetaData
 	CRank<int32, SRankTierMeta> _RankTierMetas;
 	vector<SRankReward> _RankRewards;
 public:
+	SArrowDodgeMeta ArrowDodgeMeta;
+	CRank<uint64, int32> _ArrowItemSelector;
+	inline int32 GetRandomArrowDodgeItemNumber(uint64 RandomNumber_)
+	{
+		auto itLast = _ArrowItemSelector.cend();
+		--itLast;
+		return _ArrowItemSelector.get(RandomNumber_ % itLast->first)->second;
+	}
 	SMapMeta MapMeta;
 private:
 	vector<vector<SQuest>> _QuestTypes;
@@ -125,7 +133,6 @@ public:
 	vector<wstring> ForbiddenWords;
 	SServerConfigMeta ServerConfigMeta;
 	SConfigMeta ConfigMeta;
-	SSingleMeta SingleMeta;
 	SIslandMeta IslandMeta;
 	SShopConfigServerMeta ShopConfig;
 	map<int32, SGoods> GoodsItems;

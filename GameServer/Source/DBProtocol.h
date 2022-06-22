@@ -1565,15 +1565,15 @@ namespace bb
 		TUID UID{};
 		TResources Resources{};
 		int32 PointBest{};
-		int32 SecondBest{};
+		int64 BestTick{};
 		TDoneQuestDBs DoneQuests{};
 		SArrowDodgeBattleEndDBIn()
 		{
 		}
-		SArrowDodgeBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const int32& SecondBest_, const TDoneQuestDBs& DoneQuests_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), SecondBest(SecondBest_), DoneQuests(DoneQuests_)
+		SArrowDodgeBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const int64& BestTick_, const TDoneQuestDBs& DoneQuests_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), BestTick(BestTick_), DoneQuests(DoneQuests_)
 		{
 		}
-		SArrowDodgeBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, int32&& SecondBest_, TDoneQuestDBs&& DoneQuests_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), SecondBest(std::move(SecondBest_)), DoneQuests(std::move(DoneQuests_))
+		SArrowDodgeBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, int64&& BestTick_, TDoneQuestDBs&& DoneQuests_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), BestTick(std::move(BestTick_)), DoneQuests(std::move(DoneQuests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1581,7 +1581,7 @@ namespace bb
 			Stream_ >> UID;
 			Stream_ >> Resources;
 			Stream_ >> PointBest;
-			Stream_ >> SecondBest;
+			Stream_ >> BestTick;
 			Stream_ >> DoneQuests;
 		}
 		void operator << (const Value& Value_) override
@@ -1589,7 +1589,7 @@ namespace bb
 			Value_["UID"] >> UID;
 			Value_["Resources"] >> Resources;
 			Value_["PointBest"] >> PointBest;
-			Value_["SecondBest"] >> SecondBest;
+			Value_["BestTick"] >> BestTick;
 			Value_["DoneQuests"] >> DoneQuests;
 		}
 		void operator >> (CStream& Stream_) const override
@@ -1597,7 +1597,7 @@ namespace bb
 			Stream_ << UID;
 			Stream_ << Resources;
 			Stream_ << PointBest;
-			Stream_ << SecondBest;
+			Stream_ << BestTick;
 			Stream_ << DoneQuests;
 		}
 		void operator >> (Value& Value_) const override
@@ -1605,7 +1605,7 @@ namespace bb
 			Value_["UID"] = UID;
 			Value_["Resources"] = Resources;
 			Value_["PointBest"] = PointBest;
-			Value_["SecondBest"] = SecondBest;
+			Value_["BestTick"] = BestTick;
 			Value_["DoneQuests"] = DoneQuests;
 		}
 		static wstring StdName(void)
@@ -1614,7 +1614,7 @@ namespace bb
 				GetStdName(TUID()) + L"," + 
 				GetStdName(TResources()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
+				GetStdName(int64()) + L"," + 
 				GetStdName(TDoneQuestDBs());
 		}
 		static wstring MemberName(void)
@@ -1623,7 +1623,7 @@ namespace bb
 				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(TResources(), L"Resources") + L"," + 
 				GetMemberName(int32(), L"PointBest") + L"," + 
-				GetMemberName(int32(), L"SecondBest") + L"," + 
+				GetMemberName(int64(), L"BestTick") + L"," + 
 				GetMemberName(TDoneQuestDBs(), L"DoneQuests");
 		}
 	};

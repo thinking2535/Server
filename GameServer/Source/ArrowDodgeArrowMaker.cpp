@@ -36,7 +36,7 @@ SRectCollider2D CArrowDodgeArrowMaker::_GetArrowCollider2D(const SPoint& Velocit
 	else
 		return RectCollider2DTo270Rotated(g_MetaData->MapMeta.ArrowDodgeMapInfo.Arrow.Collider);
 }
-CArrowDodgeArrowMaker::CArrowDodgeArrowMaker(CFixedRandom& FixedRandom_) :
+CArrowDodgeArrowMaker::CArrowDodgeArrowMaker(CFixedRandom64& FixedRandom_) :
 	_FixedRandom(FixedRandom_)
 {
 }
