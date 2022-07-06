@@ -20,11 +20,11 @@ namespace bb
 		Purchase
 		DailyReward
 		SelectChar
-		IslandStart
-		IslandEnd
 		BattleEnd
 		ArrowDodgeBattleStart
 		ArrowDodgeBattleEnd
+		FlyAwayBattleStart
+		FlyAwayBattleEnd
 		Gacha
 		RankReward
 		QuestNew
@@ -176,23 +176,6 @@ namespace bb
 	}
 
 
-	struct SIslandStartDBIn
-	{
-		TUID UID
-		TResources Resources
-		int32 Count
-		time_point RefreshTime
-		TDoneQuestDBs DoneQuests
-	}
-	struct SIslandEndDBIn
-	{
-		TUID UID
-		TResources Resources
-		int32 PointBest
-		int32 PassedCountBest
-		TDoneQuestDBs DoneQuests
-	}
-
 	struct SBattleEndInfo
 	{
 		TUID UID
@@ -230,6 +213,22 @@ namespace bb
 		TResources Resources
 		int32 PointBest
 		int64 BestTick
+		TDoneQuestDBs DoneQuests
+	}
+	struct SFlyAwayBattleStartDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 Count
+		time_point RefreshTime
+		TDoneQuestDBs DoneQuests
+	}
+	struct SFlyAwayBattleEndDBIn
+	{
+		TUID UID
+		TResources Resources
+		int32 PointBest
+		int32 PassedCountBest
 		TDoneQuestDBs DoneQuests
 	}
 

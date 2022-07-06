@@ -118,20 +118,6 @@ ERet SelectCharNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->SelectChar(Proto);
 }
-ERet IslandStartNetCs(CUser* User_, CStream& Stream_)
-{
-	SIslandStartNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->IslandStart(Proto);
-}
-ERet IslandEndNetCs(CUser* User_, CStream& Stream_)
-{
-	SIslandEndNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->IslandEnd(Proto);
-}
 
 ERet BattleTouchNetCs(CUser* User_, CStream& Stream_)
 {
@@ -212,6 +198,21 @@ ERet ArrowDodgeBattleEndNetCs(CUser* User_, CStream& Stream_)
 	Stream_ >> Proto;
 
 	return User_->ArrowDodgeBattleEnd(Proto);
+}
+
+ERet FlyAwayBattleJoinNetCs(CUser* User_, CStream& Stream_)
+{
+	SFlyAwayBattleJoinNetCs Proto;
+	Stream_ >> Proto;
+
+	return User_->FlyAwayBattleJoin();
+}
+ERet FlyAwayBattleEndNetCs(CUser* User_, CStream& Stream_)
+{
+	SFlyAwayBattleEndNetCs Proto;
+	Stream_ >> Proto;
+
+	return User_->FlyAwayBattleEnd(Proto);
 }
 
 ERet GachaNetCs(CUser* User_, CStream& Stream_)

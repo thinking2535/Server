@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
-CArrow::CArrow(const STransform& Transform_, const SPoint& Velocity_) :
-    CMovingObject2D(Transform_, Velocity_)
+CArrow::CArrow(const SPoint& LocalPosition_, const SPoint& Velocity_) :
+    CMovingObject2D(GetDefaultTransform(LocalPosition_), Velocity_)
 {
 }
 bool CArrow::FixedUpdate() // true : 화면 내에서 보여져야 하는 화살

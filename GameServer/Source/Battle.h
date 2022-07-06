@@ -15,6 +15,7 @@ protected:
 	TTime _BeginTime = system_clock::now();
 	vector<shared_ptr<CBattlePlayer>> _BattlePlayers;
 
+	void _SyncMessage(int64 Tick_);
 	void _AddBattlePlayer(const shared_ptr<CBattlePlayer>& pBattlePlayer_);
 protected:
 	template<typename _TProto>
@@ -25,9 +26,9 @@ protected:
 	}
 
 public:
-	CBattle(unique_ptr<CServerEngine> pEngine_, const SBattleType& BattleType_);
+	CBattle(const SBattleType& BattleType_);
 	virtual ~CBattle();
-	ERet Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_);
+	virtual ERet Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_);
 	ERet Push(int32 PlayerIndex_, const SBattlePushNetCs& Proto_);
 	virtual bool Update(void);
 	virtual void OnLine(int32 PlayerIndex_) = 0;

@@ -853,6 +853,52 @@ namespace bb
 				GetMemberName(list<SStructureMove>(), L"StructureMoves");
 		}
 	};
+	struct SPrefabNameCollider : public SProto
+	{
+		wstring PrefabName{};
+		SRectCollider2D Collider{};
+		SPrefabNameCollider()
+		{
+		}
+		SPrefabNameCollider(const wstring& PrefabName_, const SRectCollider2D& Collider_) : PrefabName(PrefabName_), Collider(Collider_)
+		{
+		}
+		SPrefabNameCollider(wstring&& PrefabName_, SRectCollider2D&& Collider_) : PrefabName(std::move(PrefabName_)), Collider(std::move(Collider_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> PrefabName;
+			Stream_ >> Collider;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["PrefabName"] >> PrefabName;
+			Value_["Collider"] >> Collider;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << PrefabName;
+			Stream_ << Collider;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["PrefabName"] = PrefabName;
+			Value_["Collider"] = Collider;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(wstring()) + L"," + 
+				GetStdName(SRectCollider2D());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(wstring(), L"PrefabName") + L"," + 
+				GetMemberName(SRectCollider2D(), L"Collider");
+		}
+	};
 	struct SArrowDodgeMap : public SProto
 	{
 		wstring PrefabName{};
@@ -904,52 +950,6 @@ namespace bb
 				GetMemberName(wstring(), L"PrefabName") + L"," + 
 				GetMemberName(SPoint(), L"PropPosition") + L"," + 
 				GetMemberName(list<SBoxCollider2D>(), L"Structures");
-		}
-	};
-	struct SPrefabNameCollider : public SProto
-	{
-		wstring PrefabName{};
-		SRectCollider2D Collider{};
-		SPrefabNameCollider()
-		{
-		}
-		SPrefabNameCollider(const wstring& PrefabName_, const SRectCollider2D& Collider_) : PrefabName(PrefabName_), Collider(Collider_)
-		{
-		}
-		SPrefabNameCollider(wstring&& PrefabName_, SRectCollider2D&& Collider_) : PrefabName(std::move(PrefabName_)), Collider(std::move(Collider_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> PrefabName;
-			Stream_ >> Collider;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["PrefabName"] >> PrefabName;
-			Value_["Collider"] >> Collider;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << PrefabName;
-			Stream_ << Collider;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["PrefabName"] = PrefabName;
-			Value_["Collider"] = Collider;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(wstring()) + L"," + 
-				GetStdName(SRectCollider2D());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(wstring(), L"PrefabName") + L"," + 
-				GetMemberName(SRectCollider2D(), L"Collider");
 		}
 	};
 	struct SArrowDodgeMapInfo : public SProto
@@ -1030,14 +1030,14 @@ namespace bb
 	{
 		wstring PrefabName{};
 		SPoint PropPosition{};
-		list<SRectCollider2D> Structures{};
+		list<SBoxCollider2D> Structures{};
 		SFlyAwayMap()
 		{
 		}
-		SFlyAwayMap(const wstring& PrefabName_, const SPoint& PropPosition_, const list<SRectCollider2D>& Structures_) : PrefabName(PrefabName_), PropPosition(PropPosition_), Structures(Structures_)
+		SFlyAwayMap(const wstring& PrefabName_, const SPoint& PropPosition_, const list<SBoxCollider2D>& Structures_) : PrefabName(PrefabName_), PropPosition(PropPosition_), Structures(Structures_)
 		{
 		}
-		SFlyAwayMap(wstring&& PrefabName_, SPoint&& PropPosition_, list<SRectCollider2D>&& Structures_) : PrefabName(std::move(PrefabName_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_))
+		SFlyAwayMap(wstring&& PrefabName_, SPoint&& PropPosition_, list<SBoxCollider2D>&& Structures_) : PrefabName(std::move(PrefabName_)), PropPosition(std::move(PropPosition_)), Structures(std::move(Structures_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1069,67 +1069,148 @@ namespace bb
 			return 
 				GetStdName(wstring()) + L"," + 
 				GetStdName(SPoint()) + L"," + 
-				GetStdName(list<SRectCollider2D>());
+				GetStdName(list<SBoxCollider2D>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(wstring(), L"PrefabName") + L"," + 
 				GetMemberName(SPoint(), L"PropPosition") + L"," + 
-				GetMemberName(list<SRectCollider2D>(), L"Structures");
+				GetMemberName(list<SBoxCollider2D>(), L"Structures");
+		}
+	};
+	struct SFlyAwayMapInfo : public SProto
+	{
+		vector<SFlyAwayMap> Maps{};
+		vector<SPrefabNameCollider> Lands{};
+		SPrefabNameCollider Coin{};
+		SPrefabNameCollider GoldBar{};
+		SPrefabNameCollider Apple{};
+		SPrefabNameCollider Meat{};
+		SPrefabNameCollider Chicken{};
+		SFlyAwayMapInfo()
+		{
+		}
+		SFlyAwayMapInfo(const vector<SFlyAwayMap>& Maps_, const vector<SPrefabNameCollider>& Lands_, const SPrefabNameCollider& Coin_, const SPrefabNameCollider& GoldBar_, const SPrefabNameCollider& Apple_, const SPrefabNameCollider& Meat_, const SPrefabNameCollider& Chicken_) : Maps(Maps_), Lands(Lands_), Coin(Coin_), GoldBar(GoldBar_), Apple(Apple_), Meat(Meat_), Chicken(Chicken_)
+		{
+		}
+		SFlyAwayMapInfo(vector<SFlyAwayMap>&& Maps_, vector<SPrefabNameCollider>&& Lands_, SPrefabNameCollider&& Coin_, SPrefabNameCollider&& GoldBar_, SPrefabNameCollider&& Apple_, SPrefabNameCollider&& Meat_, SPrefabNameCollider&& Chicken_) : Maps(std::move(Maps_)), Lands(std::move(Lands_)), Coin(std::move(Coin_)), GoldBar(std::move(GoldBar_)), Apple(std::move(Apple_)), Meat(std::move(Meat_)), Chicken(std::move(Chicken_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> Maps;
+			Stream_ >> Lands;
+			Stream_ >> Coin;
+			Stream_ >> GoldBar;
+			Stream_ >> Apple;
+			Stream_ >> Meat;
+			Stream_ >> Chicken;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["Maps"] >> Maps;
+			Value_["Lands"] >> Lands;
+			Value_["Coin"] >> Coin;
+			Value_["GoldBar"] >> GoldBar;
+			Value_["Apple"] >> Apple;
+			Value_["Meat"] >> Meat;
+			Value_["Chicken"] >> Chicken;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << Maps;
+			Stream_ << Lands;
+			Stream_ << Coin;
+			Stream_ << GoldBar;
+			Stream_ << Apple;
+			Stream_ << Meat;
+			Stream_ << Chicken;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["Maps"] = Maps;
+			Value_["Lands"] = Lands;
+			Value_["Coin"] = Coin;
+			Value_["GoldBar"] = GoldBar;
+			Value_["Apple"] = Apple;
+			Value_["Meat"] = Meat;
+			Value_["Chicken"] = Chicken;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(vector<SFlyAwayMap>()) + L"," + 
+				GetStdName(vector<SPrefabNameCollider>()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider()) + L"," + 
+				GetStdName(SPrefabNameCollider());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(vector<SFlyAwayMap>(), L"Maps") + L"," + 
+				GetMemberName(vector<SPrefabNameCollider>(), L"Lands") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Coin") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"GoldBar") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Apple") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Meat") + L"," + 
+				GetMemberName(SPrefabNameCollider(), L"Chicken");
 		}
 	};
 	struct SMapMeta : public SProto
 	{
 		vector<SMultiMap> OneOnOneMaps{};
 		SArrowDodgeMapInfo ArrowDodgeMapInfo{};
-		vector<SFlyAwayMap> FlyAwayMaps{};
+		SFlyAwayMapInfo FlyAwayMapInfo{};
 		SMapMeta()
 		{
 		}
-		SMapMeta(const vector<SMultiMap>& OneOnOneMaps_, const SArrowDodgeMapInfo& ArrowDodgeMapInfo_, const vector<SFlyAwayMap>& FlyAwayMaps_) : OneOnOneMaps(OneOnOneMaps_), ArrowDodgeMapInfo(ArrowDodgeMapInfo_), FlyAwayMaps(FlyAwayMaps_)
+		SMapMeta(const vector<SMultiMap>& OneOnOneMaps_, const SArrowDodgeMapInfo& ArrowDodgeMapInfo_, const SFlyAwayMapInfo& FlyAwayMapInfo_) : OneOnOneMaps(OneOnOneMaps_), ArrowDodgeMapInfo(ArrowDodgeMapInfo_), FlyAwayMapInfo(FlyAwayMapInfo_)
 		{
 		}
-		SMapMeta(vector<SMultiMap>&& OneOnOneMaps_, SArrowDodgeMapInfo&& ArrowDodgeMapInfo_, vector<SFlyAwayMap>&& FlyAwayMaps_) : OneOnOneMaps(std::move(OneOnOneMaps_)), ArrowDodgeMapInfo(std::move(ArrowDodgeMapInfo_)), FlyAwayMaps(std::move(FlyAwayMaps_))
+		SMapMeta(vector<SMultiMap>&& OneOnOneMaps_, SArrowDodgeMapInfo&& ArrowDodgeMapInfo_, SFlyAwayMapInfo&& FlyAwayMapInfo_) : OneOnOneMaps(std::move(OneOnOneMaps_)), ArrowDodgeMapInfo(std::move(ArrowDodgeMapInfo_)), FlyAwayMapInfo(std::move(FlyAwayMapInfo_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> OneOnOneMaps;
 			Stream_ >> ArrowDodgeMapInfo;
-			Stream_ >> FlyAwayMaps;
+			Stream_ >> FlyAwayMapInfo;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["OneOnOneMaps"] >> OneOnOneMaps;
 			Value_["ArrowDodgeMapInfo"] >> ArrowDodgeMapInfo;
-			Value_["FlyAwayMaps"] >> FlyAwayMaps;
+			Value_["FlyAwayMapInfo"] >> FlyAwayMapInfo;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << OneOnOneMaps;
 			Stream_ << ArrowDodgeMapInfo;
-			Stream_ << FlyAwayMaps;
+			Stream_ << FlyAwayMapInfo;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["OneOnOneMaps"] = OneOnOneMaps;
 			Value_["ArrowDodgeMapInfo"] = ArrowDodgeMapInfo;
-			Value_["FlyAwayMaps"] = FlyAwayMaps;
+			Value_["FlyAwayMapInfo"] = FlyAwayMapInfo;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(vector<SMultiMap>()) + L"," + 
 				GetStdName(SArrowDodgeMapInfo()) + L"," + 
-				GetStdName(vector<SFlyAwayMap>());
+				GetStdName(SFlyAwayMapInfo());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(vector<SMultiMap>(), L"OneOnOneMaps") + L"," + 
 				GetMemberName(SArrowDodgeMapInfo(), L"ArrowDodgeMapInfo") + L"," + 
-				GetMemberName(vector<SFlyAwayMap>(), L"FlyAwayMaps");
+				GetMemberName(SFlyAwayMapInfo(), L"FlyAwayMapInfo");
 		}
 	};
 	struct SIslandMeta : public SProto
@@ -1810,20 +1891,10 @@ namespace bb
 				GetMemberName(int32(), L"Champion");
 		}
 	};
-	enum class EArrowDodgeItemType
-	{
-		Coin,
-		GoldBar,
-		Shield,
-		Stamina,
-		Max,
-		Null,
-	};
 	struct SArrowDodgeMeta : public SProto
 	{
 		int32 ArrowDodgePoint{};
 		int32 ArrowGetPoint{};
-		int32 ItemGetPoint{};
 		int64 ItemDurationTick{};
 		int64 ItemRegenPeriodTick{};
 		int32 PlayCountMax{};
@@ -1832,17 +1903,16 @@ namespace bb
 		SArrowDodgeMeta()
 		{
 		}
-		SArrowDodgeMeta(const int32& ArrowDodgePoint_, const int32& ArrowGetPoint_, const int32& ItemGetPoint_, const int64& ItemDurationTick_, const int64& ItemRegenPeriodTick_, const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& RefreshDurationMinute_) : ArrowDodgePoint(ArrowDodgePoint_), ArrowGetPoint(ArrowGetPoint_), ItemGetPoint(ItemGetPoint_), ItemDurationTick(ItemDurationTick_), ItemRegenPeriodTick(ItemRegenPeriodTick_), PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), RefreshDurationMinute(RefreshDurationMinute_)
+		SArrowDodgeMeta(const int32& ArrowDodgePoint_, const int32& ArrowGetPoint_, const int64& ItemDurationTick_, const int64& ItemRegenPeriodTick_, const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& RefreshDurationMinute_) : ArrowDodgePoint(ArrowDodgePoint_), ArrowGetPoint(ArrowGetPoint_), ItemDurationTick(ItemDurationTick_), ItemRegenPeriodTick(ItemRegenPeriodTick_), PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), RefreshDurationMinute(RefreshDurationMinute_)
 		{
 		}
-		SArrowDodgeMeta(int32&& ArrowDodgePoint_, int32&& ArrowGetPoint_, int32&& ItemGetPoint_, int64&& ItemDurationTick_, int64&& ItemRegenPeriodTick_, int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& RefreshDurationMinute_) : ArrowDodgePoint(std::move(ArrowDodgePoint_)), ArrowGetPoint(std::move(ArrowGetPoint_)), ItemGetPoint(std::move(ItemGetPoint_)), ItemDurationTick(std::move(ItemDurationTick_)), ItemRegenPeriodTick(std::move(ItemRegenPeriodTick_)), PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
+		SArrowDodgeMeta(int32&& ArrowDodgePoint_, int32&& ArrowGetPoint_, int64&& ItemDurationTick_, int64&& ItemRegenPeriodTick_, int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& RefreshDurationMinute_) : ArrowDodgePoint(std::move(ArrowDodgePoint_)), ArrowGetPoint(std::move(ArrowGetPoint_)), ItemDurationTick(std::move(ItemDurationTick_)), ItemRegenPeriodTick(std::move(ItemRegenPeriodTick_)), PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> ArrowDodgePoint;
 			Stream_ >> ArrowGetPoint;
-			Stream_ >> ItemGetPoint;
 			Stream_ >> ItemDurationTick;
 			Stream_ >> ItemRegenPeriodTick;
 			Stream_ >> PlayCountMax;
@@ -1853,7 +1923,6 @@ namespace bb
 		{
 			Value_["ArrowDodgePoint"] >> ArrowDodgePoint;
 			Value_["ArrowGetPoint"] >> ArrowGetPoint;
-			Value_["ItemGetPoint"] >> ItemGetPoint;
 			Value_["ItemDurationTick"] >> ItemDurationTick;
 			Value_["ItemRegenPeriodTick"] >> ItemRegenPeriodTick;
 			Value_["PlayCountMax"] >> PlayCountMax;
@@ -1864,7 +1933,6 @@ namespace bb
 		{
 			Stream_ << ArrowDodgePoint;
 			Stream_ << ArrowGetPoint;
-			Stream_ << ItemGetPoint;
 			Stream_ << ItemDurationTick;
 			Stream_ << ItemRegenPeriodTick;
 			Stream_ << PlayCountMax;
@@ -1875,7 +1943,6 @@ namespace bb
 		{
 			Value_["ArrowDodgePoint"] = ArrowDodgePoint;
 			Value_["ArrowGetPoint"] = ArrowGetPoint;
-			Value_["ItemGetPoint"] = ItemGetPoint;
 			Value_["ItemDurationTick"] = ItemDurationTick;
 			Value_["ItemRegenPeriodTick"] = ItemRegenPeriodTick;
 			Value_["PlayCountMax"] = PlayCountMax;
@@ -1885,7 +1952,6 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int64()) + L"," + 
@@ -1899,7 +1965,6 @@ namespace bb
 			return 
 				GetMemberName(int32(), L"ArrowDodgePoint") + L"," + 
 				GetMemberName(int32(), L"ArrowGetPoint") + L"," + 
-				GetMemberName(int32(), L"ItemGetPoint") + L"," + 
 				GetMemberName(int64(), L"ItemDurationTick") + L"," + 
 				GetMemberName(int64(), L"ItemRegenPeriodTick") + L"," + 
 				GetMemberName(int32(), L"PlayCountMax") + L"," + 
@@ -1910,47 +1975,181 @@ namespace bb
 	struct SArrowDodgeItemMeta : public SProto
 	{
 		EArrowDodgeItemType ItemType{};
-		uint64 Weight{};
+		uint32 CreateWeight{};
+		int32 AddedPoint{};
+		TResource AddedGold{};
 		SArrowDodgeItemMeta()
 		{
 		}
-		SArrowDodgeItemMeta(const EArrowDodgeItemType& ItemType_, const uint64& Weight_) : ItemType(ItemType_), Weight(Weight_)
+		SArrowDodgeItemMeta(const EArrowDodgeItemType& ItemType_, const uint32& CreateWeight_, const int32& AddedPoint_, const TResource& AddedGold_) : ItemType(ItemType_), CreateWeight(CreateWeight_), AddedPoint(AddedPoint_), AddedGold(AddedGold_)
 		{
 		}
-		SArrowDodgeItemMeta(EArrowDodgeItemType&& ItemType_, uint64&& Weight_) : ItemType(std::move(ItemType_)), Weight(std::move(Weight_))
+		SArrowDodgeItemMeta(EArrowDodgeItemType&& ItemType_, uint32&& CreateWeight_, int32&& AddedPoint_, TResource&& AddedGold_) : ItemType(std::move(ItemType_)), CreateWeight(std::move(CreateWeight_)), AddedPoint(std::move(AddedPoint_)), AddedGold(std::move(AddedGold_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> ItemType;
-			Stream_ >> Weight;
+			Stream_ >> CreateWeight;
+			Stream_ >> AddedPoint;
+			Stream_ >> AddedGold;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["ItemType"] >> ItemType;
-			Value_["Weight"] >> Weight;
+			Value_["CreateWeight"] >> CreateWeight;
+			Value_["AddedPoint"] >> AddedPoint;
+			Value_["AddedGold"] >> AddedGold;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << ItemType;
-			Stream_ << Weight;
+			Stream_ << CreateWeight;
+			Stream_ << AddedPoint;
+			Stream_ << AddedGold;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["ItemType"] = ItemType;
-			Value_["Weight"] = Weight;
+			Value_["CreateWeight"] = CreateWeight;
+			Value_["AddedPoint"] = AddedPoint;
+			Value_["AddedGold"] = AddedGold;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(EArrowDodgeItemType()) + L"," + 
-				GetStdName(uint64());
+				GetStdName(uint32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TResource());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(EArrowDodgeItemType(), L"ItemType") + L"," + 
-				GetMemberName(uint64(), L"Weight");
+				GetMemberName(uint32(), L"CreateWeight") + L"," + 
+				GetMemberName(int32(), L"AddedPoint") + L"," + 
+				GetMemberName(TResource(), L"AddedGold");
+		}
+	};
+	struct SFlyAwayMeta : public SProto
+	{
+		int32 PlayCountMax{};
+		TResource ChargeCostGold{};
+		int32 RefreshDurationMinute{};
+		SFlyAwayMeta()
+		{
+		}
+		SFlyAwayMeta(const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& RefreshDurationMinute_) : PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), RefreshDurationMinute(RefreshDurationMinute_)
+		{
+		}
+		SFlyAwayMeta(int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& RefreshDurationMinute_) : PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> PlayCountMax;
+			Stream_ >> ChargeCostGold;
+			Stream_ >> RefreshDurationMinute;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["PlayCountMax"] >> PlayCountMax;
+			Value_["ChargeCostGold"] >> ChargeCostGold;
+			Value_["RefreshDurationMinute"] >> RefreshDurationMinute;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << PlayCountMax;
+			Stream_ << ChargeCostGold;
+			Stream_ << RefreshDurationMinute;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["PlayCountMax"] = PlayCountMax;
+			Value_["ChargeCostGold"] = ChargeCostGold;
+			Value_["RefreshDurationMinute"] = RefreshDurationMinute;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TResource()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"PlayCountMax") + L"," + 
+				GetMemberName(TResource(), L"ChargeCostGold") + L"," + 
+				GetMemberName(int32(), L"RefreshDurationMinute");
+		}
+	};
+	struct SFlyAwayItemMeta : public SProto
+	{
+		EFlyAwayItemType ItemType{};
+		uint32 StaminaCreateWeight{};
+		int32 AddedPoint{};
+		TResource AddedGold{};
+		float AddedStamina{};
+		SFlyAwayItemMeta()
+		{
+		}
+		SFlyAwayItemMeta(const EFlyAwayItemType& ItemType_, const uint32& StaminaCreateWeight_, const int32& AddedPoint_, const TResource& AddedGold_, const float& AddedStamina_) : ItemType(ItemType_), StaminaCreateWeight(StaminaCreateWeight_), AddedPoint(AddedPoint_), AddedGold(AddedGold_), AddedStamina(AddedStamina_)
+		{
+		}
+		SFlyAwayItemMeta(EFlyAwayItemType&& ItemType_, uint32&& StaminaCreateWeight_, int32&& AddedPoint_, TResource&& AddedGold_, float&& AddedStamina_) : ItemType(std::move(ItemType_)), StaminaCreateWeight(std::move(StaminaCreateWeight_)), AddedPoint(std::move(AddedPoint_)), AddedGold(std::move(AddedGold_)), AddedStamina(std::move(AddedStamina_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> ItemType;
+			Stream_ >> StaminaCreateWeight;
+			Stream_ >> AddedPoint;
+			Stream_ >> AddedGold;
+			Stream_ >> AddedStamina;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["ItemType"] >> ItemType;
+			Value_["StaminaCreateWeight"] >> StaminaCreateWeight;
+			Value_["AddedPoint"] >> AddedPoint;
+			Value_["AddedGold"] >> AddedGold;
+			Value_["AddedStamina"] >> AddedStamina;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << ItemType;
+			Stream_ << StaminaCreateWeight;
+			Stream_ << AddedPoint;
+			Stream_ << AddedGold;
+			Stream_ << AddedStamina;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["ItemType"] = ItemType;
+			Value_["StaminaCreateWeight"] = StaminaCreateWeight;
+			Value_["AddedPoint"] = AddedPoint;
+			Value_["AddedGold"] = AddedGold;
+			Value_["AddedStamina"] = AddedStamina;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(EFlyAwayItemType()) + L"," + 
+				GetStdName(uint32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TResource()) + L"," + 
+				GetStdName(float());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(EFlyAwayItemType(), L"ItemType") + L"," + 
+				GetMemberName(uint32(), L"StaminaCreateWeight") + L"," + 
+				GetMemberName(int32(), L"AddedPoint") + L"," + 
+				GetMemberName(TResource(), L"AddedGold") + L"," + 
+				GetMemberName(float(), L"AddedStamina");
 		}
 	};
 	struct SCouponMeta : public SProto

@@ -62,7 +62,12 @@ void CBattlePlayer::Bounce(const SPoint& Normal_)
 		}
 	}
 }
-void CBattlePlayer::_Dead(int64 Tick_)
+void CBattlePlayer::Die(int64 Tick_)
+{
+	pCharacter->BalloonCount = -1;
+	_Die(Tick_);
+}
+void CBattlePlayer::_Die(int64 Tick_)
 {
 	pPlayerObject->Velocity.X = 0.0f;
 	pPlayerObject->Velocity.Y = c_DieUpVel;
@@ -132,56 +137,66 @@ void CBattlePlayer::_SetLandingVelocity(const shared_ptr<CMovingObject2D>& pOthe
 		}
 	}
 }
-bool CBattlePlayer::_CheckCollisionEnterStructure(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
-	if (pOtherCollider_->Number == CEngineGlobal::c_StructureNumber &&
-		pCollider_->Number == CEngineGlobal::c_BodyNumber && Normal_.Y > 0.0f)
-	{
-		_SetLandingVelocity(pOtherMovingObject_);
-		_AttachGround(pOtherCollider_);
-		return true;
-	}
-	else
-	{
+	if (pOtherCollider_->Number != CEngineGlobal::c_StructureNumber ||
+		pCollider_->Number != CEngineGlobal::c_BodyNumber ||
+		Normal_.Y <= 0.0f)
 		return false;
-	}
+
+	_SetLandingVelocity(pOtherMovingObject_);
+	_AttachGround(pOtherCollider_);
+	return true;
 }
 void CBattlePlayer::_CollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
-	if (_CheckCollisionEnterStructure(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return;
-
 	if (_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
 		return;
 
 	Bounce(Normal_);
 }
-void CBattlePlayer::_CollisionStay(int64 Tick_, const CPlayerObject2D::TContactPoint2Ds& ContactPoint2Ds_)
+bool CBattlePlayer::_CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
-	for (auto& i : ContactPoint2Ds_)
+	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_StructureNumber) // 몸이 지형에 안 닿았으면
+		return false;
+
+	if (Normal_.Y > 0.0f)
 	{
-		if (i.first.pCollider->Number == CEngineGlobal::c_BodyNumber && i.first.pOtherCollider->Number == CEngineGlobal::c_StructureNumber) // 몸이 지형에 닿았으면
-		{
-			if (i.second.Normal.Y > 0.0f)
-			{
-				_SetLandingVelocity(i.second.pOtherMovingObject);
-				_AttachGround(i.first.pOtherCollider);
-			}
-			else
-			{
-				_DetachGround(i.first.pOtherCollider);
-			}
-		}
+		_SetLandingVelocity(pOtherMovingObject_);
+		_AttachGround(pOtherCollider_);
 	}
+	else
+	{
+		_DetachGround(pOtherCollider_);
+	}
+
+	return true;
 }
-void CBattlePlayer::_CollisionExit(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+void CBattlePlayer::_CollisionStay(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+{
+	if (_CheckCollisionStay(Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
+		return;
+}
+bool CBattlePlayer::_CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
 	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_StructureNumber)
-		return;
+		return false;
 
 	_DetachGround(pOtherCollider_);
+
+	return true;
+}
+void CBattlePlayer::_CollisionExit(int64 Tick_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+{
+	if (_CheckCollisionExit(pCollider_, pOtherCollider_, pOtherMovingObject_))
+		return;
 }
 void CBattlePlayer::_FixedUpdate(int64 Tick_)
+{
+	_UpdateStamina(Tick_);
+	_UpdatePhysics(Tick_);
+}
+void CBattlePlayer::_UpdateStamina(int64 Tick_)
 {
 	if (Tick_ > pCharacter->StaminaInfo.LastUsedTick + pMeta->StaminaRegenDelay)
 	{
@@ -189,7 +204,9 @@ void CBattlePlayer::_FixedUpdate(int64 Tick_)
 		if (pCharacter->StaminaInfo.Stamina > pMeta->StaminaMax)
 			pCharacter->StaminaInfo.Stamina = pMeta->StaminaMax;
 	}
-
+}
+void CBattlePlayer::_UpdatePhysics(int64 Tick_)
+{
 	// 변위 = 0.5 * g * t*t + 현재v * t
 	//      = t * (0.5 * g * t + 현재v)
 	pPlayerObject->LocalPosition.X += (CEngine::GetDeltaTime() * (0.5f * pCharacter->Acc.X * CEngine::GetDeltaTime() + pPlayerObject->Velocity.X));
@@ -435,8 +452,8 @@ CBattlePlayer::CBattlePlayer(
 
 	SetColliderToMovingObject2D(_PlayerCollider.pPlayer, pPlayerObject);
 	pPlayerObject->fCollisionEnter = std::bind(&CBattlePlayer::_CollisionEnter, this, _1, _2, _3, _4, _5);
-	pPlayerObject->fCollisionStay = std::bind(&CBattlePlayer::_CollisionStay, this, _1, _2);
-	pPlayerObject->fCollisionExit = std::bind(&CBattlePlayer::_CollisionExit, this, _1, _2, _3, _4, _5);
+	pPlayerObject->fCollisionStay = std::bind(&CBattlePlayer::_CollisionStay, this, _1, _2, _3, _4, _5);
+	pPlayerObject->fCollisionExit = std::bind(&CBattlePlayer::_CollisionExit, this, _1, _2, _3, _4);
 	pPlayerObject->fFixedUpdate = std::bind(&CBattlePlayer::_FixedUpdate, this, _1);
 
 	pPlayer->BattleBegin(this);

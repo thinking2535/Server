@@ -7,7 +7,7 @@ SArrowObject::SArrowObject(const shared_ptr<CArrow>& pArrow_, const CList<shared
 }
 SArrow SArrowObject::GetSArrow(void) const
 {
-	return SArrow(*pArrow, pArrow->Velocity);
+	return SArrow(pArrow->LocalPosition, pArrow->Velocity);
 }
 
 SItemObject::SItemObject(const shared_ptr<CArrowDodgeItem>& pItem_, const CList<shared_ptr<CCollider2D>>::iterator& ItemIterator_)
@@ -15,9 +15,9 @@ SItemObject::SItemObject(const shared_ptr<CArrowDodgeItem>& pItem_, const CList<
 	pItem = pItem_;
 	ItemIterator = ItemIterator_;
 }
-SItem SItemObject::GetSItem(void) const
+SArrowDodgeItem SItemObject::GetSArrowDodgeItem(void) const
 {
-	return SItem(*pItem, pItem->Number);
+	return SArrowDodgeItem(pItem->LocalPosition, pItem->GetItemType());
 }
 
 void CArrowDodgeBattle::_AddBattlePlayer(const shared_ptr<CArrowDodgeBattlePlayer>& pBattlePlayer_)
@@ -40,18 +40,10 @@ void CArrowDodgeBattle::_HitArrowCallback(const shared_ptr<CArrow>& pArrow_, boo
 void CArrowDodgeBattle::_GetItemCallback(int64 Tick_, const shared_ptr<CArrowDodgeItem>& pItem_)
 {
 	_RemoveItem(pItem_->Iterator);
-	_UpdateScore(g_MetaData->ArrowDodgeMeta.ItemGetPoint);
 	pItem_->Proc(Tick_, _pArrowDodgeBattlePlayer, this);
 }
 CArrowDodgeBattle::CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_) :
-	CBattle(
-		make_unique<CServerEngine>(
-			c_NetworkTickSync,
-			0,
-			c_ContactOffset,
-			c_FPS,
-			std::bind(&CArrowDodgeBattle::_SyncMessage, this, _1)),
-		SBattleType(1, 1))
+	CBattle(SBattleType(1, 1))
 {
 	auto pMap = g_MetaData->GetArrowDodgeMap();
 	_pRootObject = make_shared<CObject2D>(GetDefaultTransform(pMap->PropPosition));
@@ -100,19 +92,15 @@ CArrowDodgeBattle::~CArrowDodgeBattle()
 {
 	_pArrowDodgeBattlePlayer->BattleEnd(_pEngine->GetTick());
 }
-void CArrowDodgeBattle::_SyncMessage(int64 Tick_)
-{
-	BroadCast(SBattleSyncNetSc(Tick_));
-}
 SArrowDodgeBattleBeginNetSc CArrowDodgeBattle::GetArrowDodgeBattleBeginNetSc(void) const
 {
 	vector<SArrow> Arrows;
 	for (auto& i : _ArrowIts)
 		Arrows.emplace_back(i.GetSArrow());
 
-	vector<SItem> Items;
+	vector<SArrowDodgeItem> Items;
 	for (auto& i : _ItemIts)
-		Items.emplace_back(i.GetSItem());
+		Items.emplace_back(i.GetSArrowDodgeItem());
 
 	return SArrowDodgeBattleBeginNetSc(
 		*_pArrowDodgeBattlePlayer,
@@ -120,7 +108,7 @@ SArrowDodgeBattleBeginNetSc CArrowDodgeBattle::GetArrowDodgeBattleBeginNetSc(voi
 		_pArrowDodgeBattlePlayer->Bufs,
 		_pArrowDodgeBattlePlayer->GetCharacterNet(),
 		_pEngine->GetTick(),
-		_ArrowMaker.GetRandomSeed(),
+		_FixedRandom.GetSeed(),
 		_ArrowMaker.GetNextDownArrowTick(),
 		_ArrowMaker.GetNextLeftArrowTick(),
 		_ArrowMaker.GetNextRightArrowTick(),
@@ -194,6 +182,9 @@ void CArrowDodgeBattle::_AddArrow(const shared_ptr<CArrow>& pArrow_)
 }
 void CArrowDodgeBattle::_RemoveArrow(CList<SArrowObject>::iterator ArrowObjectIt_)
 {
+	if (!ArrowObjectIt_)
+		return;
+
 	_pEngine->RemoveMovingObject(ArrowObjectIt_->ArrowIterator);
 	_ArrowIts.erase(ArrowObjectIt_);
 }
@@ -205,6 +196,9 @@ void CArrowDodgeBattle::_AddItem(const shared_ptr<CArrowDodgeItem>& pItem_)
 }
 void CArrowDodgeBattle::_RemoveItem(CList<SItemObject>::iterator ItemObjectIt_)
 {
+	if (!ItemObjectIt_)
+		return;
+
 	_pEngine->RemoveObject(ItemObjectIt_->ItemIterator);
 	_ItemIts.erase(ItemObjectIt_);
 }

@@ -59,6 +59,4 @@ public:
 	void OffLine(int32 PlayerIndex_) override;
 	void Link(int32 PlayerIndex_);
 	void UnLink(int32 PlayerIndex_);
-private:
-	void _SyncMessage(int64 Tick_);
 };

@@ -1,5 +1,9 @@
 #include "stdafx.h"
 
+void CBattle::_SyncMessage(int64 Tick_)
+{
+	BroadCast(SBattleSyncNetSc(Tick_));
+}
 void CBattle::_AddBattlePlayer(const shared_ptr<CBattlePlayer>& pBattlePlayer_)
 {
 	_BattlePlayers.emplace_back(pBattlePlayer_);
@@ -34,8 +38,13 @@ ERet CBattle::Push(int32 PlayerIndex_, const SBattlePushNetCs& Proto_)
 	return ERet::Ok;
 }
 
-CBattle::CBattle(unique_ptr<CServerEngine> pEngine_, const SBattleType& BattleType_) :
-	_pEngine(std::move(pEngine_)),
+CBattle::CBattle(const SBattleType& BattleType_) :
+	_pEngine(make_unique<CServerEngine>(
+		c_NetworkTickSync,
+		0,
+		c_ContactOffset,
+		c_FPS,
+		std::bind(&CBattle::_SyncMessage, this, _1))),
 	_BattleType(BattleType_)
 {
 }

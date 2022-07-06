@@ -50,6 +50,15 @@ CMetaData::CMetaData() :
 
 		for (auto& i : CharacterMetas)
 		{
+			if (i.MaxVelXAir < _MinVelXAir)
+				_MinVelXAir = i.MaxVelXAir;
+
+			if (i.MaxVelUp < _MinVelUp)
+				_MinVelUp = i.MaxVelUp;
+
+			if (i.MaxVelDown < _MinVelDown)
+				_MinVelDown = i.MaxVelDown;
+
 			_Characters.emplace(i.Code, CCharacter(i));
 
 			if (i.Default)
@@ -333,7 +342,6 @@ CMetaData::CMetaData() :
 			ASSERTION(ib.first->second.BattleReward.back().Points.size() == (size_t)ERank::Max);
 		}
 
-		// Battle /////////////////////////
 		{
 			// ArrowDodge ///////////////////////////////////////
 			list<SArrowDodgeMeta> ArrowDodges;
@@ -342,49 +350,52 @@ CMetaData::CMetaData() :
 
 			ASSERTION(!ArrowDodges.empty());
 			ArrowDodgeMeta = ArrowDodges.front();
+			ASSERTIONA(ArrowDodgeMeta.PlayCountMax > 0 && ArrowDodgeMeta.ChargeCostGold > 0, L"Invalid ArrowDodgeMeta");
 
 
 			// ArrowDodgeItem ///////////////////////////////////
-			vector<SArrowDodgeItemMeta> ArrowDodgeItemMetas;
 			Stream.LoadFile(L"../../MetaData/ArrowDodgeItem.bin");
-			Stream >> ArrowDodgeItemMetas;
+			Stream >> _ArrowDodgeItemMetas;
 
-			ASSERTION(!ArrowDodgeItemMetas.empty());
+			ASSERTION(!_ArrowDodgeItemMetas.empty());
 
-			uint64 WeightSum = 0;
-			for (auto& i : ArrowDodgeItemMetas)
+			sort(_ArrowDodgeItemMetas.begin(), _ArrowDodgeItemMetas.end(), [](const SArrowDodgeItemMeta& a, const SArrowDodgeItemMeta& b) { return a.ItemType < b.ItemType; });
+
+			uint32 WeightSum = 0;
+			for (auto& i : _ArrowDodgeItemMetas)
 			{
-				int32 ItemNumber;
-				switch (i.ItemType)
-				{
-				case EArrowDodgeItemType::Coin:
-				{
-					ItemNumber = CEngineGlobal::c_CoinNumber;
-					break;
-				}
-				case EArrowDodgeItemType::GoldBar:
-				{
-					ItemNumber = CEngineGlobal::c_GoldBarNumber;
-					break;
-				}
-				case EArrowDodgeItemType::Shield:
-				{
-					ItemNumber = CEngineGlobal::c_ShieldNumber;
-					break;
-				}
-				case EArrowDodgeItemType::Stamina:
-				{
-					ItemNumber = CEngineGlobal::c_StaminaNumber;
-					break;
-				}
-				default:
-					throw exception();
-				}
-
-				WeightSum += i.Weight;
-				_ArrowItemSelector.emplace(WeightSum, ItemNumber);
+				WeightSum += i.CreateWeight;
+				_ArrowDodgeItemSelector.emplace(WeightSum, i.ItemType);
 			}
 		}
+
+		{
+			// FlyAway ////////////////////////////////////////////
+			list<SFlyAwayMeta> FlyAways;
+			Stream.LoadFile(L"../../MetaData/FlyAway.bin");
+			Stream >> FlyAways;
+
+			ASSERTION(!FlyAways.empty());
+			FlyAwayMeta = FlyAways.front();
+			ASSERTIONA(FlyAwayMeta.PlayCountMax > 0 && FlyAwayMeta.ChargeCostGold > 0, L"Invalid FlyAwayMeta");
+
+
+			// FlyAwayItem ///////////////////////////////////
+			Stream.LoadFile(L"../../MetaData/FlyAwayItem.bin");
+			Stream >> _FlyAwayItemMetas;
+
+			ASSERTION(!_FlyAwayItemMetas.empty());
+
+			sort(_FlyAwayItemMetas.begin(), _FlyAwayItemMetas.end(), [](const SFlyAwayItemMeta& a, const SFlyAwayItemMeta& b) { return a.ItemType < b.ItemType; });
+
+			uint32 WeightSum = 0;
+			for (auto& i : _FlyAwayItemMetas)
+			{
+				WeightSum += i.StaminaCreateWeight;
+				_FlyAwayStaminaItemSelector.emplace(WeightSum, i.ItemType);
+			}
+		}
+
 
 		// Map /////////////////////////////////////////////
 		Stream.LoadFile(L"../../MetaData/Map.bin");

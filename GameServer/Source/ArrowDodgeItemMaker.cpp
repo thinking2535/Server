@@ -6,10 +6,10 @@ const float CArrowDodgeItemMaker::_ItemScreenWidth = c_ScreenWidth * 0.8f;
 const float CArrowDodgeItemMaker::_ItemScreenHeight = c_ScreenHeight * 0.8f;
 const float CArrowDodgeItemMaker::_HalfItemScreenWidth = _ItemScreenWidth * 0.5f;
 const float CArrowDodgeItemMaker::_HalfItemScreenHeight = _ItemScreenHeight * 0.5f;
-const uint64 CArrowDodgeItemMaker::_IntItemScreenWidth = (uint64)(_ItemScreenWidth * _PositionPrecision);
-const uint64 CArrowDodgeItemMaker::_IntItemScreenHeight = (uint64)(_ItemScreenHeight * _PositionPrecision);
+const uint32 CArrowDodgeItemMaker::_IntItemScreenWidth = (uint32)(_ItemScreenWidth * _PositionPrecision);
+const uint32 CArrowDodgeItemMaker::_IntItemScreenHeight = (uint32)(_ItemScreenHeight * _PositionPrecision);
 
-CArrowDodgeItemMaker::CArrowDodgeItemMaker(CFixedRandom64& FixedRandom_) :
+CArrowDodgeItemMaker::CArrowDodgeItemMaker(CFixedRandom32& FixedRandom_) :
 	_FixedRandom(FixedRandom_)
 {
 }
@@ -19,24 +19,27 @@ void CArrowDodgeItemMaker::FixedUpdate(int64 Tick_, function<void(const shared_p
 	{
 		_NextItemTick += g_MetaData->ArrowDodgeMeta.ItemRegenPeriodTick;
 
-		auto ItemNumber = g_MetaData->GetRandomArrowDodgeItemNumber(_FixedRandom.Get());
-		fAddItem_(MakeItem(_GetItemRandomPosition(), ItemNumber));
+		// 클라이언트와 맞추기 위해 순서대로 호출되어야 함
+		auto RandomPosition = _GetItemRandomPosition();
+		auto RandomType = g_MetaData->GetRandomArrowDodgeItemType(_FixedRandom.Get());
+
+		fAddItem_(MakeItem(RandomPosition, RandomType));
 	}
 }
-shared_ptr<CArrowDodgeItem> CArrowDodgeItemMaker::MakeItem(const SPoint& LocalPosition_, int32 Number_)
+shared_ptr<CArrowDodgeItem> CArrowDodgeItemMaker::MakeItem(const SPoint& LocalPosition_, EArrowDodgeItemType ItemType_)
 {
-	switch (Number_)
+	switch (ItemType_)
 	{
-	case CEngineGlobal::c_CoinNumber:
+	case EArrowDodgeItemType::Coin:
 		return make_shared<CArrowDodgeCoin>(LocalPosition_);
 
-	case CEngineGlobal::c_GoldBarNumber:
+	case EArrowDodgeItemType::GoldBar:
 		return make_shared<CArrowDodgeGoldBar>(LocalPosition_);
 
-	case CEngineGlobal::c_ShieldNumber:
+	case EArrowDodgeItemType::Shield:
 		return make_shared<CArrowDodgeShield>(LocalPosition_);
 
-	case CEngineGlobal::c_StaminaNumber:
+	case EArrowDodgeItemType::Stamina:
 		return make_shared<CArrowDodgeStamina>(LocalPosition_);
 
 	default:

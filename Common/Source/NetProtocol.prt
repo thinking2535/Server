@@ -19,13 +19,18 @@ namespace bb
 	typedef int8 TTeamCnt
 	typedef uint8 TQuestSlotIndex
 
-	const TVer c_Ver_Main 38
+	const TVer c_Ver_Main 41
 
 	const int32 c_FPS 60
 	const int64 c_NetworkTickSync 500000
 	const int64 c_NetworkTickBuffer c_NetworkTickSync+500000
 	const float c_ContactOffset 0.0001f
 	const float c_LandXDragPerFrame 1.0f/c_FPS
+
+	const float c_ScreenWidth 3.448f
+	const float c_ScreenHeight 1.8f
+	const float c_ScreenWidth_2 c_ScreenWidth*0.5f
+	const float c_ScreenHeight_2 c_ScreenHeight*0.5f
 
 	const float c_MaxVelDeadY 1.13784f
 	const float c_Gravity -0.6465f
@@ -39,6 +44,7 @@ namespace bb
 	const float c_GroundResistance 0.1f
 
 	const float c_PlayerWidth 0.1258713f
+	const float c_PlayerWidth_2 c_PlayerWidth*0.5f
 	const float c_PlayerHeight 0.150337f
 	const float c_PlayerOffsetY c_PlayerHeight*0.5f
 	const float c_BalloonWidth 0.2f
@@ -76,8 +82,6 @@ namespace bb
 		Purchase
 		DailyReward
 		SelectChar
-		IslandStart
-		IslandEnd
 
 		BattleTouch
 		BattlePush
@@ -88,6 +92,8 @@ namespace bb
 
 		ArrowDodgeBattleJoin
 		ArrowDodgeBattleEnd
+		FlyAwayBattleJoin
+		FlyAwayBattleEnd
 
 		Gacha
 		GachaX10
@@ -121,8 +127,6 @@ namespace bb
 		Purchase
 		DailyReward
 		DailyRewardFail
-		IslandStart
-		IslandEnd
 
 		BattleSync
 		BattleTouch
@@ -131,7 +135,6 @@ namespace bb
 		MultiBattleJoin
 		MultiBattleOut
 		MultiBattleBegin
-		MultiBattleMatching
 		MultiBattleStart
 		MultiBattleEnd
 		MultiBattleIcon
@@ -142,6 +145,10 @@ namespace bb
 		ArrowDodgeBattleBegin
 		ArrowDodgeBattleStart
 		ArrowDodgeBattleEnd
+		FlyAwayBattleJoin
+		FlyAwayBattleBegin
+		FlyAwayBattleStart
+		FlyAwayBattleEnd
 
 		Gacha
 		GachaX10
@@ -255,12 +262,16 @@ namespace bb
 		Dia
 		CP
 		DiaPaid
+		Dia00
+		Dia01
+		Dia02
+		Dia03
 		Max
 		Null
 	}
 
 	typedef int32 TResource
-	typedef array<TResource,5> TResources
+	typedef array<TResource,9> TResources
 
 	enum class ERewardType : uint8
 	{
@@ -363,7 +374,6 @@ namespace bb
 		int32 BlowBalloonTotal
 		int32 QuestDailyCompleteCount
 		bool TutorialReward
-		bool IslandStarted
 		int64 RankingRewardedCounter
 		TNick NewNick
 	}
@@ -494,28 +504,6 @@ namespace bb
 		int32 Code
 	}
 
-	struct SIslandStartNetCs
-	{
-	}
-	struct SIslandStartNetSc
-	{
-		TResource GoldCost
-		int32 PlayCount
-		time_point RefreshTime
-		TDoneQuests DoneQuests
-	}
-	struct SIslandEndNetCs
-	{
-		int32 PassedIslandCount
-		TResource Gold
-		TResource GoldAdded
-		TResource DiaAdded
-	}
-	struct SIslandEndNetSc
-	{
-		TDoneQuests DoneQuests
-	}
-
 	struct SBattleType
 	{
 		TTeamCnt TeamCount
@@ -626,10 +614,6 @@ namespace bb
 		int64 Tick
 		vector<SStructMovePosition> StructMovePositions
 	}
-	struct SMultiBattleMatchingNetSc
-	{
-		int32 UserCount
-	}
 	struct SMultiBattleStartNetSc
 	{
 		time_point EndTime
@@ -677,13 +661,24 @@ namespace bb
 	}
 	struct SArrow
 	{
-		STransform Transform
+		SPoint LocalPosition
 		SPoint Velocity
 	}
-	struct SItem
+
+	enum class EArrowDodgeItemType
 	{
-		STransform Transform
-		int32 ItemNumber
+		Coin
+		GoldBar
+		Shield
+		Stamina
+		Max
+		Null
+	}
+
+	struct SArrowDodgeItem
+	{
+		SPoint LocalPosition
+		EArrowDodgeItemType ItemType
 	}
 	struct SArrowDodgeBattleInfo
 	{
@@ -708,13 +703,13 @@ namespace bb
 		SArrowDodgeBattleBufs Bufs
 		SCharacterNet Character
 		int64 Tick
-		uint64 RandomSeed
+		uint32 RandomSeed
 		int64 NextDownArrowTick
 		int64 NextLeftArrowTick
 		int64 NextRightArrowTick
 		int64 NextItemTick
 		vector<SArrow> Arrows
-		vector<SItem> Items
+		vector<SArrowDodgeItem> Items
 		bool Started
 	}
 	struct SArrowDodgeBattleStartNetSc
@@ -729,6 +724,81 @@ namespace bb
 		TResources ResourcesLeft
 		TDoneQuests DoneQuests
 	}
+
+	struct SFlyAwayBattleJoinNetCs
+	{
+	}
+	struct SFlyAwayBattleJoinNetSc
+	{
+		TResource GoldCost
+		int32 PlayCount
+		time_point RefreshTime
+		TDoneQuests DoneQuests
+	}
+	enum class EFlyAwayLandState
+	{
+		Normal
+		Shaking
+		Falling
+	}
+	struct SFlyAwayLand
+	{
+		SPoint LocalPosition
+		int32 Number
+		int32 Index
+		EFlyAwayLandState State
+		int64 NextActionTick
+	}
+
+	enum class EFlyAwayItemType
+	{
+		Coin
+		GoldBar
+		Apple
+		Meat
+		Chicken
+		Max
+		Null
+	}
+
+	struct SFlyAwayItem
+	{
+		SPoint LocalPosition
+		EFlyAwayItemType ItemType
+	}
+	struct SFlyAwayBattleInfo
+	{
+		int32 Point
+		int32 PassedCount
+		int32 PerfectCombo
+		TResource Gold
+	}
+	struct SFlyAwayBattleBeginNetSc
+	{
+		SBattlePlayer Player
+		SFlyAwayBattleInfo BattleInfo
+		SCharacterNet Character
+		int64 Tick
+		uint32 RandomSeed
+		int32 LandCounter
+		SPoint LastLandPosition
+		vector<SFlyAwayLand> Lands
+		vector<SFlyAwayItem> Items
+		bool Started
+	}
+	struct SFlyAwayBattleStartNetSc
+	{
+	}
+	struct SFlyAwayBattleEndNetCs
+	{
+	}
+	struct SFlyAwayBattleEndNetSc
+	{
+		int64 Tick
+		TResources ResourcesLeft
+		TDoneQuests DoneQuests
+	}
+
 	struct SRankingUser
 	{
 		TUID UID

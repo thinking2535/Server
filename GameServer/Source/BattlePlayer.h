@@ -38,25 +38,32 @@ private:
 	void _PumpCallback(void);
 	void _PumpDoneCallback(void);
 	void _ParachuteOnCallback(bool On_);
+protected:
 	void _AttachGround(const shared_ptr<CCollider2D>& pOtherCollider_);
 	void _DetachGround(const shared_ptr<CCollider2D>& pOtherCollider_);
 public:
 	void Bounce(const SPoint& Normal_);
+	void Die(int64 Tick_);
 protected:
-	void _Dead(int64 Tick_);
+	void _Die(int64 Tick_);
 	bool _HitBalloon(int64 Tick_, const SPoint& Normal_);
-private:
 	void _SetLandingVelocity(const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-	bool _CheckCollisionEnterStructure(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
 protected:
-	virtual bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) = 0;
+	virtual bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
 private:
 	void _CollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-	void _CollisionStay(int64 Tick_, const CPlayerObject2D::TContactPoint2Ds& ContactPoint2Ds_);
-	void _CollisionExit(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
+protected:
+	virtual bool _CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
+private:
+	void _CollisionStay(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
+protected:
+	virtual bool _CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
+private:
+	void _CollisionExit(int64 Tick_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
 protected:
 	virtual void _FixedUpdate(int64 Tick_);
-
+	virtual void _UpdateStamina(int64 Tick_);
+	virtual void _UpdatePhysics(int64 Tick_);
 public:
 	bool IsInvulerable(int64 Tick_);
 	bool IsAlive(void) const;

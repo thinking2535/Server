@@ -18,7 +18,7 @@ struct SItemObject
     CList<shared_ptr<CCollider2D>>::iterator ItemIterator;
 
     SItemObject(const shared_ptr<CArrowDodgeItem>& pItem_, const CList<shared_ptr<CCollider2D>>::iterator& ItemIterator_);
-    SItem GetSItem(void) const;
+    SArrowDodgeItem GetSArrowDodgeItem(void) const;
 };
 
 class CArrowDodgeBattle : public CBattle
@@ -28,7 +28,7 @@ class CArrowDodgeBattle : public CBattle
     shared_ptr<CObject2D> _pRootObject;
     shared_ptr<CArrowDodgeBattlePlayer> _pArrowDodgeBattlePlayer;
 
-    CFixedRandom64 _FixedRandom{ (uint64)system_clock::now().time_since_epoch().count()};
+    CFixedRandom32 _FixedRandom{ (uint32)(system_clock::now().time_since_epoch().count() % 0xffffffff) };
 
     CArrowDodgeArrowMaker _ArrowMaker{ _FixedRandom };
     CArrowDodgeItemMaker _ItemMaker{ _FixedRandom };
@@ -45,7 +45,6 @@ private:
 public:
     CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_);
     virtual ~CArrowDodgeBattle();
-    void _SyncMessage(int64 Tick_);
     SArrowDodgeBattleBeginNetSc GetArrowDodgeBattleBeginNetSc(void) const;
     bool Update(void) override;
     void OnLine(int32 PlayerIndex_) override;

@@ -48,6 +48,10 @@
     <ClCompile Include="Source\Character.cpp" />
     <ClCompile Include="Source\CheatCommand.cpp" />
     <ClCompile Include="Source\DataBase.cpp" />
+    <ClCompile Include="Source\FlyAwayBattle.cpp" />
+    <ClCompile Include="Source\FlyAwayBattlePlayer.cpp" />
+    <ClCompile Include="Source\FlyAwayItem.cpp" />
+    <ClCompile Include="Source\FlyAwayLand.cpp" />
     <ClCompile Include="Source\MetaData.cpp" />
     <ClCompile Include="Source\MultiBattle.cpp" />
     <ClCompile Include="Source\EngineGlobal.cpp" />
@@ -89,6 +93,10 @@
     <ClInclude Include="Source\CheatCommand.h" />
     <ClInclude Include="Source\DataBase.h" />
     <ClInclude Include="Source\DBProtocol.h" />
+    <ClInclude Include="Source\FlyAwayBattle.h" />
+    <ClInclude Include="Source\FlyAwayBattlePlayer.h" />
+    <ClInclude Include="Source\FlyAwayItem.h" />
+    <ClInclude Include="Source\FlyAwayLand.h" />
     <ClInclude Include="Source\MetaData.h" />
     <ClInclude Include="Source\MultiBattle.h" />
     <ClInclude Include="Source\EngineGlobal.h" />

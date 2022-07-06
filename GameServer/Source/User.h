@@ -44,7 +44,10 @@ public:
 	inline EOS GetOS(void) const { return _LoginInfo.Option.OS; }
 	inline TResources& GetResources(void) { return _User.Resources; }
 	inline const CCharacter* GetSelectedChar(void) const { return _pSelectedChar; }
-	inline bool InBattle(void) const { return _pBattlePlayer != nullptr; }
+	inline bool InBattle(void) const
+	{
+		return _pBattlePlayer != nullptr;
+	}
 	inline int32 GetSelectedCharCode(void) const { return _User.SelectedCharCode; }
 	inline wstring GetCountryCode(void) const { return MBSToWCS(_LoginInfo.CountryCodeMinuteOffset.CountryCode); }
 	template<typename _TProto>
@@ -108,8 +111,6 @@ public:
 	ERet ChangeLanguage(const SChangeLanguageNetCs& Proto_);
 
 	ERet SelectChar(const SSelectCharNetCs& Proto_);
-	ERet IslandStart(const SIslandStartNetCs& Proto_);
-	ERet IslandEnd(const SIslandEndNetCs& Proto_);
 
 	ERet BattleTouch(const SBattleTouchNetCs& Proto_);
 	ERet BattlePush(const SBattlePushNetCs& Proto_);
@@ -120,9 +121,14 @@ public:
 	ERet MultiBattleOut(void);
 	SBattleEndInfo MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
 	ERet MultiBattleIcon(const SMultiBattleIconNetCs& Proto_);
+
 	ERet ArrowDodgeBattleJoin(void);
 	ERet ArrowDodgeBattleEnd(const SArrowDodgeBattleEndNetCs& Proto_);
 	void ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
+
+	ERet FlyAwayBattleJoin(void);
+	ERet FlyAwayBattleEnd(const SFlyAwayBattleEndNetCs& Proto_);
+	void FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
 
 	ERet Gacha(const SGachaNetCs& Proto_);
 	ERet GachaX10(const SGachaX10NetCs& Proto_);

@@ -27,12 +27,11 @@ public:
 		CArrowDodgeBattle* pArrowDodgeBattle_);
 	void BattleEnd(int64 Tick_);
 protected:
-	bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) override;
 	bool IsStaminaFree(void) const override;
 	void _FixedUpdate(int64 Tick_) override;
+	bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) override;
 public:
-	void SetCoinItem(const CArrowDodgeCoin* pCoin_);
-	void SetGoldBarItem(const CArrowDodgeGoldBar* pGoldBar_);
+	void SetItem(const SArrowDodgeItemMeta& Meta_);
 	void SetShieldItem(int64 Tick_, const CArrowDodgeShield* pShield_);
 	void SetStaminaItem(int64 Tick_, const CArrowDodgeStamina* pStamina_);
 };

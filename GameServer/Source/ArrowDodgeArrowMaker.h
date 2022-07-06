@@ -10,11 +10,11 @@ class CArrowDodgeArrowMaker
 {
     static const float _PositionPrecision;
     static const float _PositionMultiplier;
-    static const uint64 _IntScreenWidth;
-    static const uint64 _IntScreenHeight;
+    static const uint32 _IntScreenWidth;
+    static const uint32 _IntScreenHeight;
     static const float _MinDownVelocity;
     static const float _MinHorizontalVelocity;
-    static const uint64 _VelocityRange;
+    static const uint32 _VelocityRange;
     static const float _VelocityMultiplier;
 
     static const float _ArrowCreateAreaHalfWidth;
@@ -24,7 +24,7 @@ class CArrowDodgeArrowMaker
     static const float _ArrowCreateScreenBottom;
     static const float _ArrowCreateScreenTop;
 
-    static const float _ArrowDeleteAreaHalfWidth;
+    static const float _ArrowActiveAreaHalfWidth;
     static const float _ArrowActiveAreaHalfHeight;
 public:
     static const float ArrowDeleteScreenLeft;
@@ -38,7 +38,7 @@ private:
 
     static SRectCollider2D _GetArrowCollider2D(const SPoint& Velocity_);
 
-    CFixedRandom64& _FixedRandom;
+    CFixedRandom32& _FixedRandom;
     int64 _NextDownArrowTick = 0;
     int64 _NextLeftArrowTick = _FirstLeftArrowTick;
     int64 _NextRightArrowTick = _FirstRightArrowTick;
@@ -46,11 +46,23 @@ public:
     int64 GetNextDownArrowTick(void) const { return _NextDownArrowTick; }
     int64 GetNextLeftArrowTick(void) const { return _NextLeftArrowTick; }
     int64 GetNextRightArrowTick(void) const { return _NextRightArrowTick; }
-    CArrowDodgeArrowMaker(CFixedRandom64& FixedRandom_);
+    CArrowDodgeArrowMaker(CFixedRandom32& FixedRandom_);
     void FixedUpdate(int64 Tick_, function<void(const shared_ptr<CArrow>& pArrow_)> fAddArrow_);
-    static shared_ptr<CArrow> MakeArrow(const STransform& Transform_, const SPoint& Velocity_);
-    inline uint64 GetRandomSeed(void) const
+    static shared_ptr<CArrow> MakeArrow(const SPoint& LocalPosition_, const SPoint& Velocity_);
+    inline uint32 GetRandomSeed(void) const
     {
         return _FixedRandom.GetSeed();
+    }
+    static inline int64 _GetDownArrowDuration(Int64 Tick_)
+    {
+        return Tick_ > _FirstLeftArrowTick ? 5000000 : -Tick_ / 20 + 20000000;
+    }
+    static inline int64 _GetLeftArrowDuration(Int64 Tick_)
+    {
+        return Tick_ > _FirstRightArrowTick ? 10000000 : -(Tick_ - _FirstLeftArrowTick) / 30 + 20000000;
+    }
+    static inline int64 _GetRightArrowDuration(Int64 Tick_)
+    {
+        return Tick_ > _MaxArrowTick ? 10000000 : -(Tick_ - _FirstRightArrowTick) / 30 + 20000000;
     }
 };

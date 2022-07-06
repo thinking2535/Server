@@ -96,6 +96,18 @@
     <ClCompile Include="Source\ArrowDodgeItemMaker.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\FlyAwayBattle.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FlyAwayBattlePlayer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FlyAwayItem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FlyAwayLand.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h">
@@ -201,6 +213,18 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\ArrowDodgeItemMaker.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FlyAwayBattle.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FlyAwayBattlePlayer.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FlyAwayItem.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FlyAwayLand.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>

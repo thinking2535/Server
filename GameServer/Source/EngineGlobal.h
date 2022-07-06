@@ -9,10 +9,8 @@ public:
     static const int32 c_BalloonNumber = 3;
     static const int32 c_ParachuteNumber = 4;
     static const int32 c_ArrowNumber = 5;
-    static const int32 c_CoinNumber = 6;
-    static const int32 c_GoldBarNumber = 7;
-    static const int32 c_ShieldNumber = 8;
-    static const int32 c_StaminaNumber = 9;
+    static const int32 c_ItemNumber = 6;
+    static const int32 c_LandNumber = 7;
 
     static inline int8 GetFaceWithPosition(const SPoint& Position_) { return (Position_.X <= 0.0f ? 1 : -1); }
     static inline int64 GetInvulnerableEndTick(int64 Tick_) { return (Tick_ + g_MetaData->ConfigMeta.InvulnerableDurationSec * 10000000); }

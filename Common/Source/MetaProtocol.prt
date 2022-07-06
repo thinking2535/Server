@@ -129,16 +129,17 @@ namespace bb
 		list<SBoxCollider2D> Structures
 		list<SStructureMove> StructureMoves
 	}
+	struct SPrefabNameCollider
+	{
+		wstring PrefabName
+		SRectCollider2D Collider
+	}
+
 	struct SArrowDodgeMap
 	{
 		wstring PrefabName
 		SPoint PropPosition
 		list<SBoxCollider2D> Structures
-	}
-	struct SPrefabNameCollider
-	{
-		wstring PrefabName
-		SRectCollider2D Collider
 	}
 	struct SArrowDodgeMapInfo
 	{
@@ -149,17 +150,29 @@ namespace bb
 		SPrefabNameCollider Shield
 		SPrefabNameCollider Stamina
 	}
+
 	struct SFlyAwayMap
 	{
 		wstring PrefabName
 		SPoint PropPosition
-		list<SRectCollider2D> Structures
+		list<SBoxCollider2D> Structures
 	}
+	struct SFlyAwayMapInfo
+	{
+		vector<SFlyAwayMap> Maps
+		vector<SPrefabNameCollider> Lands
+		SPrefabNameCollider Coin
+		SPrefabNameCollider GoldBar
+		SPrefabNameCollider Apple
+		SPrefabNameCollider Meat
+		SPrefabNameCollider Chicken
+	}
+
 	struct SMapMeta
 	{
 		vector<SMultiMap> OneOnOneMaps
 		SArrowDodgeMapInfo ArrowDodgeMapInfo
-		vector<SFlyAwayMap> FlyAwayMaps
+		SFlyAwayMapInfo FlyAwayMapInfo
 	}
 	struct SIslandMeta
 	{
@@ -230,6 +243,7 @@ namespace bb
 		int32 RewardCode
 		int32 RefreshMinutes
 	}
+
 	struct SBattleRewardMeta
 	{
 		SBattleType BattleType
@@ -241,20 +255,11 @@ namespace bb
 		int32 Diamond
 		int32 Champion
 	}
-	enum class EArrowDodgeItemType
-	{
-		Coin
-		GoldBar
-		Shield
-		Stamina
-		Max
-		Null
-	}
+
 	struct SArrowDodgeMeta
 	{
 		int32 ArrowDodgePoint
 		int32 ArrowGetPoint
-		int32 ItemGetPoint
 		int64 ItemDurationTick
 		int64 ItemRegenPeriodTick
 		int32 PlayCountMax
@@ -264,7 +269,24 @@ namespace bb
 	struct SArrowDodgeItemMeta
 	{
 		EArrowDodgeItemType ItemType
-		uint64 Weight
+		uint32 CreateWeight
+		int32 AddedPoint
+		TResource AddedGold
+	}
+
+	struct SFlyAwayMeta
+	{
+		int32 PlayCountMax
+		TResource ChargeCostGold
+		int32 RefreshDurationMinute
+	}
+	struct SFlyAwayItemMeta
+	{
+		EFlyAwayItemType ItemType
+		uint32 StaminaCreateWeight
+		int32 AddedPoint
+		TResource AddedGold
+		float AddedStamina
 	}
 
 	struct SCouponMeta

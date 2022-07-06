@@ -60,8 +60,25 @@ void CArrowDodgeBattlePlayer::BattleEnd(int64 Tick_)
 
 	CBattlePlayer::BattleEnd();
 }
+bool CArrowDodgeBattlePlayer::IsStaminaFree(void) const
+{
+	return Bufs.Stamina.Enabled;
+}
+void CArrowDodgeBattlePlayer::_FixedUpdate(int64 Tick_)
+{
+	CBattlePlayer::_FixedUpdate(Tick_);
+
+	if (Bufs.Shield.Enabled && Bufs.Shield.EndTick < Tick_)
+		Bufs.Shield.Enabled = false;
+
+	if (Bufs.Stamina.Enabled && Bufs.Stamina.EndTick < Tick_)
+		Bufs.Stamina.Enabled = false;
+}
 bool CArrowDodgeBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
+	if (__super::_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
+		return true;
+
 	if (pOtherCollider_->Number == CEngineGlobal::c_ArrowNumber)
 	{
 		if (pOtherMovingObject_)
@@ -82,12 +99,11 @@ bool CArrowDodgeBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& No
 				if (pCollider_->Number == CEngineGlobal::c_BalloonNumber)
 				{
 					if (_HitBalloon(Tick_, Normal_))
-						_Dead(Tick_);
+						_Die(Tick_);
 				}
 				else if (pCollider_->Number == CEngineGlobal::c_BodyNumber || pCollider_->Number == CEngineGlobal::c_ParachuteNumber)
 				{
-					pCharacter->BalloonCount = -1;
-					_Dead(Tick_);
+					Die(Tick_);
 				}
 
 				_fHitArrow(pArrow, false);
@@ -96,39 +112,18 @@ bool CArrowDodgeBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& No
 			}
 		}
 	}
-	else if (
-		pOtherCollider_->Number == CEngineGlobal::c_CoinNumber ||
-		pOtherCollider_->Number == CEngineGlobal::c_GoldBarNumber ||
-		pOtherCollider_->Number == CEngineGlobal::c_ShieldNumber ||
-		pOtherCollider_->Number == CEngineGlobal::c_StaminaNumber)
+	else if (pOtherCollider_->Number == CEngineGlobal::c_ItemNumber)
 	{
 		_fGetItem(Tick_, dynamic_pointer_cast<CArrowDodgeItem>(pOtherCollider_));
-
 		return true;
 	}
+
 	return false;
 }
-bool CArrowDodgeBattlePlayer::IsStaminaFree(void) const
+void CArrowDodgeBattlePlayer::SetItem(const SArrowDodgeItemMeta& Meta_)
 {
-	return Bufs.Stamina.Enabled;
-}
-void CArrowDodgeBattlePlayer::_FixedUpdate(int64 Tick_)
-{
-	CBattlePlayer::_FixedUpdate(Tick_);
-
-	if (Bufs.Shield.Enabled && Bufs.Shield.EndTick < Tick_)
-		Bufs.Shield.Enabled = false;
-
-	if (Bufs.Stamina.Enabled && Bufs.Stamina.EndTick < Tick_)
-		Bufs.Stamina.Enabled = false;
-}
-void CArrowDodgeBattlePlayer::SetCoinItem(const CArrowDodgeCoin* pCoin_)
-{
-	++BattleInfo.Gold;
-}
-void CArrowDodgeBattlePlayer::SetGoldBarItem(const CArrowDodgeGoldBar* pGoldBar_)
-{
-	BattleInfo.Gold += 5;
+	BattleInfo.Point += Meta_.AddedPoint;
+	BattleInfo.Gold += Meta_.AddedGold;
 }
 void CArrowDodgeBattlePlayer::SetShieldItem(int64 Tick_, const CArrowDodgeShield* pShield_)
 {

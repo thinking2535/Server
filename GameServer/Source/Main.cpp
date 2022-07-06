@@ -261,10 +261,6 @@ void ChangeNick(const CKey& ClientKey_, EGameRet GameRet_)
 	User->ChangeNickResult(GameRet_);
 }
 
-void Matching(TPeerCnt PeerNum_, size_t Count_)
-{
-	Send(PeerNum_, SMultiBattleMatchingNetSc((int32)Count_));
-}
 void Matched(const TMatch::element_type::TMatchedUsers& Users_, const SBattleType& BattleType_, const SBattleTypeInfo* pBattleTypeInfo_)
 {
 	try
@@ -363,7 +359,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			auto AllMemberCount = GetAllMemberCount(i.first);
 			ASSERTION(AllMemberCount <= c_MaxPlayer && i.first.TeamCount > 1);
-			g_Matches.emplace(i.first, new TMatch::element_type(AllMemberCount, Matching, Matched, seconds(5), g_MetaData->GetMaxRewardPoint(), i.first, &i.second));
+			g_Matches.emplace(
+				i.first,
+				new TMatch::element_type(AllMemberCount, [](t_duration Elapsed_, double MyGrade_, double OppGrade_) { return true; }, Matched, i.first, &i.second));
 		}
 
 		LOG(L"Initializing BulkCopyConnect");
@@ -423,11 +421,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SPurchaseDBIn, SDummyDBOut>(L"dbo.spPurchase", true, PurchaseDBOut);
 		DBAddCmd<SDailyRewardDBIn, SDummyDBOut>(L"dbo.spDailyReward", true, DummyDBOut);
 		DBAddCmd<SSelectCharDBIn, SDummyDBOut>(L"dbo.spSelectChar", true, DummyDBOut);
-		DBAddCmd<SIslandStartDBIn, SDummyDBOut>(L"dbo.spIslandStart", true, DummyDBOut);
-		DBAddCmd<SIslandEndDBIn, SDummyDBOut>(L"dbo.spIslandEnd", true, DummyDBOut);
 		DBAddCmd<SBattleEndDBIn, SDummyDBOut>(L"dbo.spBattleEnd", true, DummyDBOut);
 		DBAddCmd<SArrowDodgeBattleStartDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleStart", true, DummyDBOut);
 		DBAddCmd<SArrowDodgeBattleEndDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleEnd", true, DummyDBOut);
+		DBAddCmd<SFlyAwayBattleStartDBIn, SDummyDBOut>(L"dbo.spFlyAwayBattleStart", true, DummyDBOut);
+		DBAddCmd<SFlyAwayBattleEndDBIn, SDummyDBOut>(L"dbo.spFlyAwayBattleEnd", true, DummyDBOut);
 		DBAddCmd<SGachaDBIn, SDummyDBOut>(L"dbo.spGacha", true, DummyDBOut);
 		DBAddCmd<SRankRewardDBIn, SDummyDBOut>(L"dbo.spRankReward", true, DummyDBOut);
 		DBAddCmd<SQuestNewDBIn, SDummyDBOut>(L"dbo.spQuestNew", true, DummyDBOut);
@@ -464,8 +462,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::DailyReward, DailyRewardNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SelectChar, SelectCharNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::IslandStart, IslandStartNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::IslandEnd, IslandEndNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattleTouch, BattleTouchNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BattlePush, BattlePushNetCs);
@@ -476,6 +472,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleJoin, ArrowDodgeBattleJoinNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ArrowDodgeBattleEnd, ArrowDodgeBattleEndNetCs);
+
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::FlyAwayBattleJoin, FlyAwayBattleJoinNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::FlyAwayBattleEnd, FlyAwayBattleEndNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Gacha, GachaNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::GachaX10, GachaX10NetCs);

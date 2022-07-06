@@ -45,20 +45,13 @@ void CMultiBattle::_FixedUpdate(int64 Tick_)
 		i->CheckRegen(Tick_);
 }
 CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo* pBattleTypeInfo_, const TMatch::element_type::TMatchedUsers& Users_, TBattlesIt itBattle_) :
-	CBattle(
-		make_unique<CServerEngine>(
-			c_NetworkTickSync,
-			0,
-			c_ContactOffset,
-			c_FPS,
-			std::bind(&CMultiBattle::_SyncMessage, this, _1)),
-		BattleType_),
+	CBattle(BattleType_),
 	_pBattleTypeInfo(pBattleTypeInfo_)
 {
 	// 실력으로 정렬
 	vector<CUser*> Users;
 	std::transform(Users_.begin(), Users_.end(), std::back_inserter(Users), [](TPeerCnt PeerNum_) { return g_Users.get(PeerNum_); });
-	std::sort(Users.begin(), Users.end(), SUserCompare());
+	std::sort(Users.begin(), Users.end(), [](const CUser* User0_, const CUser* User1_) { return User0_->GetPoint() < User1_->GetPoint(); });
 
 	auto [MapIndex, Map] = g_MetaData->GetMultiMap();
 	_MapIndex = MapIndex;
@@ -402,8 +395,4 @@ void CMultiBattle::UnLink(int32 PlayerIndex_)
 	_MultiBattlePlayers[PlayerIndex_]->UnLink(_pEngine->GetTick());
 	_pEngine->Send();
 	BroadCast(SMultiBattleUnLinkNetSc(_pEngine->GetTick(), PlayerIndex_));
-}
-void CMultiBattle::_SyncMessage(int64 Tick_)
-{
-	BroadCast(SBattleSyncNetSc(Tick_));
 }

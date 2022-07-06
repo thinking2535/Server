@@ -73,10 +73,6 @@ struct STeamEndInfo
 	{
 		return (Point > 0 && BattleRanking <= (TeamCount_ / 2));
 	}
-	bool Is3PWin(int32 TeamCount_) const
-	{
-		return (Point > 0 && BattleRanking < (TeamCount_ / 2));
-	}
 };
 
 namespace bb
@@ -105,15 +101,21 @@ class CUsers;
 class CBattlePlayer;
 class CMultiBattlePlayer;
 class CArrowDodgeBattlePlayer;
+class CFlyAwayBattlePlayer;
 class CBattle;
 class CMultiBattle;
 class CArrowDodgeBattle;
+class CFlyAwayBattle;
 class CArrow;
 class CArrowDodgeItem;
 class CArrowDodgeCoin;
 class CArrowDodgeGoldBar;
 class CArrowDodgeShield;
 class CArrowDodgeStamina;
+class CFlyAwayLand;
+class CFlyAwayItem;
+class CFlyAwayCoin;
+class CFlyAwayGoldBar;
 
 class CEngineGlobal;
 
@@ -176,11 +178,6 @@ using TCouponSP = CStoredProcedure<CKey>;
 using TCouponDB = unique_ptr<TCouponSP>;
 using FQuestDone = function<void(EQuestType QuestType_, int32 Count_)>;
 
-const float c_ScreenWidth = 3.448f;
-const float c_ScreenHeight = 1.8f;
-const float c_HalfScreenWidth = c_ScreenWidth * 0.5f;
-const float c_HalfScreenHeight = c_ScreenHeight * 0.5f;
-
 const TIndex c_Index_Null = -1;
 const t_duration c_TicksForHour = hours(1);
 const milliseconds c_NetworkDelayTimeSync = milliseconds(3000);
@@ -232,11 +229,15 @@ extern TCouponDB g_pCouponDB;
 #include "BattlePlayer.h"
 #include "MultiBattlePlayer.h"
 #include "ArrowDodgeBattlePlayer.h"
+#include "FlyAwayBattlePlayer.h"
 #include "Battle.h"
 #include "MultiBattle.h"
 #include "ArrowDodgeBattle.h"
 #include "Arrow.h"
 #include "ArrowDodgeItem.h"
+#include "FlyAwayBattle.h"
+#include "FlyAwayLand.h"
+#include "FlyAwayItem.h"
 
 #include "EngineGlobal.h"
 #include "EnginePumpControl.h"
@@ -261,15 +262,12 @@ template<> struct SBinder<SPurchaseNetSc> { static const int32 ProtoNum = int32(
 template<> struct SBinder<SDailyRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyReward); };
 template<> struct SBinder<SDailyRewardFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyRewardFail); };
 
-template<> struct SBinder<SIslandStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::IslandStart); };
-template<> struct SBinder<SIslandEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::IslandEnd); };
 template<> struct SBinder<SBattleSyncNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleSync); };
 template<> struct SBinder<SBattleTouchNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleTouch); };
 template<> struct SBinder<SBattlePushNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattlePush); };
 template<> struct SBinder<SMultiBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleJoin); };
 template<> struct SBinder<SMultiBattleOutNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleOut); };
 template<> struct SBinder<SMultiBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleBegin); };
-template<> struct SBinder<SMultiBattleMatchingNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleMatching); };
 template<> struct SBinder<SMultiBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleStart); };
 template<> struct SBinder<SMultiBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleEnd); };
 template<> struct SBinder<SMultiBattleIconNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleIcon); };
@@ -280,6 +278,11 @@ template<> struct SBinder<SArrowDodgeBattleJoinNetSc> { static const int32 Proto
 template<> struct SBinder<SArrowDodgeBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleBegin); };
 template<> struct SBinder<SArrowDodgeBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleStart); };
 template<> struct SBinder<SArrowDodgeBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleEnd); };
+
+template<> struct SBinder<SFlyAwayBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleJoin); };
+template<> struct SBinder<SFlyAwayBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleBegin); };
+template<> struct SBinder<SFlyAwayBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleStart); };
+template<> struct SBinder<SFlyAwayBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleEnd); };
 
 template<> struct SBinder<SGachaNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Gacha); };
 template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaX10); };
@@ -322,11 +325,11 @@ template<> struct SDBBinder<SPurchaseDBIn> { static const int32 SpNum = int32(EP
 template<> struct SDBBinder<SDailyRewardDBIn> { static const int32 SpNum = int32(EProtoDB::DailyReward); };
 
 template<> struct SDBBinder<SSelectCharDBIn> { static const int32 SpNum = int32(EProtoDB::SelectChar); };
-template<> struct SDBBinder<SIslandStartDBIn> { static const int32 SpNum = int32(EProtoDB::IslandStart); };
-template<> struct SDBBinder<SIslandEndDBIn> { static const int32 SpNum = int32(EProtoDB::IslandEnd); };
 template<> struct SDBBinder<SBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::BattleEnd); };
 template<> struct SDBBinder<SArrowDodgeBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleStart); };
 template<> struct SDBBinder<SArrowDodgeBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleEnd); };
+template<> struct SDBBinder<SFlyAwayBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::FlyAwayBattleStart); };
+template<> struct SDBBinder<SFlyAwayBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::FlyAwayBattleEnd); };
 
 template<> struct SDBBinder<SGachaDBIn> { static const int32 SpNum = int32(EProtoDB::Gacha); };
 template<> struct SDBBinder<SRankRewardDBIn> { static const int32 SpNum = int32(EProtoDB::RankReward); };
@@ -458,13 +461,6 @@ inline SRect GetCharRect(const SPoint& Pos_)
 	return SRect();
 }
 
-struct SUserCompare
-{
-	inline bool operator() (const CUser* User0_, const CUser* User1_)
-	{
-		return User0_->GetPoint() < User1_->GetPoint();
-	}
-};
 inline float GetS(float Acc_, float Vel_, float Duration_)
 {
 	return 0.5f * Acc_ * Duration_ * Duration_ + Vel_ * Duration_;

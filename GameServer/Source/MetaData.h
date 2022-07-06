@@ -104,6 +104,14 @@ class CMetaData
 	using _TMapInfo = tuple<int32, const SMultiMap&>;
 
 	map<int32, CCharacter> _Characters;
+	float _MinVelXAir = (std::numeric_limits<float>::max)();
+	float _MinVelUp = (std::numeric_limits<float>::max)();
+	float _MinVelDown = (std::numeric_limits<float>::max)();
+public:
+	float GetMinVelXAir(void) const { return _MinVelXAir; }
+	float GetMinVelUp(void) const { return _MinVelUp; }
+	float GetMinVelDown(void) const { return _MinVelDown; }
+private:
 	vector<SGachaMeta> _GachaMetas;
 	vector<unique_ptr<CGacha>> _Gachas;
 	CRank<TExp, TLevel, greater<TExp>> _ExpToLevel;
@@ -114,12 +122,35 @@ class CMetaData
 	vector<SRankReward> _RankRewards;
 public:
 	SArrowDodgeMeta ArrowDodgeMeta;
-	CRank<uint64, int32> _ArrowItemSelector;
-	inline int32 GetRandomArrowDodgeItemNumber(uint64 RandomNumber_)
+	SFlyAwayMeta FlyAwayMeta;
+private:
+	vector<SArrowDodgeItemMeta> _ArrowDodgeItemMetas;
+public:
+	inline const vector<SArrowDodgeItemMeta>& GetArrowDodgeItemMetas(void) const
 	{
-		auto itLast = _ArrowItemSelector.cend();
+		return _ArrowDodgeItemMetas;
+	}
+	CRank<uint32, EArrowDodgeItemType> _ArrowDodgeItemSelector;
+	inline EArrowDodgeItemType GetRandomArrowDodgeItemType(uint32 RandomNumber_)
+	{
+		auto itLast = _ArrowDodgeItemSelector.cend();
 		--itLast;
-		return _ArrowItemSelector.get(RandomNumber_ % itLast->first)->second;
+		return _ArrowDodgeItemSelector.get(RandomNumber_ % itLast->first)->second;
+	}
+private:
+	vector<SFlyAwayItemMeta> _FlyAwayItemMetas;
+public:
+	inline const vector<SFlyAwayItemMeta>& GetFlyAwayItemMetas(void) const
+	{
+		return _FlyAwayItemMetas;
+	}
+
+	CRank<uint32, EFlyAwayItemType> _FlyAwayStaminaItemSelector;
+	inline EFlyAwayItemType GetRandomFlyAwayStaminaItemType(uint32 RandomNumber_)
+	{
+		auto itLast = _FlyAwayStaminaItemSelector.cend();
+		--itLast;
+		return _FlyAwayStaminaItemSelector.get(RandomNumber_ % itLast->first)->second;
 	}
 	SMapMeta MapMeta;
 private:
@@ -155,14 +186,13 @@ public:
 	const SReward* GetRankReward(int32 PointBest_, int32 RewardIndex_) const;
 	const CCharacter* GetCharacter(int32 Code_) const;
 	const map<int32, CCharacter>& GetCharacters(void) const { return _Characters; }
-	int32 GetMaxRewardPoint(void) const { return _RankRewards.back().Point; }
 	_TMapInfo GetMultiMap(void) const;
 	inline size_t GetMultiMapCount(void) const { return MapMeta.OneOnOneMaps.size(); }
 	const SArrowDodgeMap* GetArrowDodgeMap(void) const {
 		return &MapMeta.ArrowDodgeMapInfo.Maps.front();
 	}
 	const SFlyAwayMap* GetFlyAwayMap(void) const {
-		return &MapMeta.FlyAwayMaps.front();
+		return &MapMeta.FlyAwayMapInfo.Maps.front();
 	}
 	const vector<SQuest>& GetQuest(EQuestType QuestType_) const { return _QuestTypes[(size_t)QuestType_]; }
 	const SQuest* GetQuest(int32 Code_) const;

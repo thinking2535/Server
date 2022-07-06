@@ -80,6 +80,9 @@ void CMultiBattlePlayer::AttackBalloon(int32 AddedPoint_)
 }
 bool CMultiBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
 {
+	if (__super::_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
+		return true;
+
 	auto pOtherBattlePlayerObject = dynamic_pointer_cast<CBattlePlayerObject>(pOtherMovingObject_);
 	if (!pOtherBattlePlayerObject)
 		return false;
@@ -101,7 +104,7 @@ bool CMultiBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_
 				pOtherBattlePlayer->pCharacter->ChainKillCount = 1;
 
 			pOtherBattlePlayer->pCharacter->LastKillTick = Tick_;
-			_Dead(Tick_);
+			_Die(Tick_);
 		}
 
 		_fHit(pOtherBattlePlayer->PlayerIndex, PlayerIndex);

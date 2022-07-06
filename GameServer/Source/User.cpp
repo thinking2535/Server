@@ -495,140 +495,6 @@ ERet CUser::SelectChar(const SSelectCharNetCs& Proto_)
 
 	return ERet::Ok;
 }
-ERet CUser::IslandStart(const SIslandStartNetCs& Proto_)
-{
-	if (_BattleJoining)
-		return ERet::AlreadyBattleJoining;
-
-	if (InBattle())
-		return ERet::AlreadyInBattle;
-
-	auto NewIslandPlayCount = _User.IslandPlayCount;
-	auto NewIslandRefreshTime = _User.IslandRefreshTime;
-	auto Now = system_clock::now();
-
-	if (NewIslandPlayCount < g_MetaData->IslandMeta.PlayCountMax)
-	{
-		auto UnitDuration = minutes(g_MetaData->IslandMeta.RefreshDurationMinute);
-		auto ElapsedMinutes = duration_cast<minutes>(Now - NewIslandRefreshTime);
-		auto ElapsedCount = ElapsedMinutes / UnitDuration;
-		NewIslandPlayCount += ElapsedCount;
-
-		if (NewIslandPlayCount > g_MetaData->IslandMeta.PlayCountMax)
-			NewIslandPlayCount = g_MetaData->IslandMeta.PlayCountMax;
-
-		if (NewIslandPlayCount >= g_MetaData->IslandMeta.PlayCountMax)
-			NewIslandRefreshTime = Now;
-		else
-			NewIslandRefreshTime += (UnitDuration * ElapsedCount);
-	}
-	else if (NewIslandPlayCount >= g_MetaData->IslandMeta.PlayCountMax)
-	{
-		NewIslandRefreshTime = Now;
-	}
-
-	TQuests Quests;
-	TDoneQuestDBs DoneQuestDBs;
-	TDoneQuests DoneQuests;
-
-	TResource GoldCost = 0;
-	if (NewIslandPlayCount < 1)
-	{
-		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_MetaData->IslandMeta.ChargeCostGold))
-			return ERet::NotEnoughMoney;
-
-		SubResourceCore(CostType, g_MetaData->IslandMeta.ChargeCostGold);
-		GoldCost = g_MetaData->IslandMeta.ChargeCostGold;
-		NewIslandPlayCount = g_MetaData->IslandMeta.PlayCountMax;
-		NewIslandRefreshTime = Now;
-	}
-
-	--NewIslandPlayCount;
-	_User.IslandPlayCount = NewIslandPlayCount;
-	_User.IslandRefreshTime = NewIslandRefreshTime;
-	_User.IslandStarted = true;
-
-	QuestDone(Quests, DoneQuestDBs, DoneQuests);
-	Push(SIslandStartDBIn(GetUID(), _User.Resources, _User.IslandPlayCount, _User.IslandRefreshTime, std::move(DoneQuestDBs)));
-	Send(SIslandStartNetSc(GoldCost, _User.IslandPlayCount, _User.IslandRefreshTime, std::move(DoneQuests)));
-
-	return ERet::Ok;
-}
-ERet CUser::IslandEnd(const SIslandEndNetCs& Proto_)
-{
-	if (_BattleJoining)
-		return ERet::AlreadyBattleJoining;
-
-	if (InBattle())
-		return ERet::AlreadyInBattle;
-
-	if (!_User.IslandStarted)
-		return ERet::InvalidProtocol;
-
-	auto IslandPoint = Proto_.PassedIslandCount * g_MetaData->IslandMeta.ScoreFactorIsland + Proto_.Gold * g_MetaData->IslandMeta.ScoreFactorGold;
-
-	int32 CharCode = GetSelectedCharCode();
-
-	if (IsValidRankingInfo() &&
-		g_RankingInfo.UserPointMin.UserPointMinIsland < IslandPoint &&
-		g_NetRankingKey)
-		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateIsland,
-			SRankingUser(
-				GetUID(),
-				GetNick(),
-				CharCode,
-				GetCountryCode(),
-				IslandPoint));
-
-	if (IslandPoint > _User.IslandPointBest)
-		_User.IslandPointBest = IslandPoint;
-
-	if (Proto_.PassedIslandCount > _User.IslandPassedCountBest)
-		_User.IslandPassedCountBest = Proto_.PassedIslandCount;
-
-	TResources Added{};
-	::AddResource(Added, EResource::Gold, Proto_.GoldAdded);
-	::AddResource(Added, EResource::Dia, Proto_.DiaAdded);
-	AddResourcesCore(Added);
-	_User.IslandStarted = false;
-
-	TQuests Quests;
-	TDoneQuestDBs DoneQuestDBs;
-	TDoneQuests DoneQuests;
-
-	Quests.emplace(EQuestType::PlayIsland, 1);
-
-	if (Proto_.PassedIslandCount > 0)
-		Quests.emplace(EQuestType::IslandCount, Proto_.PassedIslandCount);
-
-	if (Proto_.Gold > 0)
-		Quests.emplace(EQuestType::IslandGoldGet, Proto_.Gold);
-
-	if (IslandPoint > 0)
-		Quests.emplace(EQuestType::IslandScoreGet, IslandPoint);
-
-	switch (_pSelectedChar->Grade)
-	{
-	case EGrade::Normal:
-		Quests.emplace(EQuestType::PlayNormal, 1);
-		break;
-
-	case EGrade::Rare:
-		Quests.emplace(EQuestType::PlayRare, 1);
-		break;
-
-	case EGrade::Epic:
-		Quests.emplace(EQuestType::PlayEpic, 1);
-		break;
-	}
-
-	QuestDone(Quests, DoneQuestDBs, DoneQuests);
-	Push(SIslandEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandPassedCountBest, std::move(DoneQuestDBs)));
-	Send(SIslandEndNetSc(std::move(DoneQuests)));
-
-	return ERet::Ok;
-}
 
 ERet CUser::BattleTouch(const SBattleTouchNetCs& Proto_)
 {
@@ -740,28 +606,28 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	if (InBattle())
 		return ERet::AlreadyInBattle;
 
-	auto NewSinglePlayCount = _User.SinglePlayCount;
-	auto NewSingleRefreshTime = _User.SingleRefreshTime;
+	auto NewPlayCount = _User.SinglePlayCount;
+	auto NewRefreshTime = _User.SingleRefreshTime;
 	auto Now = system_clock::now();
 
-	if (NewSinglePlayCount < g_MetaData->ArrowDodgeMeta.PlayCountMax)
+	if (NewPlayCount < g_MetaData->ArrowDodgeMeta.PlayCountMax)
 	{
 		auto UnitDuration = minutes(g_MetaData->ArrowDodgeMeta.RefreshDurationMinute);
-		auto ElapsedMinutes = duration_cast<minutes>(Now - NewSingleRefreshTime);
+		auto ElapsedMinutes = duration_cast<minutes>(Now - NewRefreshTime);
 		auto ElapsedCount = ElapsedMinutes / UnitDuration;
-		NewSinglePlayCount += ElapsedCount;
+		NewPlayCount += ElapsedCount;
 
-		if (NewSinglePlayCount > g_MetaData->ArrowDodgeMeta.PlayCountMax)
-			NewSinglePlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
+		if (NewPlayCount > g_MetaData->ArrowDodgeMeta.PlayCountMax)
+			NewPlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
 
-		if (NewSinglePlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
-			NewSingleRefreshTime = Now;
+		if (NewPlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
+			NewRefreshTime = Now;
 		else
-			NewSingleRefreshTime += (UnitDuration * ElapsedCount);
+			NewRefreshTime += (UnitDuration * ElapsedCount);
 	}
-	else if (NewSinglePlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
+	else if (NewPlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
 	{
-		NewSingleRefreshTime = Now;
+		NewRefreshTime = Now;
 	}
 
 	TQuests Quests;
@@ -769,7 +635,7 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	TDoneQuests DoneQuests;
 
 	TResource GoldCost = 0;
-	if (NewSinglePlayCount < 1)
+	if (NewPlayCount < 1)
 	{
 		auto CostType = EResource::Gold;
 		if (!HaveCost(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold))
@@ -777,13 +643,13 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 
 		SubResourceCore(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold);
 		GoldCost = g_MetaData->ArrowDodgeMeta.ChargeCostGold;
-		NewSinglePlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
-		NewSingleRefreshTime = Now;
+		NewPlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
+		NewRefreshTime = Now;
 	}
 
-	--NewSinglePlayCount;
-	_User.SinglePlayCount = NewSinglePlayCount;
-	_User.SingleRefreshTime = NewSingleRefreshTime;
+	--NewPlayCount;
+	_User.SinglePlayCount = NewPlayCount;
+	_User.SingleRefreshTime = NewRefreshTime;
 
 	QuestDone(Quests, DoneQuestDBs, DoneQuests);
 	Push(SArrowDodgeBattleStartDBIn(GetUID(), _User.Resources, _User.SinglePlayCount, _User.SingleRefreshTime, std::move(DoneQuestDBs)));
@@ -842,6 +708,118 @@ void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& Battle
 	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleBestTick, std::move(DoneQuestDBs)));
 	Send(SArrowDodgeBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
 }
+
+ERet CUser::FlyAwayBattleJoin(void)
+{
+	if (_BattleJoining)
+		return ERet::AlreadyBattleJoining;
+
+	if (InBattle())
+		return ERet::AlreadyInBattle;
+
+	auto NewPlayCount = _User.IslandPlayCount;
+	auto NewRefreshTime = _User.IslandRefreshTime;
+	auto Now = system_clock::now();
+
+	if (NewPlayCount < g_MetaData->FlyAwayMeta.PlayCountMax)
+	{
+		auto UnitDuration = minutes(g_MetaData->FlyAwayMeta.RefreshDurationMinute);
+		auto ElapsedMinutes = duration_cast<minutes>(Now - NewRefreshTime);
+		auto ElapsedCount = ElapsedMinutes / UnitDuration;
+		NewPlayCount += ElapsedCount;
+
+		if (NewPlayCount > g_MetaData->FlyAwayMeta.PlayCountMax)
+			NewPlayCount = g_MetaData->FlyAwayMeta.PlayCountMax;
+
+		if (NewPlayCount >= g_MetaData->FlyAwayMeta.PlayCountMax)
+			NewRefreshTime = Now;
+		else
+			NewRefreshTime += (UnitDuration * ElapsedCount);
+	}
+	else if (NewPlayCount >= g_MetaData->FlyAwayMeta.PlayCountMax)
+	{
+		NewRefreshTime = Now;
+	}
+
+	TQuests Quests;
+	TDoneQuestDBs DoneQuestDBs;
+	TDoneQuests DoneQuests;
+
+	TResource GoldCost = 0;
+	if (NewPlayCount < 1)
+	{
+		auto CostType = EResource::Gold;
+		if (!HaveCost(CostType, g_MetaData->FlyAwayMeta.ChargeCostGold))
+			return ERet::NotEnoughMoney;
+
+		SubResourceCore(CostType, g_MetaData->FlyAwayMeta.ChargeCostGold);
+		GoldCost = g_MetaData->FlyAwayMeta.ChargeCostGold;
+		NewPlayCount = g_MetaData->FlyAwayMeta.PlayCountMax;
+		NewRefreshTime = Now;
+	}
+
+	--NewPlayCount;
+	_User.IslandPlayCount = NewPlayCount;
+	_User.IslandRefreshTime = NewRefreshTime;
+
+	QuestDone(Quests, DoneQuestDBs, DoneQuests);
+	Push(SFlyAwayBattleStartDBIn(GetUID(), _User.Resources, _User.IslandPlayCount, _User.IslandRefreshTime, std::move(DoneQuestDBs)));
+	Send(SFlyAwayBattleJoinNetSc(GoldCost, _User.IslandPlayCount, _User.IslandRefreshTime, std::move(DoneQuests)));
+
+	auto itBattle = g_Battles.emplace(nullptr);
+	itBattle->reset(new CFlyAwayBattle(this, itBattle));
+
+	return ERet::Ok;
+}
+ERet CUser::FlyAwayBattleEnd(const SFlyAwayBattleEndNetCs& Proto_)
+{
+	// 시간차로 이미 끝나있을 수 있으므로
+	if (!InBattle())
+		return ERet::Ok;
+
+	auto* pFlyAwayBattlePlayer = dynamic_cast<CFlyAwayBattlePlayer*>(_pBattlePlayer);
+	if (pFlyAwayBattlePlayer == nullptr)
+		return ERet::InvalidProtocol;
+
+	g_Battles.erase(_pBattlePlayer->itBattle);
+
+	return ERet::Ok;
+}
+void CUser::FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
+{
+	int32 CharCode = GetSelectedCharCode();
+
+	if (IsValidRankingInfo() &&
+		g_RankingInfo.UserPointMin.UserPointMinIsland < BattleInfo_.Point &&
+		g_NetRankingKey)
+		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateIsland,
+			SRankingUser(
+				GetUID(),
+				GetNick(),
+				CharCode,
+				GetCountryCode(),
+				BattleInfo_.Point));
+
+	if (BattleInfo_.Point > _User.IslandPointBest)
+		_User.IslandPointBest = BattleInfo_.Point;
+
+	if (BattleInfo_.PassedCount > _User.IslandPassedCountBest)
+		_User.IslandPassedCountBest = BattleInfo_.PassedCount;
+
+	TResources Added{};
+	::AddResource(Added, EResource::Gold, BattleInfo_.Gold);
+	AddResourcesCore(Added);
+
+	TDoneQuestDBs DoneQuestDBs;
+	TDoneQuests DoneQuestNets;
+
+	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
+	BattleEnd();
+
+	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandPassedCountBest, std::move(DoneQuestDBs)));
+	Send(SFlyAwayBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
+}
+
 ERet CUser::Gacha(const SGachaNetCs& Proto_)
 {
 	auto Gacha = g_MetaData->GetGacha(Proto_.GachaIndex);
