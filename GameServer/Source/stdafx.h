@@ -18,6 +18,7 @@
 #include <Rso/Base/Timers.h>
 #include <Rso/Util/RandomGeometry.h>
 #include <Rso/GameUtil/TimeSync.h>
+#include <Rso/GameUtil/Rank.h>
 #include <Rso/GameUtil/RandomBox.h>
 #include <Rso/GameUtil/Timer.h>
 #include <Rso/GameUtil/KeyCnt.h>
@@ -25,7 +26,6 @@
 #include <Rso/GameUtil/Command.h>
 #include <Rso/GameUtil/Match.h>
 #include <Rso/Physics/Physics.h>
-#include <Rso/Unity/Unity.h>
 #include <Rso/Physics/ServerEngine.h>
 
 #include <Rso/MSSQL/BulkCopy.h>
@@ -44,7 +44,6 @@ using namespace util;
 using namespace gameutil;
 using namespace base;
 using namespace physics;
-using namespace unity;
 using namespace mobileutil;
 using namespace net;
 using namespace mssql;
@@ -63,17 +62,6 @@ using namespace mssql;
 #else
 #define DLOG(...) __noop(__VA_ARGS__)
 #endif
-
-struct STeamEndInfo
-{
-	int32 Point = 0; // 전투중 얻게되는 포인트
-	int32 BattleRanking = 0; // 6팀 경기중 1등 3팀이 동점이라면   0, 0, 0, 3, 4, 5
-
-	bool IsWin(int32 TeamCount_) const
-	{
-		return (Point > 0 && BattleRanking <= (TeamCount_ / 2));
-	}
-};
 
 namespace bb
 {
@@ -206,8 +194,8 @@ extern CLog g_Log;
 extern CUsers g_Users;
 extern TCommand g_Command;
 extern CPeriod<seconds> g_TimerPeriod;
+extern CPeriod<milliseconds> g_BattlePeriod;
 extern CPeriod<seconds> g_CCULogPeriod;
-extern seconds g_BattleWaitDuration; // jjj 전투시간 처리
 extern TBattles g_Battles;
 extern TBulkCopyConnect g_BulkCopyConnect;
 extern CIPInfo g_IPInfo;
@@ -258,7 +246,6 @@ template<> struct SBinder<SUnsetCharNetSc> { static const int32 ProtoNum = int32
 template<> struct SBinder<SBuyNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Buy); };
 template<> struct SBinder<SBuyCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyChar); };
 template<> struct SBinder<SBuyPackageNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyPackage); };
-template<> struct SBinder<SPurchaseNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Purchase); };
 template<> struct SBinder<SDailyRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyReward); };
 template<> struct SBinder<SDailyRewardFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyRewardFail); };
 
@@ -270,9 +257,12 @@ template<> struct SBinder<SMultiBattleOutNetSc> { static const int32 ProtoNum = 
 template<> struct SBinder<SMultiBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleBegin); };
 template<> struct SBinder<SMultiBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleStart); };
 template<> struct SBinder<SMultiBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleEnd); };
+template<> struct SBinder<SMultiBattleEndDrawNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleEndDraw); };
+template<> struct SBinder<SMultiBattleEndInvalidNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleEndInvalid); };
 template<> struct SBinder<SMultiBattleIconNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleIcon); };
 template<> struct SBinder<SMultiBattleLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleLink); };
 template<> struct SBinder<SMultiBattleUnLinkNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleUnLink); };
+template<> struct SBinder<SInvalidDisconnectInfoNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::InvalidDisconnectInfo); };
 
 template<> struct SBinder<SArrowDodgeBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleJoin); };
 template<> struct SBinder<SArrowDodgeBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ArrowDodgeBattleBegin); };
@@ -287,6 +277,7 @@ template<> struct SBinder<SFlyAwayBattleEndNetSc> { static const int32 ProtoNum 
 template<> struct SBinder<SGachaNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Gacha); };
 template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaX10); };
 template<> struct SBinder<SGachaFailedNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaFailed); };
+template<> struct SBinder<SRankRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RankReward); };
 template<> struct SBinder<SQuestGotNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestGot); };
 template<> struct SBinder<SQuestDoneNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestDone); };
 template<> struct SBinder<SQuestRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestReward); };
@@ -321,11 +312,12 @@ template<> struct SDBBinder<SChangeLanguageDBIn> { static const int32 SpNum = in
 template<> struct SDBBinder<SBuyDBIn> { static const int32 SpNum = int32(EProtoDB::Buy); };
 template<> struct SDBBinder<SBuyCharDBIn> { static const int32 SpNum = int32(EProtoDB::BuyChar); };
 template<> struct SDBBinder<SBuyPackageDBIn> { static const int32 SpNum = int32(EProtoDB::BuyPackage); };
-template<> struct SDBBinder<SPurchaseDBIn> { static const int32 SpNum = int32(EProtoDB::Purchase); };
 template<> struct SDBBinder<SDailyRewardDBIn> { static const int32 SpNum = int32(EProtoDB::DailyReward); };
 
 template<> struct SDBBinder<SSelectCharDBIn> { static const int32 SpNum = int32(EProtoDB::SelectChar); };
 template<> struct SDBBinder<SBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::BattleEnd); };
+template<> struct SDBBinder<SUpdateInvalidDisconnectInfoDBIn> { static const int32 SpNum = int32(EProtoDB::UpdateInvalidDisconnectInfo); };
+template<> struct SDBBinder<SUpdateMatchBlockEndTimeDBIn> { static const int32 SpNum = int32(EProtoDB::UpdateMatchBlockEndTime); };
 template<> struct SDBBinder<SArrowDodgeBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleStart); };
 template<> struct SDBBinder<SArrowDodgeBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::ArrowDodgeBattleEnd); };
 template<> struct SDBBinder<SFlyAwayBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::FlyAwayBattleStart); };
@@ -434,14 +426,14 @@ TExp DurationToExp(const _TDuration& Duration_)
 
 	return TExp(sqrt(Seconds.count()));
 }
-bool IsDia(EResource Resource_);
 bool HaveCost(const TResources& Resources_, EResource CostType_, TResource Cost_);
 bool HaveCost(const TResources& Resources_, const TResources& Cost_);
-TResource GetDia(const TResources& Resources_);
-void SubDia(TResources& Resources_, TResource Dia_);
+TResources MakeResources(TResource Data_);
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_);
 void AddResource(TResources& Resources_, EResource Resource_, TResource Data_);
+void AddResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_);
 void SubResource(TResources& Resources_, size_t Index_, TResource Data_);
+void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
 void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
 void AddResources(TResources& Resources_, const TResources& Added_);
 void SubResources(TResources& Resources_, const TResources& Added_);
@@ -473,3 +465,5 @@ void Fly(SCharacter& Char_);
 void Land(SCharacter& Char_, const SCharacterMeta* pMeta_);
 bool IsValidRankingInfo(void);
 int32 GetAllMemberCount(const SBattleType& BattleType_);
+bool IsOneOnOneBattle(const SBattleType& BattleType_);
+bool IsMultiBattle(const SBattleType& BattleType_);

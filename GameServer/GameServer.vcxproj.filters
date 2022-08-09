@@ -48,9 +48,6 @@
     <ClCompile Include="Source\Quest.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\BalloonHitControl.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Source\EngineGlobal.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -165,9 +162,6 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\Quest.h">
-      <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\BalloonHitControl.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\EngineGlobal.h">

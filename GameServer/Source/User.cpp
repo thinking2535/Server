@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include <GameServer/Common/Base.h>
-#include "User.h"
 
 CUser::CUser(TSessionsIt itSession_) :
 	_itSession(itSession_)
@@ -60,14 +59,14 @@ void CUser::LoginAfterBattle(const SUserLoginInfo& Info_)
 	Certify();
 
 	if (InBattle())
-		_pBattlePlayer->OnLine();
+		_pBattlePlayer->Link();
 	else
 		Send(SLobbyNetSc());
 }
 void CUser::Logout(void)
 {
 	if (InBattle())
-		_pBattlePlayer->OffLine();
+		_pBattlePlayer->UnLink();
 
 	g_BulkCopyConnect->Push(SConnectDBIn(_LoginInfo.Time, system_clock::now(), GetUID(), _LoginInfo.Option.OS, _LoginInfo.CountryCodeMinuteOffset.CountryCode, _NewRegistered));
 	_LoginInfo.Key = CKey(); // 결제 중에 나가더라도 이후 진행 시킬 수 있으므로 _LoginInfo = SUserLoginInfo(); 로 처리하여도 상관없을듯 하나 그냥 안전하게 Key만 초기화.
@@ -148,7 +147,7 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 					g_MetaData->GetDefaultChar(),
 					g_MetaData->ArrowDodgeMeta.PlayCountMax,
 					Now,
-					g_MetaData->IslandMeta.PlayCountMax,
+					g_MetaData->FlyAwayMeta.PlayCountMax,
 					Now,
 					Now,
 					g_MetaData->ConfigMeta.ChangeNickFreeCount,
@@ -172,16 +171,17 @@ void CUser::_SendLogin(void)
 }
 ERet CUser::Buy(const SBuyNetCs& Proto_)
 {
-	auto itGoods = g_MetaData->GoodsItems.find(Proto_.Code);
-	if (itGoods == g_MetaData->GoodsItems.end())
+	auto itGoods = g_MetaData->ShopItems.find(Proto_.Code);
+	if (itGoods == g_MetaData->ShopItems.end())
 		return ERet::InvalidGoodsID;
 
 	if (!HaveCost(itGoods->second.Cost))
 		return ERet::NotEnoughMoney;
 
 	SubResourcesCore(itGoods->second.Cost);
-	Push(SBuyDBIn(RewardCore(*itGoods->second.pReward, 1)));
-	Send(SBuyNetSc(Proto_.Code));
+	auto RewardDB = RewardCore(*itGoods->second.pReward);
+	Push(SBuyDBIn(RewardDB));
+	Send(SBuyNetSc(RewardDB, Proto_.Code));
 	
 	return ERet::Ok;
 }
@@ -191,12 +191,12 @@ ERet CUser::BuyChar(const SBuyCharNetCs& Proto_)
 		return ERet::InvalidProtocol;
 
 	auto pChar = g_MetaData->GetCharacter(Proto_.Code);
-	if (!HaveCost(pChar->Cost_Type, pChar->Price))
+	if (!HaveCost(pChar->CostType, pChar->CostValue))
 	{
 		return ERet::NotEnoughMoney;
 	}
 
-	SubResourceCore(pChar->Cost_Type, pChar->Price);
+	SubResourceCore(pChar->CostType, pChar->CostValue);
 	_Chars.emplace(Proto_.Code);
 
 	Push(SBuyCharDBIn(GetUID(), _User.Resources, Proto_.Code));
@@ -206,34 +206,37 @@ ERet CUser::BuyChar(const SBuyCharNetCs& Proto_)
 }
 ERet CUser::BuyPackage(const SBuyPackageNetCs& Proto_)
 {
-	auto itPackage = g_MetaData->Packages.find(Proto_.Code);
-	if (itPackage == g_MetaData->Packages.end())
+	auto itPackage = g_MetaData->ShopPackages.find(Proto_.Code);
+	if (itPackage == g_MetaData->ShopPackages.end())
 		return ERet::InvalidProtocol;
 
-	//if (_Packages.find(Proto_.Code) != _Packages.end())
-	//	return ERet::AlreadyHave;
+	if (_Packages.find(Proto_.Code) != _Packages.end())
+		return ERet::AlreadyHave;
 
 	if (!HaveCost(itPackage->second.CostType, itPackage->second.CostValue))
 		return ERet::NotEnoughMoney;
 
 	SubResourceCore(itPackage->second.CostType, itPackage->second.CostValue);
-	//_Packages.emplace(Proto_.Code);
+	_Packages.emplace(Proto_.Code);
 
-	Push(SBuyPackageDBIn(RewardCore(*itPackage->second.pReward, 1), Proto_.Code));
-	Send(SBuyPackageNetSc(Proto_.Code));
+	auto RewardDB = RewardCore(*itPackage->second.pReward);
+	Push(SBuyPackageDBIn(RewardDB, Proto_.Code));
+	Send(SBuyPackageNetSc(RewardDB, Proto_.Code));
 
 	return ERet::Ok;
 }
-ERet CUser::Purchase(const SPurchaseNetCs& Proto_)
+ERet CUser::Purchase(void)
 {
-	LOG(L"Purchase Try UID[%d] ProductID[%s] Token[%s]", GetUID(), Proto_.ProductID, Proto_.PurchaseToken);
+	return ERet::InvalidProtocol;
 
-	if (!g_ReceiptCheck->Check(_LoginInfo.Option.OS, TOrder(GetUID(), WCSToMBS(Proto_.ProductID), WCSToMBS(Proto_.PurchaseToken))))
-	{
-		LOG(L"Purchase ReceiptCheckFail");
+	//LOG(L"Purchase Try UID[%d] ProductID[%s] Token[%s]", GetUID(), Proto_.ProductID, Proto_.PurchaseToken);
 
-		return ERet::ReceiptCheckFail;
-	}
+	//if (!g_ReceiptCheck->Check(_LoginInfo.Option.OS, TOrder(GetUID(), WCSToMBS(Proto_.ProductID), WCSToMBS(Proto_.PurchaseToken))))
+	//{
+	//	LOG(L"Purchase ReceiptCheckFail");
+
+	//	return ERet::ReceiptCheckFail;
+	//}
 
 	return ERet::Ok;
 }
@@ -241,40 +244,17 @@ ERet CUser::ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 Pur
 {
 	LOG(L"Purchase ReceiptCheck Callback UID[%d] ProductID[%s] Token[%s]", GetUID(), MBSToWCS(Order_.ProductID), MBSToWCS(Order_.PurchaseToken));
 
-	auto it = g_MetaData->CashItems.find(MBSToWCS(Order_.ProductID));
-	if (it == g_MetaData->CashItems.end())
-	{
-		LOG(L"Purchase InvalidShopID");
+	//auto it = g_MetaData->CashItems.find(MBSToWCS(Order_.ProductID));
+	//if (it == g_MetaData->CashItems.end())
+	//{
+	//	LOG(L"Purchase InvalidShopID");
 
-		return ERet::InvalidShopID;
-	}
+	//	return ERet::InvalidShopID;
+	//}
 
-	Push(SPurchaseDBIn(_LoginInfo.Option.OS, OrderID_, GetUID(), _LoginInfo.CountryCodeMinuteOffset.CountryCode, PurchaseTime_, PurchaseType_, Order_.ProductID, it->second.DiaCount));
+	//Push(SPurchaseDBIn(_LoginInfo.Option.OS, OrderID_, GetUID(), _LoginInfo.CountryCodeMinuteOffset.CountryCode, PurchaseTime_, PurchaseType_, Order_.ProductID, 0));
 
 	return ERet::Ok;
-}
-void CUser::SendSPurchaseNetSc(const string& ProductID_, TResource PaidDiaAdded_)
-{
-	Send(SPurchaseNetSc(MBSToWCS(ProductID_), PaidDiaAdded_));
-}
-void CUser::PurchaseDB(const SPurchaseDBIn& In_, int32 SPRet_)
-{
-	if (SPRet_ == 0)
-	{
-		AddResourceCore(EResource::DiaPaid, In_.DiaCount);
-		LOG(L"PurchaseDB OK UID[%d] ProductID[%s]", GetUID(), MBSToWCS(In_.ProductID));
-	}
-	else if (SPRet_ == 2601 || SPRet_ == 2627)
-	{
-		LOG(L"PurchaseDB Duplicate UID[%d] ProductID[%s] SPRet[%d]", GetUID(), MBSToWCS(In_.ProductID), SPRet_);
-	}
-	else // 중복 요청
-	{
-		LOG(L"PurchaseDB SPError UID[%d] ProductID[%s] SPRet[%d]", GetUID(), MBSToWCS(In_.ProductID), SPRet_);
-		throw ERet::SPError;
-	}
-
-	SendSPurchaseNetSc(In_.ProductID, In_.DiaCount);
 }
 void CUser::ChangeNickBeginDB(void)
 {
@@ -444,7 +424,7 @@ void CUser::UnsetChar(list<int32>& CharCodes_)
 }
 ERet CUser::Chat(const SChatNetCs& Proto_)
 {
-	BroadCast(SChatNetSc(Proto_.Msg));
+	// BroadCast(SChatNetSc(Proto_.Msg));
 
 	return ERet::Ok;
 }
@@ -516,9 +496,14 @@ void CUser::BattleBegin(CBattlePlayer* pBattlePlayer_)
 	_BattleJoining = false;
 	_pBattlePlayer = pBattlePlayer_;
 }
-void CUser::BattleEnd(void)
+void CUser::_BattleEnd(void)
 {
 	_pBattlePlayer = nullptr;
+}
+void CUser::_BattleEndAndUpdateMatchBlockEndTime(TTime Now_)
+{
+	_BattleEnd();
+	UpdateMatchBlockEndTime(Now_);
 }
 ERet CUser::MultiBattleJoin(void)
 {
@@ -527,6 +512,12 @@ ERet CUser::MultiBattleJoin(void)
 
 	if (InBattle())
 		return ERet::AlreadyInBattle;
+
+	if (!_CanMatchable(system_clock::now()))
+		return ERet::InvalidProtocol;
+
+	if (!HaveCost(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue))
+		return ERet::InvalidProtocol;
 
 	_BattleJoining = true;
 	Send(SMultiBattleJoinNetSc());
@@ -547,12 +538,27 @@ ERet CUser::MultiBattleOut(void)
 
 	return ERet::Ok;
 }
-SBattleEndInfo CUser::MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
+SBattleEndInfo CUser::GetSBattleEndInfo(void) const
+{
+	return SBattleEndInfo(
+		GetUID(), _User.Resources, _User.Point, _User.PointBest,
+		_User.WinCountSolo, _User.LoseCountSolo, _User.WinCountMulti, _User.LoseCountMulti,
+		_User.BattlePointBest, _User.KillTotal, _User.ChainKillTotal, _User.BlowBalloonTotal);
+}
+TDoneQuests CUser::_MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
 {
 	TDoneQuests DoneQeusts;
 	QuestDone(DoneQuests_, DoneQuestDBs_, DoneQeusts);
 
+	if (BattlePoint_ > _User.BattlePointBest)
+		_User.BattlePointBest = BattlePoint_;
+
+	return DoneQeusts;
+}
+void CUser::MultiBattleEnd(TTime Now_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
+{
 	auto& BattleEndPlayer = BattleEndPlayers_[_pBattlePlayer->PlayerIndex];
+	auto DoneQeusts = _MultiBattleEnd(BattleEndPlayer.BattlePoint, DoneQuests_, DoneQuestDBs_);
 
 	if (BattleEndPlayer.AddedPoint > 0)
 	{
@@ -572,18 +578,36 @@ SBattleEndInfo CUser::MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPl
 	if (_User.Point > _User.PointBest)
 		_User.PointBest = _User.Point;
 
-	if (BattleEndPlayer.BattlePoint > _User.BattlePointBest)
-		_User.BattlePointBest = BattleEndPlayer.BattlePoint;
-
+	SubResourceCore(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue);
 	AddResourceCore(EResource::Gold, BattleEndPlayer.AddedGold);
-	BattleEnd();
+	_BattleEndAndUpdateMatchBlockEndTime(Now_);
+	Send(SMultiBattleEndNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), _User.Resources, BattleEndPlayers_, OrderedTeamRankings_, DoneQeusts));
+}
+void CUser::MultiBattleEndDraw(TTime Now_, int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
+{
+	SubResourceCore(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue);
+	_BattleEndAndUpdateMatchBlockEndTime(Now_);
+	Send(SMultiBattleEndDrawNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), _User.Resources, _MultiBattleEnd(BattlePoint_, DoneQuests_, DoneQuestDBs_)));
+}
+void CUser::MultiBattleEndInvalid(TTime Now_)
+{
+	_BattleEndAndUpdateMatchBlockEndTime(Now_);
+	Send(SMultiBattleEndInvalidNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo)));
+}
+void CUser::MultiBattleEndInvalidPunish(void)
+{
+	auto Now = system_clock::now();
 
-	Send(SMultiBattleEndNetSc(BattleEndPlayers_, DoneQeusts));
+	if (_IsInPunished(Now))
+		++_User.InvalidDisconnectInfo.Count;
+	else
+		_User.InvalidDisconnectInfo.Count = 1;
 
-	return SBattleEndInfo(
-		GetUID(), _User.Resources, _User.Point, _User.PointBest,
-		_User.WinCountSolo, _User.LoseCountSolo, _User.WinCountSurvival, _User.LoseCountSurvival, _User.WinCountMulti, _User.LoseCountMulti,
-		_User.BattlePointBest, _User.KillTotal, _User.ChainKillTotal, _User.BlowBalloonTotal);
+	_User.InvalidDisconnectInfo.EndTime = Now + g_MetaData->pMultiBattleMeta->PunishMinutesForDisconnect;
+	_UpdateMatchBlockEndTime(Now);
+
+	_BattleEnd();
+	Push(SUpdateInvalidDisconnectInfoDBIn(GetUID(), _User.InvalidDisconnectInfo));
 }
 ERet CUser::MultiBattleIcon(const SMultiBattleIconNetCs& Proto_)
 {
@@ -679,15 +703,16 @@ void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& Battle
 	int32 CharCode = GetSelectedCharCode();
 
 	if (IsValidRankingInfo() &&
-		g_RankingInfo.UserPointMin.UserPointMinSingle < BattleInfo_.Point &&
+		g_RankingInfo.UserPointMinArray[(size_t)ERankingType::Single] < BattleInfo_.Point &&
 		g_NetRankingKey)
 		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateSingle,
-			SRankingUser(
-				GetUID(),
-				GetNick(),
-				CharCode,
-				GetCountryCode(),
-				BattleInfo_.Point));
+			SRankingUpdateSingleNetSr(
+				SRankingUser(
+					GetUID(),
+					GetNick(),
+					CharCode,
+					GetCountryCode(),
+					BattleInfo_.Point)));
 
 	if (BattleInfo_.Point > _User.SinglePointBest)
 		_User.SinglePointBest = BattleInfo_.Point;
@@ -703,10 +728,9 @@ void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& Battle
 	TDoneQuests DoneQuestNets;
 
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	BattleEnd();
-
 	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleBestTick, std::move(DoneQuestDBs)));
 	Send(SArrowDodgeBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
+	_BattleEnd();
 }
 
 ERet CUser::FlyAwayBattleJoin(void)
@@ -790,15 +814,16 @@ void CUser::FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_,
 	int32 CharCode = GetSelectedCharCode();
 
 	if (IsValidRankingInfo() &&
-		g_RankingInfo.UserPointMin.UserPointMinIsland < BattleInfo_.Point &&
+		g_RankingInfo.UserPointMinArray[(size_t)ERankingType::Island] < BattleInfo_.Point &&
 		g_NetRankingKey)
 		g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateIsland,
-			SRankingUser(
-				GetUID(),
-				GetNick(),
-				CharCode,
-				GetCountryCode(),
-				BattleInfo_.Point));
+			SRankingUpdateIslandNetSr(
+				SRankingUser(
+					GetUID(),
+					GetNick(),
+					CharCode,
+					GetCountryCode(),
+					BattleInfo_.Point)));
 
 	if (BattleInfo_.Point > _User.IslandPointBest)
 		_User.IslandPointBest = BattleInfo_.Point;
@@ -814,10 +839,9 @@ void CUser::FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_,
 	TDoneQuests DoneQuestNets;
 
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	BattleEnd();
-
 	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandPassedCountBest, std::move(DoneQuestDBs)));
 	Send(SFlyAwayBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
+	_BattleEnd();
 }
 
 ERet CUser::Gacha(const SGachaNetCs& Proto_)
@@ -829,13 +853,6 @@ ERet CUser::Gacha(const SGachaNetCs& Proto_)
 	//if (Gacha->DoesAllHave(_Chars))
 	//	return ERet::NoMoreNewCharacter;
 
-	switch (Proto_.GachaIndex)
-	{
-	case 0:
-		QuestDone(EQuestType::GachaRuby, 1);
-		break;
-	}
-
 	return Gacha->Get(this, _Chars);
 }
 ERet CUser::GachaX10(const SGachaX10NetCs& Proto_)
@@ -846,13 +863,6 @@ ERet CUser::GachaX10(const SGachaX10NetCs& Proto_)
 
 	//if (Gacha->DoesAllHave(_Chars))
 	//	return ERet::NoMoreNewCharacter;
-
-	switch (Proto_.GachaIndex)
-	{
-	case 0:
-		QuestDone(EQuestType::GachaRuby, 10);
-		break;
-	}
 
 	return Gacha->GetX10(this, _Chars);
 }
@@ -886,35 +896,32 @@ void CUser::GachaFailed(const TResources& Cost_, int32 GachaIndex_, int32 CharCo
 	Push(SGachaDBIn(GetUID(), _User.Resources, list<int32>()));
 	Send(SGachaFailedNetSc(SGachaNetSc(Cost_, GachaIndex_, CharCode_), Refund_));
 }
-void CUser::_RewardCore(const SReward& Reward_, int32 Multiple_, list<int32>& CharsAdded_)
+void CUser::_RewardCore(const SReward& Reward_, list<int32>& CharsAdded_)
 {
-	AddResourcesCore(Reward_.Resources * Multiple_);
+	AddResourcesCore(Reward_.Resources);
 
 	for (auto& i : Reward_.Chars)
 	{
-		if (_Chars.find(i->Code) != _Chars.end())
-			AddResourceCore(EResource::CP, i->CPRefund);
-		else
-		{
-			_Chars.emplace(i->Code);
+		if (_Chars.emplace(i->Code).second)
 			CharsAdded_.emplace_back(i->Code);
-		}
+		else
+			AddResourceCore(i->RefundType, i->RefundValue);
 	}
 }
-SRewardDB CUser::RewardCore(const SReward& Reward_, int32 Multiple_)
+SRewardDB CUser::RewardCore(const SReward& Reward_)
 {
 	list<int32> CharsAdded;
 
-	_RewardCore(Reward_, Multiple_, CharsAdded);
+	_RewardCore(Reward_, CharsAdded);
 
 	return SRewardDB(GetUID(), _User.Resources, std::move(CharsAdded));
 }
-SRewardDB CUser::RewardsCore(const list<const SReward*>& Rewards_, int32 Multiple_)
+SRewardDB CUser::RewardsCore(const list<const SReward*>& Rewards_)
 {
 	list<int32> CharsAdded;
 
 	for (auto& i : Rewards_)
-		_RewardCore(*i, Multiple_, CharsAdded);
+		_RewardCore(*i, CharsAdded);
 
 	return SRewardDB(GetUID(), _User.Resources, std::move(CharsAdded));
 }
@@ -925,7 +932,9 @@ ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 		return ERet::InvalidProtocol;
 
 	++_User.LastGotRewardRankIndex;
-	Push(SRankRewardDBIn(RewardCore(*pRankReward, 1), _User.LastGotRewardRankIndex));
+	auto RewardDB = RewardCore(*pRankReward);
+	Push(SRankRewardDBIn(RewardDB, _User.LastGotRewardRankIndex));
+	Send(SRankRewardNetSc(RewardDB, _User.LastGotRewardRankIndex));
 
 	return ERet::Ok;
 }
@@ -956,8 +965,9 @@ ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 			++_User.QuestDailyCompleteCount;
 	}
 
-	Push(SQuestRewardDBIn(RewardCore(*Reward->second, 1), Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
-	Send(SQuestRewardNetSc(Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
+	auto RewardDB = RewardCore(*Reward->second);
+	Push(SQuestRewardDBIn(RewardDB, Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
+	Send(SQuestRewardNetSc(RewardDB, Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
 }
@@ -1048,8 +1058,9 @@ ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto
 	}
 
 	_User.QuestDailyCompleteCount = 0;
-	Push(SQuestDailyCompleteRewardDBIn(RewardCore(*g_MetaData->QuestDailyComplete.pReward, Proto_.WatchAd ? 2 : 1), _User.QuestDailyCompleteRefreshTime));
-	Send(SQuestDailyCompleteRewardNetSc(Proto_.WatchAd, _User.QuestDailyCompleteRefreshTime));
+	auto RewardDB = RewardCore(*g_MetaData->QuestDailyComplete.pReward);
+	Push(SQuestDailyCompleteRewardDBIn(RewardDB, _User.QuestDailyCompleteRefreshTime));
+	Send(SQuestDailyCompleteRewardNetSc(RewardDB, _User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
 }
@@ -1077,7 +1088,7 @@ ERet CUser::ChangeNickRequest(const SChangeNickNetCs& Proto_)
 	}
 
 	if (_User.ChangeNickFreeCount <= 0 &&
-		!HaveCost(EResource::Dia, g_MetaData->ConfigMeta.ChangeNickCostDia))
+		!HaveCost(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue))
 		return ERet::NotEnoughMoney;
 
 	_User.NewNick = Proto_.Nick;
@@ -1091,7 +1102,7 @@ void CUser::ChangeNickResult(EGameRet GameRet_)
 	{
 		if (_User.ChangeNickFreeCount <= 0)
 		{
-			SubResourceCore(EResource::Dia, g_MetaData->ConfigMeta.ChangeNickCostDia);
+			SubResourceCore(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue);
 		}
 		else
 		{
@@ -1135,9 +1146,9 @@ void CUser::CouponUseOut(const SCouponUseCouponDBIn& In_, int32 Code_)
 	if (!ib.second)
 		THROWEX(); // 유저가 연달아 날린경우 (접종)
 
-	auto Reward = RewardCore(*pCoupon->pReward, 1);
-	Push(SCouponUseDBIn(Reward, In_.Key));
-	Send(SCouponUseNetSc(Reward));
+	auto RewardDB = RewardCore(*pCoupon->pReward);
+	Push(SCouponUseDBIn(RewardDB, In_.Key));
+	Send(SCouponUseNetSc(RewardDB, pCoupon->pReward->Resources));
 }
 ERet CUser::TutorialReward(const STutorialRewardNetCs& Proto_)
 {
@@ -1145,36 +1156,25 @@ ERet CUser::TutorialReward(const STutorialRewardNetCs& Proto_)
 		return ERet::InvalidProtocol;
 
 	_User.TutorialReward = true;
-	AddResourceCore(EResource::Dia, g_MetaData->ConfigMeta.TutorialRewardDia);
+	AddResourceCore(g_MetaData->ConfigMeta.TutorialRewardType, g_MetaData->ConfigMeta.TutorialRewardValue);
 	Push(STutorialRewardDBIn(GetUID(), _User.Resources));
 
 	return ERet::Ok;
 }
 ERet CUser::RankingRewardInfo(const SRankingRewardInfoNetCs& Proto_)
 {
-	int32 Ranking = -1;
-	int32 RankingSingle = -1;
-	int32 RankingIsland = -1;
+	TRankingArray RankingArray;
 
+	for (size_t i = 0; i < g_RankingInfo.RewardsArray.size(); ++i)
 	{
-		auto it = g_RankingInfo.Rewards.find(GetUID());
-		if (it != g_RankingInfo.Rewards.end())
-			Ranking = it->second;
+		auto it = g_RankingInfo.RewardsArray[i].find(GetUID());
+		if (it != g_RankingInfo.RewardsArray[i].end())
+			RankingArray[i] = it->second;
+		else
+			RankingArray[i] = -1;
 	}
 
-	{
-		auto it = g_RankingInfo.RewardsSingle.find(GetUID());
-		if (it != g_RankingInfo.RewardsSingle.end())
-			RankingSingle = it->second;
-	}
-
-	{
-		auto it = g_RankingInfo.RewardsIsland.find(GetUID());
-		if (it != g_RankingInfo.RewardsIsland.end())
-			RankingIsland = it->second;
-	}
-
-	Send(SRankingRewardInfoNetSc(g_RankingInfo.Counter, Ranking, RankingSingle, RankingIsland));
+	Send(SRankingRewardInfoNetSc(g_RankingInfo.Counter, std::move(RankingArray)));
 
 	return ERet::Ok;
 }
@@ -1188,54 +1188,43 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		if (_User.RankingRewardedCounter >= g_RankingInfo.Counter)
 			throw ERet::RankingRewarded;
 
-		if (g_RankingInfo.Rewards.find(GetUID()) == g_RankingInfo.Rewards.end() &&
-			g_RankingInfo.RewardsSingle.find(GetUID()) == g_RankingInfo.RewardsSingle.end() &&
-			g_RankingInfo.RewardsIsland.find(GetUID()) == g_RankingInfo.RewardsIsland.end())
-			throw ERet::RankingNoReward;
-
 		// IsValidRankingInfo == true 이면 g_NetRanking 도 유효
 
 		list<const SReward*> Rewards;
-		int32 RewardCode = 0;
-		int32 RewardCodeSingle = 0;
-		int32 RewardCodeIsland = 0;
 
-		auto itReward = g_RankingInfo.Rewards.find(GetUID());
-		if (itReward != g_RankingInfo.Rewards.end())
+		TRankingRewardArray RankingRewardArray{};
+		for (size_t i = 0; i < g_RankingInfo.RewardsArray.size(); ++i)
 		{
-			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Multi].lower_bound(itReward->second);
-			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Multi].end())
+			auto itReward = g_RankingInfo.RewardsArray[i].find(GetUID());
+			if (itReward != g_RankingInfo.RewardsArray[i].end())
 			{
-				RewardCode = itRankingReward->second->first;
-				Rewards.emplace_back(&itRankingReward->second->second);
+				auto itRankingReward = g_MetaData->RankingReward[i].get(itReward->second);
+				if (itRankingReward != g_MetaData->RankingReward[i].end())
+				{
+					RankingRewardArray[i] = itRankingReward->second->first;
+					Rewards.emplace_back(&itRankingReward->second->second);
+				}
 			}
 		}
 
-		auto itRewardSingle = g_RankingInfo.RewardsSingle.find(GetUID());
-		if (itRewardSingle != g_RankingInfo.RewardsSingle.end())
+		bool DoesHaveReward = false;
+		for (auto& i : RankingRewardArray)
 		{
-			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Single].lower_bound(itRewardSingle->second);
-			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Single].end())
+			if (i != 0)
 			{
-				RewardCodeSingle = itRankingReward->second->first;
-				Rewards.emplace_back(&itRankingReward->second->second);
+				DoesHaveReward = true;
+				break;
 			}
 		}
 
-		auto itRewardIsland = g_RankingInfo.RewardsIsland.find(GetUID());
-		if (itRewardIsland != g_RankingInfo.RewardsIsland.end())
-		{
-			auto itRankingReward = g_MetaData->RankingReward[(size_t)ERankingType::Island].lower_bound(itRewardIsland->second);
-			if (itRankingReward != g_MetaData->RankingReward[(size_t)ERankingType::Island].end())
-			{
-				RewardCodeIsland = itRankingReward->second->first;
-				Rewards.emplace_back(&itRankingReward->second->second);
-			}
-		}
+		if (!DoesHaveReward)
+			throw ERet::RankingNoReward;
+
 
 		_User.RankingRewardedCounter = g_RankingInfo.Counter;
-		Push(SRankingRewardDBIn(RewardsCore(Rewards, 1), _User.RankingRewardedCounter));
-		Send(SRankingRewardNetSc(_User.RankingRewardedCounter, RewardCode, RewardCodeSingle, RewardCodeIsland));
+		auto RewardDB = RewardsCore(Rewards);
+		Push(SRankingRewardDBIn(RewardDB, _User.RankingRewardedCounter));
+		Send(SRankingRewardNetSc(RewardDB, _User.RankingRewardedCounter, std::move(RankingRewardArray)));
 	}
 	catch (const ERet Ret_)
 	{
@@ -1247,4 +1236,52 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 	}
 
 	return ERet::Ok;
+}
+bool CUser::_IsInPunished(TTime Now_) const
+{
+	return _User.InvalidDisconnectInfo.EndTime > Now_;
+}
+bool CUser::_CanMatchable(TTime Now_) const
+{
+	return (_User.InvalidDisconnectInfo.MatchBlockEndTime <= Now_);
+}
+void CUser::_FixMatchBLockEndTime(void)
+{
+	if (_User.InvalidDisconnectInfo.MatchBlockEndTime > _User.InvalidDisconnectInfo.EndTime)
+		_User.InvalidDisconnectInfo.MatchBlockEndTime = _User.InvalidDisconnectInfo.EndTime;
+}
+void CUser::_UpdateMatchBlockEndTime(TTime Now_)
+{
+	auto itMatchDeniedSecond = g_MetaData->pMultiBattleMeta->MatchDeniedSecondsSelector.get(_User.InvalidDisconnectInfo.Count);
+
+	_User.InvalidDisconnectInfo.MatchBlockEndTime = Now_ + itMatchDeniedSecond->second;
+	_FixMatchBLockEndTime();
+}
+void CUser::UpdateMatchBlockEndTime(TTime Now_)
+{
+	if (!_IsInPunished(Now_))
+		return;
+
+	_UpdateMatchBlockEndTime(Now_);
+	Push(SUpdateMatchBlockEndTimeDBIn(GetUID(), _User.InvalidDisconnectInfo.MatchBlockEndTime));
+}
+void CUser::ResetDisconnect(wstringstream& Params_)
+{
+	auto Now = system_clock::now();
+
+	int32 MinuteLeftForEnd = 0;
+	if (Params_ >> MinuteLeftForEnd)
+		_User.InvalidDisconnectInfo.EndTime = Now + minutes(MinuteLeftForEnd);
+
+	int32 MinuteLeftForBlockEnd = 0;
+	if (Params_ >> MinuteLeftForBlockEnd)
+		_User.InvalidDisconnectInfo.MatchBlockEndTime = Now + minutes(MinuteLeftForBlockEnd);
+
+	int32 Count = 0;
+	if (Params_ >> Count)
+		_User.InvalidDisconnectInfo.Count = Count;
+
+	_FixMatchBLockEndTime();
+	Push(SUpdateInvalidDisconnectInfoDBIn(GetUID(), _User.InvalidDisconnectInfo));
+	Send(SInvalidDisconnectInfoNetSc(_User.InvalidDisconnectInfo));
 }

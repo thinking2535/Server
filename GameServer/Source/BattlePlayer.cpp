@@ -383,13 +383,6 @@ bool CBattlePlayer::Push(int64 Tick_)
 
 	return false;
 }
-void CBattlePlayer::Link(int64 Tick_)
-{
-}
-void CBattlePlayer::UnLink(int64 Tick_)
-{
-	Touch(0);
-}
 void CBattlePlayer::CheckRegen(int64 Tick_)
 {
 	if (IsAlive() || Tick_ < pCharacter->RegenTick)
@@ -434,7 +427,6 @@ CBattlePlayer::CBattlePlayer(
 	pCharacter(pCharacter_),
 	itBattle(itBattle_),
 	pPlayer(Player_),
-	_BalloonHitControl(PlayerIndex_),
 	_PlayerCollider(pCharacter.get()),
 	pPlayerObject(make_shared<CBattlePlayerObject>(GetDefaultTransform(InitialPos_), SPoint(), pVirtualBattlePlayer_)),
 	_PumpControl(
@@ -459,13 +451,11 @@ CBattlePlayer::CBattlePlayer(
 	pPlayer->BattleBegin(this);
 	g_Net->SessionHold(pPlayer->GetSession());
 }
-void CBattlePlayer::OnLine(void)
+void CBattlePlayer::Link(void)
 {
-	itBattle->get()->OnLine(PlayerIndex);
 }
-void CBattlePlayer::OffLine(void)
+void CBattlePlayer::UnLink(void)
 {
-	itBattle->get()->OffLine(PlayerIndex);
 }
 ERet CBattlePlayer::Touch(const SBattleTouchNetCs& Proto_)
 {
@@ -475,7 +465,7 @@ ERet CBattlePlayer::Push(const SBattlePushNetCs& Proto_)
 {
 	return itBattle->get()->Push(PlayerIndex, Proto_);
 }
-void CBattlePlayer::BattleEnd(void)
+void CBattlePlayer::BattleEndSession(void)
 {
 	auto itSession = pPlayer->GetSession();
 	g_Users.battle_end(itSession->first);

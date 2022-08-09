@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BalloonHitControl.h"
 #include "BattlePlayerObject.h"
 #include "PlayerCollider.h"
 #include "EnginePumpControl.h"
@@ -24,7 +23,6 @@ public:
 	const TBattlesIt itBattle;
 	CUser* const pPlayer = nullptr;
 protected:
-	CBalloonHitControl _BalloonHitControl;
 	TQuests _DoneQuests; // 전투중 완료한 퀘스트
 	CPlayerCollider _PlayerCollider;
 public:
@@ -67,16 +65,14 @@ protected:
 public:
 	bool IsInvulerable(int64 Tick_);
 	bool IsAlive(void) const;
-	bool Touch(int8 Dir_);
 protected:
 	virtual bool IsStaminaFree(void) const
 	{
 		return false;
 	}
 public:
+	bool Touch(int8 Dir_);
 	bool Push(int64 Tick_);
-	void Link(int64 Tick_);
-	void UnLink(int64 Tick_);
 	void CheckRegen(int64 Tick_);
 
 	CBattlePlayer(
@@ -90,11 +86,11 @@ public:
 		TBattlesIt itBattle_,
 		CUser* Player_,
 		CBattlePlayer* pVirtualBattlePlayer_);
-	void OnLine(void);
-	void OffLine(void);
+	virtual void Link(void);
+	virtual void UnLink(void);
 	ERet Touch(const SBattleTouchNetCs& Proto_);
 	ERet Push(const SBattlePushNetCs& Proto_);
-	void BattleEnd(void);
+	void BattleEndSession(void);
 	template<typename _TProto>
 	void Send(const _TProto& Proto_) { pPlayer->Send(Proto_); }
 	bool WillClose(void) { return pPlayer->WillClose(); }

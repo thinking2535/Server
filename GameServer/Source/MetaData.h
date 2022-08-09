@@ -46,10 +46,12 @@ public:
 };
 struct SQuestDailyComplete : public SQuestDailyCompleteMeta
 {
-	const SReward* pReward = nullptr;
+	const SReward* pReward;
 	minutes RefreshDuration;
 
-	SQuestDailyComplete()
+	SQuestDailyComplete() :
+		pReward(nullptr),
+		RefreshDuration(minutes(0))
 	{
 	}
 	SQuestDailyComplete(const SQuestDailyCompleteMeta& Super_, const SReward* pReward_) :
@@ -60,13 +62,23 @@ struct SQuestDailyComplete : public SQuestDailyCompleteMeta
 	}
 };
 
-struct SGoods
+struct SShopItem
 {
 	TResources Cost;
 	const SReward* pReward = nullptr;
 
-	SGoods(const TResources& Cost_, const SReward* pReward_) :
+	SShopItem(const TResources& Cost_, const SReward* pReward_) :
 		Cost(Cost_),
+		pReward(pReward_)
+	{
+	}
+};
+struct SShopPackage : public SShopPackageServerMeta
+{
+	const SReward* pReward = nullptr;
+
+	SShopPackage(const SShopPackageServerMeta& Meta_, const SReward* pReward_) :
+		SShopPackageServerMeta(Meta_),
 		pReward(pReward_)
 	{
 	}
@@ -85,19 +97,22 @@ struct SCoupon
 	{
 	}
 };
-struct SPackage : public SShopPackageServerMeta
-{
-	const SReward* pReward = nullptr;
-
-	SPackage(const SShopPackageServerMeta& Package_, const SReward* pReward_) :
-		SShopPackageServerMeta(Package_),
-		pReward(pReward_)
-	{
-	}
-};
 
 using TRewards = map<int32, SReward>;
 using TRewardsIt = TRewards::iterator;
+
+struct SMultiBattleMeta
+{
+	milliseconds DisconnectableMilliseconds;
+	minutes PunishMinutesForDisconnect;
+	CClosedRank<uint32, seconds> MatchDeniedSecondsSelector;
+
+	SMultiBattleMeta(milliseconds DisconnectableMilliseconds_, minutes PunishMinutesForDisconnect_) :
+		DisconnectableMilliseconds(DisconnectableMilliseconds_),
+		PunishMinutesForDisconnect(PunishMinutesForDisconnect_)
+	{
+	}
+};
 
 class CMetaData
 {
@@ -114,13 +129,16 @@ public:
 private:
 	vector<SGachaMeta> _GachaMetas;
 	vector<unique_ptr<CGacha>> _Gachas;
-	CRank<TExp, TLevel, greater<TExp>> _ExpToLevel;
+	CClosedRank<TExp, TLevel, greater<TExp>> _ExpToLevel;
 	vector<TExp> ExpMetas;
 	TRewards _Rewards;
 	map<SBattleType, SBattleTypeInfo> _BattleTypeInfos; // key : 팀수(게임모드)
-	CRank<int32, SRankTierMeta> _RankTierMetas;
+public:
+	CClosedRank<int32, SRankTierMeta> RankTiers;
+private:
 	vector<SRankReward> _RankRewards;
 public:
+	unique_ptr<SMultiBattleMeta> pMultiBattleMeta;
 	SArrowDodgeMeta ArrowDodgeMeta;
 	SFlyAwayMeta FlyAwayMeta;
 private:
@@ -130,7 +148,7 @@ public:
 	{
 		return _ArrowDodgeItemMetas;
 	}
-	CRank<uint32, EArrowDodgeItemType> _ArrowDodgeItemSelector;
+	CClosedRank<uint32, EArrowDodgeItemType> _ArrowDodgeItemSelector;
 	inline EArrowDodgeItemType GetRandomArrowDodgeItemType(uint32 RandomNumber_)
 	{
 		auto itLast = _ArrowDodgeItemSelector.cend();
@@ -145,7 +163,7 @@ public:
 		return _FlyAwayItemMetas;
 	}
 
-	CRank<uint32, EFlyAwayItemType> _FlyAwayStaminaItemSelector;
+	CClosedRank<uint32, EFlyAwayItemType> _FlyAwayStaminaItemSelector;
 	inline EFlyAwayItemType GetRandomFlyAwayStaminaItemType(uint32 RandomNumber_)
 	{
 		auto itLast = _FlyAwayStaminaItemSelector.cend();
@@ -164,22 +182,20 @@ public:
 	vector<wstring> ForbiddenWords;
 	SServerConfigMeta ServerConfigMeta;
 	SConfigMeta ConfigMeta;
-	SIslandMeta IslandMeta;
+	TResources MaxResources;
 	SShopConfigServerMeta ShopConfig;
-	map<int32, SGoods> GoodsItems;
-	map<int32, SPackage> Packages;
+	map<int32, SShopItem> ShopItems;
+	map<int32, SShopPackage> ShopPackages;
 	CRandomBox<double, SShopDailyRewardServerMeta> DailyReward;
-	map<wstring, SShopCashServerMeta> CashItems;
 	vector<int32> DefaultChars;
 	TCoreCheckSum CheckSumMeta = 0;
 	SRankingConfigMeta RankingConfigMeta;
-	vector<map<int32, TRewardsIt>> RankingReward; // IndexOrder (Multi, Arrow, Island), second { first : Ranking, second : RewardCode }
+	vector<CRank<int32, TRewardsIt>> RankingReward; // IndexOrder (Multi, Arrow, Island), second { first : Ranking, second : RewardCode }
 
 	CMetaData();
 	TLevel ExpToLevel(TExp Exp_) const;
 	TExp LevelToExp(TLevel Level_) const;
 	TExp GetMaxExp(void) const;
-	const SRankTierMeta& GetRankTier(int32 Point_) const;
 	int32 GetDefaultChar(void) const;
 	CGacha* GetGacha(int32 Index_) const;
 	inline const map<SBattleType, SBattleTypeInfo>& GetBattleTypeInfos(void) const { return _BattleTypeInfos; }

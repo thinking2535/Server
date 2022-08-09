@@ -11,6 +11,7 @@ CMultiBattlePlayer::CMultiBattlePlayer(
 	const int8 TeamIndex_,
 	const shared_ptr<SCharacter>& pCharacter_,
 	TBattlesIt itBattle_,
+	CMultiBattle* pMultiBattle_,
 	CUser* Player_) :
 	CBattlePlayer(
 		Super_,
@@ -24,15 +25,30 @@ CMultiBattlePlayer::CMultiBattlePlayer(
 		Player_,
 		this),
 	_fHit(fHit_),
-	_fIcon(fIcon_)
+	_fIcon(fIcon_),
+	_pMultiBattle(pMultiBattle_)
 {
+}
+void CMultiBattlePlayer::Link(void)
+{
+	// LeftMillisecondsToInvalidBattle 가 음수가 되더라도 상관 없음.
+	LeftMillisecondsToInvalidBattle = duration_cast<milliseconds>(DisconnectEndTime - system_clock::now());
+	_pMultiBattle->Link(PlayerIndex);
+}
+void CMultiBattlePlayer::UnLink(void)
+{
+	DisconnectEndTime = system_clock::now() + LeftMillisecondsToInvalidBattle;
+	_pMultiBattle->UnLink(PlayerIndex);
 }
 void CMultiBattlePlayer::Icon(const SMultiBattleIconNetCs& Proto_)
 {
 	_fIcon(PlayerIndex, Proto_);
 }
-SBattleEndInfo CMultiBattlePlayer::BattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamEndInfo>& TeamEndInfos_, bool BestPlayer_, TDoneQuestDBs& DoneQuestDBs_)
+void CMultiBattlePlayer::_BattleEnd(const SBattleType& BattleType_, bool IsBestPlayer_)
 {
+	if (IsOneOnOneBattle(BattleType_))
+		QuestDone(EQuestType::SoloPlay, 1);
+
 	switch (pMeta->Grade)
 	{
 	case EGrade::Normal:
@@ -47,17 +63,49 @@ SBattleEndInfo CMultiBattlePlayer::BattleEnd(const vector<SBattleEndPlayer>& Bat
 		QuestDone(EQuestType::PlayEpic, 1);
 		break;
 	}
-
-	if (BestPlayer_)
-		QuestDone(EQuestType::IngameBestPlayer, 1);
+}
+void CMultiBattlePlayer::BattleEnd(TTime Now_, const SBattleType& BattleType_, bool IsBestPlayer_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, bool DoesWin_, TDoneQuestDBs& DoneQuestDBs_)
+{
+	_BattleEnd(BattleType_, IsBestPlayer_);
 
 	auto& BattleEndPlayer = BattleEndPlayers_[PlayerIndex];
 	if (BattleEndPlayer.AddedPoint > 0)
 		QuestDone(EQuestType::RankPointGet, BattleEndPlayer.AddedPoint);
 
-	auto BattleEndInfo = pPlayer->MultiBattleEnd(BattleEndPlayers_, _DoneQuests, DoneQuestDBs_);
-	CBattlePlayer::BattleEnd();
-	return std::move(BattleEndInfo);
+	if (IsOneOnOneBattle(BattleType_))
+	{
+		if (DoesWin_)
+		{
+			QuestDone(EQuestType::SoloVictory, 1);
+			++pPlayer->GetUserDB().WinCountSolo;
+		}
+		else
+		{
+			++pPlayer->GetUserDB().LoseCountSolo;
+		}
+	}
+	else
+	{
+		if (DoesWin_)
+			++pPlayer->GetUserDB().WinCountMulti;
+		else
+			++pPlayer->GetUserDB().LoseCountMulti;
+	}
+
+	pPlayer->MultiBattleEnd(Now_, BattleEndPlayers_, OrderedTeamRankings_, _DoneQuests, DoneQuestDBs_);
+}
+void CMultiBattlePlayer::BattleEndDraw(TTime Now_, const SBattleType& BattleType_, bool IsBestPlayer_, int32 BattlePoint_, TDoneQuestDBs& DoneQuestDBs_)
+{
+	_BattleEnd(BattleType_, IsBestPlayer_);
+	pPlayer->MultiBattleEndDraw(Now_, BattlePoint_, _DoneQuests, DoneQuestDBs_);
+}
+void CMultiBattlePlayer::BattleEndInvalid(TTime Now_)
+{
+	pPlayer->MultiBattleEndInvalid(Now_);
+}
+void CMultiBattlePlayer::BattleEndInvalidPunish(void)
+{
+	pPlayer->MultiBattleEndInvalidPunish();
 }
 void CMultiBattlePlayer::Kill(int32 AddedPoint_)
 {
@@ -69,9 +117,6 @@ void CMultiBattlePlayer::Kill(int32 AddedPoint_)
 		++pPlayer->GetUserDB().ChainKillTotal;
 
 	QuestDone(EQuestType::IngameKill, 1);
-
-	if (pCharacter->ChainKillCount > 1)
-		QuestDone(EQuestType::IngameConsecutiveKill, 1);
 }
 void CMultiBattlePlayer::AttackBalloon(int32 AddedPoint_)
 {

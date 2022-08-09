@@ -35,7 +35,7 @@ void ReceiptErrorCallback(const TOrder& Order_, int32 PurchaseState_)
 	}
 
 	// 에러 나더라도 클라의 영수증 소진시키도록 처리
-	User->SendSPurchaseNetSc(Order_.ProductID, 0);
+	//User->SendSPurchaseNetSc(Order_.ProductID, 0);
 	LOG(L"ReceiptErrorCallback UID[%d] ProductID[%s] PurchaseState[%d]", Order_.UID, MBSToWCS(Order_.ProductID), PurchaseState_);
 }
 ERet ChatNetCs(CUser* User_, CStream& Stream_)
@@ -95,13 +95,6 @@ ERet BuyPackageNetCs(CUser* User_, CStream& Stream_)
 	Stream_ >> Proto;
 
 	return User_->BuyPackage(Proto);
-}
-ERet PurchaseNetCs(CUser* User_, CStream& Stream_)
-{
-	SPurchaseNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->Purchase(Proto);
 }
 ERet DailyRewardNetCs(CUser* User_, CStream& Stream_)
 {

@@ -149,68 +149,54 @@ namespace bb
 	struct SRankingRankingInfoNetRs : public SProto
 	{
 		int64 Counter{};
-		SRankingUserPointMin UserPointMin{};
-		TRankingRewards Rewards{};
-		TRankingRewards RewardsSingle{};
-		TRankingRewards RewardsIsland{};
+		TRankingPointArray UserPointMinArray{};
+		TRankingRewardsArray RewardsArray{};
 		SRankingRankingInfoNetRs()
 		{
 		}
-		SRankingRankingInfoNetRs(const int64& Counter_, const SRankingUserPointMin& UserPointMin_, const TRankingRewards& Rewards_, const TRankingRewards& RewardsSingle_, const TRankingRewards& RewardsIsland_) : Counter(Counter_), UserPointMin(UserPointMin_), Rewards(Rewards_), RewardsSingle(RewardsSingle_), RewardsIsland(RewardsIsland_)
+		SRankingRankingInfoNetRs(const int64& Counter_, const TRankingPointArray& UserPointMinArray_, const TRankingRewardsArray& RewardsArray_) : Counter(Counter_), UserPointMinArray(UserPointMinArray_), RewardsArray(RewardsArray_)
 		{
 		}
-		SRankingRankingInfoNetRs(int64&& Counter_, SRankingUserPointMin&& UserPointMin_, TRankingRewards&& Rewards_, TRankingRewards&& RewardsSingle_, TRankingRewards&& RewardsIsland_) : Counter(std::move(Counter_)), UserPointMin(std::move(UserPointMin_)), Rewards(std::move(Rewards_)), RewardsSingle(std::move(RewardsSingle_)), RewardsIsland(std::move(RewardsIsland_))
+		SRankingRankingInfoNetRs(int64&& Counter_, TRankingPointArray&& UserPointMinArray_, TRankingRewardsArray&& RewardsArray_) : Counter(std::move(Counter_)), UserPointMinArray(std::move(UserPointMinArray_)), RewardsArray(std::move(RewardsArray_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Counter;
-			Stream_ >> UserPointMin;
-			Stream_ >> Rewards;
-			Stream_ >> RewardsSingle;
-			Stream_ >> RewardsIsland;
+			Stream_ >> UserPointMinArray;
+			Stream_ >> RewardsArray;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Counter"] >> Counter;
-			Value_["UserPointMin"] >> UserPointMin;
-			Value_["Rewards"] >> Rewards;
-			Value_["RewardsSingle"] >> RewardsSingle;
-			Value_["RewardsIsland"] >> RewardsIsland;
+			Value_["UserPointMinArray"] >> UserPointMinArray;
+			Value_["RewardsArray"] >> RewardsArray;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Counter;
-			Stream_ << UserPointMin;
-			Stream_ << Rewards;
-			Stream_ << RewardsSingle;
-			Stream_ << RewardsIsland;
+			Stream_ << UserPointMinArray;
+			Stream_ << RewardsArray;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Counter"] = Counter;
-			Value_["UserPointMin"] = UserPointMin;
-			Value_["Rewards"] = Rewards;
-			Value_["RewardsSingle"] = RewardsSingle;
-			Value_["RewardsIsland"] = RewardsIsland;
+			Value_["UserPointMinArray"] = UserPointMinArray;
+			Value_["RewardsArray"] = RewardsArray;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(int64()) + L"," + 
-				GetStdName(SRankingUserPointMin()) + L"," + 
-				GetStdName(TRankingRewards()) + L"," + 
-				GetStdName(TRankingRewards()) + L"," + 
-				GetStdName(TRankingRewards());
+				GetStdName(TRankingPointArray()) + L"," + 
+				GetStdName(TRankingRewardsArray());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(int64(), L"Counter") + L"," + 
-				GetMemberName(SRankingUserPointMin(), L"UserPointMin") + L"," + 
-				GetMemberName(TRankingRewards(), L"Rewards") + L"," + 
-				GetMemberName(TRankingRewards(), L"RewardsSingle") + L"," + 
-				GetMemberName(TRankingRewards(), L"RewardsIsland");
+				GetMemberName(TRankingPointArray(), L"UserPointMinArray") + L"," + 
+				GetMemberName(TRankingRewardsArray(), L"RewardsArray");
 		}
 	};
 }

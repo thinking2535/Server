@@ -34,9 +34,6 @@ void CFlyAwayBattlePlayer::BattleEnd(int64 Tick_)
 	if (BattleInfo.PassedCount > 0)
 		QuestDone(EQuestType::IslandCount, BattleInfo.PassedCount);
 
-	if (BattleInfo.Gold > 0)
-		QuestDone(EQuestType::SinglePlayGoldGet, BattleInfo.Gold);
-
 	if (BattleInfo.Point > 0)
 		QuestDone(EQuestType::SinglePlayScoreGet, BattleInfo.Point);
 
@@ -56,8 +53,6 @@ void CFlyAwayBattlePlayer::BattleEnd(int64 Tick_)
 	}
 
 	pPlayer->FlyAwayBattleEnd(Tick_, BattleInfo, _DoneQuests);
-
-	CBattlePlayer::BattleEnd();
 }
 void CFlyAwayBattlePlayer::_FixedUpdate(int64 Tick_)
 {

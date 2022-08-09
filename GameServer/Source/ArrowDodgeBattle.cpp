@@ -124,27 +124,25 @@ bool CArrowDodgeBattle::Update(void)
 
 	auto Now = system_clock::now(); // ing   CMultiBattle 에서는 now() 대신 GetTickCount() 를 쓸것.
 
-	if (!_pEngine->IsStarted())
+	if (!_IsStarted)
 	{
 		if (Now - _BeginTime >= milliseconds(c_BattleStartDelayMilliSec))
 		{
-			_pEngine->Start();
+			_IsStarted = true;
+			_CheckAndStartEngine();
 			BroadCast(SArrowDodgeBattleStartNetSc());
 		}
 	}
-	else if (_EndTime < Now)
+	else if (Now >= _EndTime)
 	{
 		return false;
 	}
 
 	return true;
 }
-void CArrowDodgeBattle::OnLine(int32 PlayerIndex_)
+void CArrowDodgeBattle::Link(int32 PlayerIndex_)
 {
 	Send(PlayerIndex_, GetArrowDodgeBattleBeginNetSc());
-}
-void CArrowDodgeBattle::OffLine(int32 PlayerIndex_)
-{
 }
 void CArrowDodgeBattle::_FixedUpdate(int64 Tick_)
 {

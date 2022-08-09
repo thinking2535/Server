@@ -35,9 +35,6 @@ void CArrowDodgeBattlePlayer::BattleEnd(int64 Tick_)
 	if (PlaySeconds > 0)
 		QuestDone(EQuestType::SingleTime, PlaySeconds);
 
-	if (BattleInfo.Gold > 0)
-		QuestDone(EQuestType::SinglePlayGoldGet, BattleInfo.Gold);
-
 	if (BattleInfo.Point > 0)
 		QuestDone(EQuestType::SinglePlayScoreGet, BattleInfo.Point);
 
@@ -57,8 +54,6 @@ void CArrowDodgeBattlePlayer::BattleEnd(int64 Tick_)
 	}
 
 	pPlayer->ArrowDodgeBattleEnd(Tick_, BattleInfo, _DoneQuests);
-
-	CBattlePlayer::BattleEnd();
 }
 bool CArrowDodgeBattlePlayer::IsStaminaFree(void) const
 {

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "Network.h"
-#include <Rso/Game/Base.h>
 #include <Rso/Core/Core.h>
 #include <Rso/Win/ConsoleCtrlHandler.h>
 #include <GameServer/Common/MetaProtocol.h>
@@ -278,7 +277,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	catch (const SException& Exception_)
 	{
 		cout << Exception_.what() << endl;
-		LOG(L"SException %s", Exception_.what());
 	}
 
 	return 0;

@@ -84,10 +84,8 @@ public:
 	ERet Buy(const SBuyNetCs& Proto_);
 	ERet BuyChar(const SBuyCharNetCs& Proto_);
 	ERet BuyPackage(const SBuyPackageNetCs& Proto_);
-	ERet Purchase(const SPurchaseNetCs& Proto_);
+	ERet Purchase(void);
 	ERet ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 PurchaseTime_, int32 PurchaseType_);
-	void SendSPurchaseNetSc(const string& ProductID_, TResource PaidDiaAdded_);
-	void PurchaseDB(const SPurchaseDBIn& In_, int32 SPRet_);
 	void ChangeNickBeginDB(void);
 	void ChangeNickEndDB(void);
 	void ChangeNickEndFailDB(EGameRet GameRet_);
@@ -116,10 +114,20 @@ public:
 	ERet BattlePush(const SBattlePushNetCs& Proto_);
 
 	void BattleBegin(CBattlePlayer* pBattlePlayer_);
-	void BattleEnd(void);
+private:
+	void _BattleEnd(void);
+	void _BattleEndAndUpdateMatchBlockEndTime(TTime Now_);
+public:
 	ERet MultiBattleJoin(void);
 	ERet MultiBattleOut(void);
-	SBattleEndInfo MultiBattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	SBattleEndInfo GetSBattleEndInfo(void) const;
+private:
+	TDoneQuests _MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+public:
+	void MultiBattleEnd(TTime Now_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	void MultiBattleEndDraw(TTime Now_, int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	void MultiBattleEndInvalid(TTime Now_);
+	void MultiBattleEndInvalidPunish(void);
 	ERet MultiBattleIcon(const SMultiBattleIconNetCs& Proto_);
 
 	ERet ArrowDodgeBattleJoin(void);
@@ -135,9 +143,9 @@ public:
 	void GachaSucceeded(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_);
 	void GachaX10Succeeded(const TResources& Cost_, int32 GachaIndex_, list<int32> CharCodeList_, const TResources& Refund_);
 	void GachaFailed(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_, const TResources& Refund_);
-	void _RewardCore(const SReward& Reward_, int32 Multiple_, list<int32>& CharsAdded_);
-	SRewardDB RewardCore(const SReward& Reward_, int32 Multiple_);
-	SRewardDB RewardsCore(const list<const SReward*>& Rewards_, int32 Multiple_);
+	void _RewardCore(const SReward& Reward_, list<int32>& CharsAdded_);
+	SRewardDB RewardCore(const SReward& Reward_);
+	SRewardDB RewardsCore(const list<const SReward*>& Rewards_);
 	ERet RankReward(const SRankRewardNetCs& Proto_);
 	ERet QuestReward(const SQuestRewardNetCs& Proto_);
 private:
@@ -157,4 +165,13 @@ public:
 	ERet TutorialReward(const STutorialRewardNetCs& Proto_);
 	ERet RankingRewardInfo(const SRankingRewardInfoNetCs& Proto_);
 	ERet RankingReward(const SRankingRewardNetCs& Proto_);
+private:
+	bool _IsInPunished(TTime Now_) const;
+	bool _CanMatchable(TTime Now_) const;
+private:
+	void _FixMatchBLockEndTime(void);
+	void _UpdateMatchBlockEndTime(TTime Now_);
+public:
+	void UpdateMatchBlockEndTime(TTime Now_);
+	void ResetDisconnect(wstringstream& Params_);
 };

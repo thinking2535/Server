@@ -14,10 +14,10 @@ protected:
 	SBattleType _BattleType;
 	TTime _BeginTime = system_clock::now();
 	vector<shared_ptr<CBattlePlayer>> _BattlePlayers;
+	bool _IsStarted = false;
 
 	void _SyncMessage(int64 Tick_);
 	void _AddBattlePlayer(const shared_ptr<CBattlePlayer>& pBattlePlayer_);
-protected:
 	template<typename _TProto>
 	void BroadCast(const _TProto& Proto_)
 	{
@@ -28,10 +28,13 @@ protected:
 public:
 	CBattle(const SBattleType& BattleType_);
 	virtual ~CBattle();
+protected:
+	virtual bool _CanEngineStart(void) const;
+	void _CheckAndStartEngine(void);
+public:
 	virtual ERet Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_);
 	ERet Push(int32 PlayerIndex_, const SBattlePushNetCs& Proto_);
 	virtual bool Update(void);
-	virtual void OnLine(int32 PlayerIndex_) = 0;
-	virtual void OffLine(int32 PlayerIndex_) = 0;
-	bool IsOneOnOne(void) const;
+	virtual void Link(int32 PlayerIndex_);
+	virtual void UnLink(int32 PlayerIndex_);
 };

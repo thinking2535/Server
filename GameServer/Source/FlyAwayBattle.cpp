@@ -141,7 +141,7 @@ CFlyAwayBattle::~CFlyAwayBattle()
 }
 ERet CFlyAwayBattle::Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_)
 {
-	return ERet::Ok;
+	return ERet::InvalidProtocol;
 }
 SFlyAwayBattleBeginNetSc CFlyAwayBattle::GetFlyAwayBattleBeginNetSc(void) const
 {
@@ -172,27 +172,25 @@ bool CFlyAwayBattle::Update(void)
 
 	auto Now = system_clock::now(); // ing   CMultiBattle 에서는 now() 대신 GetTickCount() 를 쓸것.
 
-	if (!_pEngine->IsStarted())
+	if (!_IsStarted)
 	{
 		if (Now - _BeginTime >= milliseconds(c_BattleStartDelayMilliSec))
 		{
-			_pEngine->Start();
+			_IsStarted = true;
+			_CheckAndStartEngine();
 			BroadCast(SFlyAwayBattleStartNetSc());
 		}
 	}
-	else if (_EndTime < Now)
+	else if (Now >= _EndTime)
 	{
 		return false;
 	}
 
 	return true;
 }
-void CFlyAwayBattle::OnLine(int32 PlayerIndex_)
+void CFlyAwayBattle::Link(int32 PlayerIndex_)
 {
 	Send(PlayerIndex_, GetFlyAwayBattleBeginNetSc());
-}
-void CFlyAwayBattle::OffLine(int32 PlayerIndex_)
-{
 }
 void CFlyAwayBattle::_FixedUpdate(int64 Tick_)
 {

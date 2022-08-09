@@ -17,10 +17,11 @@ namespace bb
 		Buy
 		BuyChar
 		BuyPackage
-		Purchase
 		DailyReward
 		SelectChar
 		BattleEnd
+		UpdateInvalidDisconnectInfo
+		UpdateMatchBlockEndTime
 		ArrowDodgeBattleStart
 		ArrowDodgeBattleEnd
 		FlyAwayBattleStart
@@ -141,17 +142,6 @@ namespace bb
 	{
 		int32 Code
 	}
-	struct SPurchaseDBIn
-	{
-		EOS OS
-		string OrderID
-		TUID UID
-		string CountryCode
-		int64 PurchaseTime
-		int32 PurchaseType
-		string ProductID
-		TResource DiaCount
-	}
 	struct SDailyRewardDBIn
 	{
 		TUID UID
@@ -184,8 +174,6 @@ namespace bb
 		int32 PointBest
 		int32 WinCountSolo
 		int32 LoseCountSolo
-		int32 WinCountSurvival
-		int32 LoseCountSurvival
 		int32 WinCountMulti
 		int32 LoseCountMulti
 		int32 BattlePointBest
@@ -197,6 +185,16 @@ namespace bb
 	{
 		vector<SBattleEndInfo> BattleEndInfos
 		TDoneQuestDBs DoneQuests
+	}
+	struct SUpdateInvalidDisconnectInfoDBIn
+	{
+		TUID UID
+		SInvalidDisconnectInfo Info
+	}
+	struct SUpdateMatchBlockEndTimeDBIn
+	{
+		TUID UID
+		time_point MatchBlockEndTime
 	}
 
 	struct SArrowDodgeBattleStartDBIn

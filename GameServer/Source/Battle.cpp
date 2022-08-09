@@ -12,7 +12,7 @@ void CBattle::_AddBattlePlayer(const shared_ptr<CBattlePlayer>& pBattlePlayer_)
 ERet CBattle::Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_)
 {
 	if (!_pEngine->IsStarted())
-		return ERet::InvalidProtocol;
+		return ERet::Ok; // MultiBattle 에서는 게임도중 Engine.Stop 될 수 있고, 시간차로 유저가 Touch를 보낼 수 있으므로 Ok처리
 
 	_pEngine->Update();
 	if (!_BattlePlayers[PlayerIndex_]->Touch(Proto_.Dir))
@@ -26,7 +26,7 @@ ERet CBattle::Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_)
 ERet CBattle::Push(int32 PlayerIndex_, const SBattlePushNetCs& Proto_)
 {
 	if (!_pEngine->IsStarted())
-		return ERet::InvalidProtocol;
+		return ERet::Ok; // MultiBattle 에서는 게임도중 Engine.Stop 될 수 있고, 시간차로 유저가 Touch를 보낼 수 있으므로 Ok처리
 
 	_pEngine->Update();
 	if (!_BattlePlayers[PlayerIndex_]->Push(_pEngine->GetTick()))
@@ -51,6 +51,17 @@ CBattle::CBattle(const SBattleType& BattleType_) :
 CBattle::~CBattle()
 {
 }
+bool CBattle::_CanEngineStart(void) const
+{
+	return _IsStarted;
+}
+void CBattle::_CheckAndStartEngine(void)
+{
+	if (!_CanEngineStart())
+		return;
+
+	_pEngine->Start();
+}
 bool CBattle::Update(void)
 {
 	if (!_pEngine->IsStarted())
@@ -60,7 +71,9 @@ bool CBattle::Update(void)
 
 	return true;
 }
-bool CBattle::IsOneOnOne(void) const
+void CBattle::Link(int32 PlayerIndex_)
 {
-	return _BattleType.TeamCount == 1 && _BattleType.TeamMemberCount == 1;
+}
+void CBattle::UnLink(int32 PlayerIndex_)
+{
 }

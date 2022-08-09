@@ -47,8 +47,7 @@ public:
     virtual ~CArrowDodgeBattle();
     SArrowDodgeBattleBeginNetSc GetArrowDodgeBattleBeginNetSc(void) const;
     bool Update(void) override;
-    void OnLine(int32 PlayerIndex_) override;
-    void OffLine(int32 PlayerIndex_) override;
+    void Link(int32 PlayerIndex_) override;
 private:
     void _FixedUpdate(int64 Tick_);
     void _UpdateScore(int32 AddedPoint_);

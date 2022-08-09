@@ -322,24 +322,21 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_MetaData.reset(new TMetaData::element_type());
 
 		LOG(L"Initializing Cheat Command");
-		g_Command.Insert(L"/help", TCommand::SCommandInfo(L"print command list", L"", CommandHelp));
-		g_Command.Insert(L"/setuserlevel", TCommand::SCommandInfo(L"", L"level", CommandSetUserLevel));
-		g_Command.Insert(L"/addresources", TCommand::SCommandInfo(L"", L"gold star dia", CommandAddResources));
-		g_Command.Insert(L"/setresources", TCommand::SCommandInfo(L"", L"gold star dia", CommandSetResources));
-		g_Command.Insert(L"/setmapindex", TCommand::SCommandInfo(L"", L"mapindex (-1 : random)", CommandSetMapIndex));
-		g_Command.Insert(L"/setpoint", TCommand::SCommandInfo(L"", L"point", CommandSetPoint));
-		g_Command.Insert(L"/setchar", TCommand::SCommandInfo(L"", L"charcode (empty : all)", CommandSetChar));
-		g_Command.Insert(L"/unsetchar", TCommand::SCommandInfo(L"", L"charcode (empty : all)", CommandUnsetChar));
-		g_Command.Insert(L"/questcomplete", TCommand::SCommandInfo(L"", L"slotindex data", CommandQuestComplete));
-		g_Command.Insert(L"/questset", TCommand::SCommandInfo(L"", L"slotindex code", CommandQuestSet));
+		g_Command.Insert(L"/help", TCommand::SCommandInfo(L"치트 명령어를 출력합니다.", { L"" }, CommandHelp));
+		g_Command.Insert(L"/setuserlevel", TCommand::SCommandInfo(L"유저의 레벨을 설정합니다.", { L"level" }, CommandSetUserLevel));
+		g_Command.Insert(L"/addresources", TCommand::SCommandInfo(L"현재 자원에 입력한 값을 더합니다. (Ticket Gold Dia00 Dia01 Dia02 Dia03)", { L"10 20 30", L"10 20 30 20 20" }, CommandAddResources));
+		g_Command.Insert(L"/setresources", TCommand::SCommandInfo(L"현재 자원을 입력한 값으로 설정합니다. (Ticket Gold Dia00 Dia01 Dia02 Dia03)", { L"10 20 30", L"10 20 30 40 50 60" }, CommandSetResources));
+		g_Command.Insert(L"/setmapindex", TCommand::SCommandInfo(L"멀티 전투에 사용할 맵 인덱스를 설정합니다.", { L"-1 (random)", L"0" }, CommandSetMapIndex));
+		g_Command.Insert(L"/setpoint", TCommand::SCommandInfo(L"랭크 포인트를 입력한 값으로 설정합니다.", { L"1234" }, CommandSetPoint));
+		g_Command.Insert(L"/setchar", TCommand::SCommandInfo(L"캐릭터를 추가합니다. (CharacterCode)", { L"10", L" (비워두면 모두 생성)"}, CommandSetChar));
+		g_Command.Insert(L"/unsetchar", TCommand::SCommandInfo(L"캐릭터를 삭제합니다. (CharacterCode)", { L"10", L" (비워두면 모두 삭제)" }, CommandUnsetChar));
+		g_Command.Insert(L"/questcomplete", TCommand::SCommandInfo(L"지정한 슬롯의 퀘스트를 완료합니다. (SlotIndex Count)", { L"0 3" }, CommandQuestComplete));
+		g_Command.Insert(L"/questset", TCommand::SCommandInfo(L"지정한 슬롯에 퀘스트를 설정합니다. (SlotIndex QuestCode)", { L"0 10" }, CommandQuestSet));
+		g_Command.Insert(L"/resetdisconnect", TCommand::SCommandInfo(L"접속종료 처벌 상태를 재설정 합니다. ([전체종료까지 남은 분] [매칭차단종료까지 남은 분] [위반 회수])", { L"0 0 0  (완전 초기화)", L"100 10 1  (100분 후 전체차단 해제, 10분후 매칭차단 해제, 현재 위반회수 1)" }, CommandResetDisconnect));
 
-		LOG(L"Initializing Option Files");
 		COptionJson<SOption> Option(L"Option.ini", false);
-		LOG(L"Initializing Option Files");
 		COptionJson<SOptionRanking> OptionRanking(L"OptionRanking.ini", false);
-		LOG(L"Initializing OptionRanking Files");
 		COptionJson<SDBOptions> DBOptions(L"DBOptions.ini", false);
-		LOG(L"Initializing DBOptions Files");
 
 		SVersion Version(c_Ver_Main, g_MetaData->CheckSumMeta);
 		LOG(L"CheckSum : %d", g_MetaData->CheckSumMeta);
@@ -418,10 +415,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SBuyDBIn, SDummyDBOut>(L"dbo.spBuy", true, DummyDBOut);
 		DBAddCmd<SBuyCharDBIn, SDummyDBOut>(L"dbo.spBuyChar", true, DummyDBOut);
 		DBAddCmd<SBuyPackageDBIn, SDummyDBOut>(L"dbo.spBuyPackage", true, DummyDBOut);
-		DBAddCmd<SPurchaseDBIn, SDummyDBOut>(L"dbo.spPurchase", true, PurchaseDBOut);
 		DBAddCmd<SDailyRewardDBIn, SDummyDBOut>(L"dbo.spDailyReward", true, DummyDBOut);
 		DBAddCmd<SSelectCharDBIn, SDummyDBOut>(L"dbo.spSelectChar", true, DummyDBOut);
 		DBAddCmd<SBattleEndDBIn, SDummyDBOut>(L"dbo.spBattleEnd", true, DummyDBOut);
+		DBAddCmd<SUpdateInvalidDisconnectInfoDBIn, SDummyDBOut>(L"dbo.spUpdateInvalidDisconnectInfo", true, DummyDBOut);
+		DBAddCmd<SUpdateMatchBlockEndTimeDBIn, SDummyDBOut>(L"dbo.spUpdateMatchBlockEndTime", true, DummyDBOut);
 		DBAddCmd<SArrowDodgeBattleStartDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleStart", true, DummyDBOut);
 		DBAddCmd<SArrowDodgeBattleEndDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleEnd", true, DummyDBOut);
 		DBAddCmd<SFlyAwayBattleStartDBIn, SDummyDBOut>(L"dbo.spFlyAwayBattleStart", true, DummyDBOut);
@@ -458,7 +456,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Buy, BuyNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyChar, BuyCharNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyPackage, BuyPackageNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Purchase, PurchaseNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::DailyReward, DailyRewardNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SelectChar, SelectCharNetCs);
@@ -526,13 +523,16 @@ int _tmain(int argc, _TCHAR* argv[])
 			g_ReceiptCheck->Proc();
 			g_pCouponDB->Proc();
 
-			for (auto it = g_Battles.begin(); it != g_Battles.end(); )
+			if (g_BattlePeriod.CheckAndNextLoose())
 			{
-				auto itCheck = it;
-				++it;
+				for (auto it = g_Battles.begin(); it != g_Battles.end(); )
+				{
+					auto itCheck = it;
+					++it;
 
-				if (!(*itCheck)->Update())
-					g_Battles.erase(itCheck);
+					if (!(*itCheck)->Update())
+						g_Battles.erase(itCheck);
+				}
 			}
 
 			if (g_TimerPeriod.CheckAndNextLoose())

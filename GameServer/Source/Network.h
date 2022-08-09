@@ -8,7 +8,6 @@ ERet ChangeLanguageNetCs(CUser* User_, CStream& Stream_);
 ERet BuyNetCs(CUser* User_, CStream& Stream_);
 ERet BuyCharNetCs(CUser* User_, CStream& Stream_);
 ERet BuyPackageNetCs(CUser* User_, CStream& Stream_);
-ERet PurchaseNetCs(CUser* User_, CStream& Stream_);
 ERet DailyRewardNetCs(CUser* User_, CStream& Stream_);
 
 ERet SelectCharNetCs(CUser* User_, CStream& Stream_);

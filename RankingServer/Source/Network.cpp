@@ -4,23 +4,14 @@ void RequestRankingNetCs(const CKey& Key_, CStream& Stream_)
 {
 	SRanking Ranking;
 
-	for (auto& i : g_Ranking.operator() < 1 > ())
+	for (size_t i = 0; i < g_RankingMapArray.size(); ++i)
 	{
-		auto itRanking = g_Ranking.get(i.second);
-		Ranking.RankingUsers.emplace_back(itRanking->second);
+		for (auto& u : g_RankingMapArray[i].operator() < 1 > ())
+		{
+			auto itRanking = g_RankingMapArray[i].get(u.second);
+			Ranking.RankingUsersArray[i].RankingUsers.emplace_back(itRanking->second);
+		}
 	}
 
-	for (auto& i : g_RankingSingle.operator() < 1 > ())
-	{
-		auto itRanking = g_RankingSingle.get(i.second);
-		Ranking.RankingUserSingles.emplace_back(itRanking->second);
-	}
-
-	for (auto& i : g_RankingIsland.operator() < 1 > ())
-	{
-		auto itRanking = g_RankingIsland.get(i.second);
-		Ranking.RankingUserIslands.emplace_back(itRanking->second); // Point
-	}
-
-	g_NetBalance->Send(Key_.PeerNum, (__int32)EProtoRankingNetSc::RequestRanking, Ranking);
+	g_NetBalance->Send(Key_.PeerNum, (__int32)EProtoRankingNetSc::RequestRanking, std::move(Ranking));
 }

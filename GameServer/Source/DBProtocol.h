@@ -27,10 +27,11 @@ namespace bb
 		Buy,
 		BuyChar,
 		BuyPackage,
-		Purchase,
 		DailyReward,
 		SelectChar,
 		BattleEnd,
+		UpdateInvalidDisconnectInfo,
+		UpdateMatchBlockEndTime,
 		ArrowDodgeBattleStart,
 		ArrowDodgeBattleEnd,
 		FlyAwayBattleStart,
@@ -915,94 +916,6 @@ namespace bb
 				GetMemberName(int32(), L"Code");
 		}
 	};
-	struct SPurchaseDBIn : public SProto
-	{
-		EOS OS{};
-		string OrderID{};
-		TUID UID{};
-		string CountryCode{};
-		int64 PurchaseTime{};
-		int32 PurchaseType{};
-		string ProductID{};
-		TResource DiaCount{};
-		SPurchaseDBIn()
-		{
-		}
-		SPurchaseDBIn(const EOS& OS_, const string& OrderID_, const TUID& UID_, const string& CountryCode_, const int64& PurchaseTime_, const int32& PurchaseType_, const string& ProductID_, const TResource& DiaCount_) : OS(OS_), OrderID(OrderID_), UID(UID_), CountryCode(CountryCode_), PurchaseTime(PurchaseTime_), PurchaseType(PurchaseType_), ProductID(ProductID_), DiaCount(DiaCount_)
-		{
-		}
-		SPurchaseDBIn(EOS&& OS_, string&& OrderID_, TUID&& UID_, string&& CountryCode_, int64&& PurchaseTime_, int32&& PurchaseType_, string&& ProductID_, TResource&& DiaCount_) : OS(std::move(OS_)), OrderID(std::move(OrderID_)), UID(std::move(UID_)), CountryCode(std::move(CountryCode_)), PurchaseTime(std::move(PurchaseTime_)), PurchaseType(std::move(PurchaseType_)), ProductID(std::move(ProductID_)), DiaCount(std::move(DiaCount_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> OS;
-			Stream_ >> OrderID;
-			Stream_ >> UID;
-			Stream_ >> CountryCode;
-			Stream_ >> PurchaseTime;
-			Stream_ >> PurchaseType;
-			Stream_ >> ProductID;
-			Stream_ >> DiaCount;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["OS"] >> OS;
-			Value_["OrderID"] >> OrderID;
-			Value_["UID"] >> UID;
-			Value_["CountryCode"] >> CountryCode;
-			Value_["PurchaseTime"] >> PurchaseTime;
-			Value_["PurchaseType"] >> PurchaseType;
-			Value_["ProductID"] >> ProductID;
-			Value_["DiaCount"] >> DiaCount;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << OS;
-			Stream_ << OrderID;
-			Stream_ << UID;
-			Stream_ << CountryCode;
-			Stream_ << PurchaseTime;
-			Stream_ << PurchaseType;
-			Stream_ << ProductID;
-			Stream_ << DiaCount;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["OS"] = OS;
-			Value_["OrderID"] = OrderID;
-			Value_["UID"] = UID;
-			Value_["CountryCode"] = CountryCode;
-			Value_["PurchaseTime"] = PurchaseTime;
-			Value_["PurchaseType"] = PurchaseType;
-			Value_["ProductID"] = ProductID;
-			Value_["DiaCount"] = DiaCount;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(EOS()) + L"," + 
-				GetStdName(string()) + L"," + 
-				GetStdName(TUID()) + L"," + 
-				GetStdName(string()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(string()) + L"," + 
-				GetStdName(TResource());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(EOS(), L"OS") + L"," + 
-				GetMemberName(string(), L"OrderID") + L"," + 
-				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(string(), L"CountryCode") + L"," + 
-				GetMemberName(int64(), L"PurchaseTime") + L"," + 
-				GetMemberName(int32(), L"PurchaseType") + L"," + 
-				GetMemberName(string(), L"ProductID") + L"," + 
-				GetMemberName(TResource(), L"DiaCount");
-		}
-	};
 	struct SDailyRewardDBIn : public SProto
 	{
 		TUID UID{};
@@ -1191,8 +1104,6 @@ namespace bb
 		int32 PointBest{};
 		int32 WinCountSolo{};
 		int32 LoseCountSolo{};
-		int32 WinCountSurvival{};
-		int32 LoseCountSurvival{};
 		int32 WinCountMulti{};
 		int32 LoseCountMulti{};
 		int32 BattlePointBest{};
@@ -1202,10 +1113,10 @@ namespace bb
 		SBattleEndInfo()
 		{
 		}
-		SBattleEndInfo(const TUID& UID_, const TResources& Resources_, const int32& Point_, const int32& PointBest_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountSurvival_, const int32& LoseCountSurvival_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_) : UID(UID_), Resources(Resources_), Point(Point_), PointBest(PointBest_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountSurvival(WinCountSurvival_), LoseCountSurvival(LoseCountSurvival_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_)
+		SBattleEndInfo(const TUID& UID_, const TResources& Resources_, const int32& Point_, const int32& PointBest_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_) : UID(UID_), Resources(Resources_), Point(Point_), PointBest(PointBest_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_)
 		{
 		}
-		SBattleEndInfo(TUID&& UID_, TResources&& Resources_, int32&& Point_, int32&& PointBest_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountSurvival_, int32&& LoseCountSurvival_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_) : UID(std::move(UID_)), Resources(std::move(Resources_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountSurvival(std::move(WinCountSurvival_)), LoseCountSurvival(std::move(LoseCountSurvival_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_))
+		SBattleEndInfo(TUID&& UID_, TResources&& Resources_, int32&& Point_, int32&& PointBest_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_) : UID(std::move(UID_)), Resources(std::move(Resources_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1216,8 +1127,6 @@ namespace bb
 			Stream_ >> PointBest;
 			Stream_ >> WinCountSolo;
 			Stream_ >> LoseCountSolo;
-			Stream_ >> WinCountSurvival;
-			Stream_ >> LoseCountSurvival;
 			Stream_ >> WinCountMulti;
 			Stream_ >> LoseCountMulti;
 			Stream_ >> BattlePointBest;
@@ -1233,8 +1142,6 @@ namespace bb
 			Value_["PointBest"] >> PointBest;
 			Value_["WinCountSolo"] >> WinCountSolo;
 			Value_["LoseCountSolo"] >> LoseCountSolo;
-			Value_["WinCountSurvival"] >> WinCountSurvival;
-			Value_["LoseCountSurvival"] >> LoseCountSurvival;
 			Value_["WinCountMulti"] >> WinCountMulti;
 			Value_["LoseCountMulti"] >> LoseCountMulti;
 			Value_["BattlePointBest"] >> BattlePointBest;
@@ -1250,8 +1157,6 @@ namespace bb
 			Stream_ << PointBest;
 			Stream_ << WinCountSolo;
 			Stream_ << LoseCountSolo;
-			Stream_ << WinCountSurvival;
-			Stream_ << LoseCountSurvival;
 			Stream_ << WinCountMulti;
 			Stream_ << LoseCountMulti;
 			Stream_ << BattlePointBest;
@@ -1267,8 +1172,6 @@ namespace bb
 			Value_["PointBest"] = PointBest;
 			Value_["WinCountSolo"] = WinCountSolo;
 			Value_["LoseCountSolo"] = LoseCountSolo;
-			Value_["WinCountSurvival"] = WinCountSurvival;
-			Value_["LoseCountSurvival"] = LoseCountSurvival;
 			Value_["WinCountMulti"] = WinCountMulti;
 			Value_["LoseCountMulti"] = LoseCountMulti;
 			Value_["BattlePointBest"] = BattlePointBest;
@@ -1290,8 +1193,6 @@ namespace bb
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
@@ -1303,8 +1204,6 @@ namespace bb
 				GetMemberName(int32(), L"PointBest") + L"," + 
 				GetMemberName(int32(), L"WinCountSolo") + L"," + 
 				GetMemberName(int32(), L"LoseCountSolo") + L"," + 
-				GetMemberName(int32(), L"WinCountSurvival") + L"," + 
-				GetMemberName(int32(), L"LoseCountSurvival") + L"," + 
 				GetMemberName(int32(), L"WinCountMulti") + L"," + 
 				GetMemberName(int32(), L"LoseCountMulti") + L"," + 
 				GetMemberName(int32(), L"BattlePointBest") + L"," + 
@@ -1357,6 +1256,98 @@ namespace bb
 			return 
 				GetMemberName(vector<SBattleEndInfo>(), L"BattleEndInfos") + L"," + 
 				GetMemberName(TDoneQuestDBs(), L"DoneQuests");
+		}
+	};
+	struct SUpdateInvalidDisconnectInfoDBIn : public SProto
+	{
+		TUID UID{};
+		SInvalidDisconnectInfo Info{};
+		SUpdateInvalidDisconnectInfoDBIn()
+		{
+		}
+		SUpdateInvalidDisconnectInfoDBIn(const TUID& UID_, const SInvalidDisconnectInfo& Info_) : UID(UID_), Info(Info_)
+		{
+		}
+		SUpdateInvalidDisconnectInfoDBIn(TUID&& UID_, SInvalidDisconnectInfo&& Info_) : UID(std::move(UID_)), Info(std::move(Info_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> UID;
+			Stream_ >> Info;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["UID"] >> UID;
+			Value_["Info"] >> Info;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << UID;
+			Stream_ << Info;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["UID"] = UID;
+			Value_["Info"] = Info;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(SInvalidDisconnectInfo());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(SInvalidDisconnectInfo(), L"Info");
+		}
+	};
+	struct SUpdateMatchBlockEndTimeDBIn : public SProto
+	{
+		TUID UID{};
+		system_clock::time_point MatchBlockEndTime{};
+		SUpdateMatchBlockEndTimeDBIn()
+		{
+		}
+		SUpdateMatchBlockEndTimeDBIn(const TUID& UID_, const system_clock::time_point& MatchBlockEndTime_) : UID(UID_), MatchBlockEndTime(MatchBlockEndTime_)
+		{
+		}
+		SUpdateMatchBlockEndTimeDBIn(TUID&& UID_, system_clock::time_point&& MatchBlockEndTime_) : UID(std::move(UID_)), MatchBlockEndTime(std::move(MatchBlockEndTime_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> UID;
+			Stream_ >> MatchBlockEndTime;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["UID"] >> UID;
+			Value_["MatchBlockEndTime"] >> MatchBlockEndTime;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << UID;
+			Stream_ << MatchBlockEndTime;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["UID"] = UID;
+			Value_["MatchBlockEndTime"] = MatchBlockEndTime;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(system_clock::time_point());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(system_clock::time_point(), L"MatchBlockEndTime");
 		}
 	};
 	struct SArrowDodgeBattleStartDBIn : public SProto

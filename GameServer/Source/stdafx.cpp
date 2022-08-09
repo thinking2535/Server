@@ -42,8 +42,8 @@ TTimers g_Timers(TimersCallback);
 CLog g_Log(ETarget::Target_Console | ETarget::Target_File, EPeriod::Day, L"Log/", L"Log", ELocale::Korean);
 TCommand g_Command;
 CPeriod<seconds> g_TimerPeriod = seconds(1);
+CPeriod<milliseconds> g_BattlePeriod = milliseconds(16);
 CPeriod<seconds> g_CCULogPeriod = seconds(60);
-seconds g_BattleWaitDuration = seconds(30); // jjj 전투시간 처리
 TBattles g_Battles;
 
 TBulkCopyConnect g_BulkCopyConnect;
@@ -74,87 +74,43 @@ void SendMsg(const CKey& Key_, const wstring& Msg_)
 	DLOG(L"Msg Key[%d] [%s]", Key_.PeerNum, Msg_);
 	Send(Key_, SMsgNetSc(Msg_));
 }
-bool IsDia(EResource Resource_)
-{
-	return (Resource_ == EResource::Dia || Resource_ == EResource::DiaPaid);
-}
 bool HaveCost(const TResources& Resources_, EResource CostType_, TResource Cost_)
 {
-	if (IsDia(CostType_))
-		return (GetDia(Resources_) >= Cost_);
-	else
-		return (Resources_[(int)CostType_] >= Cost_);
+	return (Resources_[(int)CostType_] >= Cost_);
 }
 bool HaveCost(const TResources& Resources_, const TResources& Cost_)
 {
-	TResource DiaResource = 0;
-	TResource DiaCost = 0;
-
 	for (size_t i = 0; i < Resources_.size(); ++i)
 	{
-		if (IsDia((EResource)i))
-		{
-			DiaResource += Resources_[i];
-			DiaCost += Cost_[i];
-		}
-		else if (Resources_[i] < Cost_[i])
-		{
+		if (Resources_[i] < Cost_[i])
 			return false;
-		}
 	}
 
-	return (DiaResource >= DiaCost);
+	return true;
 }
-static_assert(EResource::Dia < EResource::DiaPaid, "Must Be EResource::Dia < EResource::DiaPaid");
-TResource GetDia(const TResources& Resources_)
+TResources MakeResources(TResource Data_)
 {
-	TResource Dia = 0;
-	for (size_t i = 0; i < Resources_.size(); ++i)
-	{
-		if (IsDia((EResource)i))
-			Dia += Resources_[i];
-	}
+	TResources Resources;
 
-	return Dia;
-}
-void SubDia(TResources& Resources_, TResource Dia_)
-{
-	for (size_t i = 0; i < Resources_.size(); ++i)
-	{
-		if ((EResource)i == EResource::Dia) // DiaPaid 나올때 까지 DiaAdded 에서 차감
-		{
-			if (Resources_[i] - Dia_ < 0)
-			{
-				Dia_ -= Resources_[i];
-				Resources_[i] = 0;
-			}
-			else
-			{
-				Resources_[i] -= Dia_;
-				Dia_ = 0;
-			}
-		}
-		else if ((EResource)i == EResource::DiaPaid)
-		{
-			if (Resources_[i] - Dia_ < 0)
-				Resources_[i] = 0;
-			else
-				Resources_[i] -= Dia_;
+	for (auto& i : Resources)
+		i = Data_;
 
-			Dia_ = 0;
-		}
-	}
+	return Resources;
 }
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
-	if (Resources_[Index_] + Data_ < 0)
-		Resources_[Index_] = MaxValue<TResource>();
+	if (Resources_[Index_] + Data_ > g_MetaData->MaxResources[Index_] || Resources_[Index_] + Data_ < 0)
+		Resources_[Index_] = g_MetaData->MaxResources[Index_];
 	else
 		Resources_[Index_] += Data_;
 }
 void AddResource(TResources& Resources_, EResource Resource_, TResource Data_)
 {
 	AddResource(Resources_, (size_t)Resource_, Data_);
+}
+void AddResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_)
+{
+	AddResource(Resources_, ResourceTypeData_.Type, ResourceTypeData_.Data);
 }
 void SubResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
@@ -165,10 +121,11 @@ void SubResource(TResources& Resources_, size_t Index_, TResource Data_)
 }
 void SubResource(TResources& Resources_, EResource Resource_, TResource Data_)
 {
-	if (IsDia(Resource_))
-		SubDia(Resources_, Data_);
-	else
-		SubResource(Resources_, (size_t)Resource_, Data_);
+	SubResource(Resources_, (size_t)Resource_, Data_);
+}
+void SubResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_)
+{
+	SubResource(Resources_, ResourceTypeData_.Type, ResourceTypeData_.Data);
 }
 void AddResources(TResources& Resources_, const TResources& Added_)
 {
@@ -178,19 +135,14 @@ void AddResources(TResources& Resources_, const TResources& Added_)
 void SubResources(TResources& Resources_, const TResources& Added_)
 {
 	for (size_t i = 0; i < Resources_.size(); ++i)
-	{
-		if (IsDia((EResource)i))
-			continue;
-
 		SubResource(Resources_, i, Added_[i]);
-	}
-
-	SubDia(Resources_, GetDia(Added_));
 }
 void SetResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
 	if (Data_ < 0)
 		Resources_[Index_] = 0;
+	else if (Data_ > g_MetaData->MaxResources[Index_])
+		Resources_[Index_] = g_MetaData->MaxResources[Index_];
 	else
 		Resources_[Index_] = Data_;
 }
@@ -315,4 +267,12 @@ bool IsValidRankingInfo(void)
 int32 GetAllMemberCount(const SBattleType& BattleType_)
 {
 	return BattleType_.TeamCount * BattleType_.TeamMemberCount;
+}
+bool IsOneOnOneBattle(const SBattleType& BattleType_)
+{
+	return BattleType_.TeamCount == 2 && BattleType_.TeamMemberCount == 1;
+}
+bool IsMultiBattle(const SBattleType& BattleType_)
+{
+	return BattleType_.TeamCount >= 2;
 }

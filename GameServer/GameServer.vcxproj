@@ -41,7 +41,6 @@
     <ClCompile Include="Source\ArrowDodgeBattlePlayer.cpp" />
     <ClCompile Include="Source\ArrowDodgeItem.cpp" />
     <ClCompile Include="Source\ArrowDodgeItemMaker.cpp" />
-    <ClCompile Include="Source\BalloonHitControl.cpp" />
     <ClCompile Include="Source\Battle.cpp" />
     <ClCompile Include="Source\BattlePlayer.cpp" />
     <ClCompile Include="Source\BattlePlayerObject.cpp" />
@@ -85,7 +84,6 @@
     <ClInclude Include="Source\ArrowDodgeBattlePlayer.h" />
     <ClInclude Include="Source\ArrowDodgeItem.h" />
     <ClInclude Include="Source\ArrowDodgeItemMaker.h" />
-    <ClInclude Include="Source\BalloonHitControl.h" />
     <ClInclude Include="Source\Battle.h" />
     <ClInclude Include="Source\BattlePlayer.h" />
     <ClInclude Include="Source\BattlePlayerObject.h" />

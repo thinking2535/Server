@@ -58,8 +58,7 @@ public:
     ERet Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_) override;
     SFlyAwayBattleBeginNetSc GetFlyAwayBattleBeginNetSc(void) const;
     bool Update(void) override;
-    void OnLine(int32 PlayerIndex_) override;
-    void OffLine(int32 PlayerIndex_) override;
+    void Link(int32 PlayerIndex_) override;
 private:
     void _FixedUpdate(int64 Tick_);
     void _AddLand(const shared_ptr<CFlyAwayLand>& pLand_);

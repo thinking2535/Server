@@ -136,39 +136,6 @@ void CheckIDDBOut(TSessionsIt itSession_, TOutObject& OutObject_)
 		g_Net->SendCheck(itSession_, SessionCode, (CStream() << int32(Ret_)));
 	}
 }
-void PurchaseDBOut(TSessionsIt itSession_, TOutObject& OutObject_)
-{
-	auto User = GetUser(OutObject_.Key);
-	if (!User)
-	{
-		LOG(L"PurchaseDBOut User Out UID[%d]", itSession_->first);
-		return; // 토파즈는 DB에 Add가 아닌 Set 하는 방식이기 때문에 서버 메모리의 Topaz값을 알아야 하므로 유저가 로긴하고있지 않으면 다음번 로그인 시점에 다시 시도
-	}
-
-	try
-	{
-		SPurchaseDBIn In;
-		OutObject_.InStream >> In;
-
-		if (OutObject_.Ret != 0)
-		{
-			LOG(L"PurchaseDB QueryFail UID[%d] ProductID[%s] Ret[%d]", In.UID, MBSToWCS(In.ProductID), OutObject_.Ret);
-			throw ERet::SPError;
-		}
-
-		User->PurchaseDB(In, OutObject_.SPRet);
-	}
-	catch (ERet Ret_)
-	{
-		SendRet(OutObject_.Key, Ret_);
-		WillClose(OutObject_.Key);
-	}
-	catch (...)
-	{
-		SendRet(OutObject_.Key, ERet::SPError);
-		WillClose(OutObject_.Key);
-	}
-}
 void ChangeNickBeginDBOut(TSessionsIt itSession_, TOutObject& OutObject_)
 {
 	auto User = GetUser(OutObject_.Key);

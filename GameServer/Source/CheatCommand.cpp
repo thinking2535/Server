@@ -99,3 +99,7 @@ void CommandQuestSet(wstringstream& Params_, CUser& User_)
 
 	User_.QuestSet((TQuestSlotIndex)SlotIndex, Code);
 }
+void CommandResetDisconnect(wstringstream& Params_, CUser& User_)
+{
+	User_.ResetDisconnect(Params_);
+}

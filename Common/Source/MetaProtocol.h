@@ -11,13 +11,11 @@
 
 #include "NetProtocol.h"
 #include <Rso/Physics/Protocol.h>
-#include <Rso/Unity/Protocol.h>
 namespace bb
 {
 	using namespace rso;
 	using namespace core;
 	using namespace physics;
-	using namespace unity;
 	enum class ECashItemType
 	{
 		ResourcesPack,
@@ -142,15 +140,20 @@ namespace bb
 		int32 QuestCoolMinutes{};
 		TResource QuestNextCostGold{};
 		int32 ChangeNickFreeCount{};
-		TResource ChangeNickCostDia{};
-		TResource TutorialRewardDia{};
+		EResource ChangeNickCostType{};
+		TResource ChangeNickCostValue{};
+		EResource TutorialRewardType{};
+		TResource TutorialRewardValue{};
+		TResource MaxTicket{};
+		EResource BattleCostType{};
+		TResource BattleCostValue{};
 		SConfigMeta()
 		{
 		}
-		SConfigMeta(const int32& BattleDurationSec_, const int32& BattleOneOnOneDurationSec_, const int32& GhostDelaySec_, const int32& InvulnerableDurationSec_, const int32& BalloonHitPoint_, const int32& ParachuteHitPoint_, const int32& FirstBalloonHitPoint_, const int32& QuestCoolMinutes_, const TResource& QuestNextCostGold_, const int32& ChangeNickFreeCount_, const TResource& ChangeNickCostDia_, const TResource& TutorialRewardDia_) : BattleDurationSec(BattleDurationSec_), BattleOneOnOneDurationSec(BattleOneOnOneDurationSec_), GhostDelaySec(GhostDelaySec_), InvulnerableDurationSec(InvulnerableDurationSec_), BalloonHitPoint(BalloonHitPoint_), ParachuteHitPoint(ParachuteHitPoint_), FirstBalloonHitPoint(FirstBalloonHitPoint_), QuestCoolMinutes(QuestCoolMinutes_), QuestNextCostGold(QuestNextCostGold_), ChangeNickFreeCount(ChangeNickFreeCount_), ChangeNickCostDia(ChangeNickCostDia_), TutorialRewardDia(TutorialRewardDia_)
+		SConfigMeta(const int32& BattleDurationSec_, const int32& BattleOneOnOneDurationSec_, const int32& GhostDelaySec_, const int32& InvulnerableDurationSec_, const int32& BalloonHitPoint_, const int32& ParachuteHitPoint_, const int32& FirstBalloonHitPoint_, const int32& QuestCoolMinutes_, const TResource& QuestNextCostGold_, const int32& ChangeNickFreeCount_, const EResource& ChangeNickCostType_, const TResource& ChangeNickCostValue_, const EResource& TutorialRewardType_, const TResource& TutorialRewardValue_, const TResource& MaxTicket_, const EResource& BattleCostType_, const TResource& BattleCostValue_) : BattleDurationSec(BattleDurationSec_), BattleOneOnOneDurationSec(BattleOneOnOneDurationSec_), GhostDelaySec(GhostDelaySec_), InvulnerableDurationSec(InvulnerableDurationSec_), BalloonHitPoint(BalloonHitPoint_), ParachuteHitPoint(ParachuteHitPoint_), FirstBalloonHitPoint(FirstBalloonHitPoint_), QuestCoolMinutes(QuestCoolMinutes_), QuestNextCostGold(QuestNextCostGold_), ChangeNickFreeCount(ChangeNickFreeCount_), ChangeNickCostType(ChangeNickCostType_), ChangeNickCostValue(ChangeNickCostValue_), TutorialRewardType(TutorialRewardType_), TutorialRewardValue(TutorialRewardValue_), MaxTicket(MaxTicket_), BattleCostType(BattleCostType_), BattleCostValue(BattleCostValue_)
 		{
 		}
-		SConfigMeta(int32&& BattleDurationSec_, int32&& BattleOneOnOneDurationSec_, int32&& GhostDelaySec_, int32&& InvulnerableDurationSec_, int32&& BalloonHitPoint_, int32&& ParachuteHitPoint_, int32&& FirstBalloonHitPoint_, int32&& QuestCoolMinutes_, TResource&& QuestNextCostGold_, int32&& ChangeNickFreeCount_, TResource&& ChangeNickCostDia_, TResource&& TutorialRewardDia_) : BattleDurationSec(std::move(BattleDurationSec_)), BattleOneOnOneDurationSec(std::move(BattleOneOnOneDurationSec_)), GhostDelaySec(std::move(GhostDelaySec_)), InvulnerableDurationSec(std::move(InvulnerableDurationSec_)), BalloonHitPoint(std::move(BalloonHitPoint_)), ParachuteHitPoint(std::move(ParachuteHitPoint_)), FirstBalloonHitPoint(std::move(FirstBalloonHitPoint_)), QuestCoolMinutes(std::move(QuestCoolMinutes_)), QuestNextCostGold(std::move(QuestNextCostGold_)), ChangeNickFreeCount(std::move(ChangeNickFreeCount_)), ChangeNickCostDia(std::move(ChangeNickCostDia_)), TutorialRewardDia(std::move(TutorialRewardDia_))
+		SConfigMeta(int32&& BattleDurationSec_, int32&& BattleOneOnOneDurationSec_, int32&& GhostDelaySec_, int32&& InvulnerableDurationSec_, int32&& BalloonHitPoint_, int32&& ParachuteHitPoint_, int32&& FirstBalloonHitPoint_, int32&& QuestCoolMinutes_, TResource&& QuestNextCostGold_, int32&& ChangeNickFreeCount_, EResource&& ChangeNickCostType_, TResource&& ChangeNickCostValue_, EResource&& TutorialRewardType_, TResource&& TutorialRewardValue_, TResource&& MaxTicket_, EResource&& BattleCostType_, TResource&& BattleCostValue_) : BattleDurationSec(std::move(BattleDurationSec_)), BattleOneOnOneDurationSec(std::move(BattleOneOnOneDurationSec_)), GhostDelaySec(std::move(GhostDelaySec_)), InvulnerableDurationSec(std::move(InvulnerableDurationSec_)), BalloonHitPoint(std::move(BalloonHitPoint_)), ParachuteHitPoint(std::move(ParachuteHitPoint_)), FirstBalloonHitPoint(std::move(FirstBalloonHitPoint_)), QuestCoolMinutes(std::move(QuestCoolMinutes_)), QuestNextCostGold(std::move(QuestNextCostGold_)), ChangeNickFreeCount(std::move(ChangeNickFreeCount_)), ChangeNickCostType(std::move(ChangeNickCostType_)), ChangeNickCostValue(std::move(ChangeNickCostValue_)), TutorialRewardType(std::move(TutorialRewardType_)), TutorialRewardValue(std::move(TutorialRewardValue_)), MaxTicket(std::move(MaxTicket_)), BattleCostType(std::move(BattleCostType_)), BattleCostValue(std::move(BattleCostValue_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -165,8 +168,13 @@ namespace bb
 			Stream_ >> QuestCoolMinutes;
 			Stream_ >> QuestNextCostGold;
 			Stream_ >> ChangeNickFreeCount;
-			Stream_ >> ChangeNickCostDia;
-			Stream_ >> TutorialRewardDia;
+			Stream_ >> ChangeNickCostType;
+			Stream_ >> ChangeNickCostValue;
+			Stream_ >> TutorialRewardType;
+			Stream_ >> TutorialRewardValue;
+			Stream_ >> MaxTicket;
+			Stream_ >> BattleCostType;
+			Stream_ >> BattleCostValue;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -180,8 +188,13 @@ namespace bb
 			Value_["QuestCoolMinutes"] >> QuestCoolMinutes;
 			Value_["QuestNextCostGold"] >> QuestNextCostGold;
 			Value_["ChangeNickFreeCount"] >> ChangeNickFreeCount;
-			Value_["ChangeNickCostDia"] >> ChangeNickCostDia;
-			Value_["TutorialRewardDia"] >> TutorialRewardDia;
+			Value_["ChangeNickCostType"] >> ChangeNickCostType;
+			Value_["ChangeNickCostValue"] >> ChangeNickCostValue;
+			Value_["TutorialRewardType"] >> TutorialRewardType;
+			Value_["TutorialRewardValue"] >> TutorialRewardValue;
+			Value_["MaxTicket"] >> MaxTicket;
+			Value_["BattleCostType"] >> BattleCostType;
+			Value_["BattleCostValue"] >> BattleCostValue;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -195,8 +208,13 @@ namespace bb
 			Stream_ << QuestCoolMinutes;
 			Stream_ << QuestNextCostGold;
 			Stream_ << ChangeNickFreeCount;
-			Stream_ << ChangeNickCostDia;
-			Stream_ << TutorialRewardDia;
+			Stream_ << ChangeNickCostType;
+			Stream_ << ChangeNickCostValue;
+			Stream_ << TutorialRewardType;
+			Stream_ << TutorialRewardValue;
+			Stream_ << MaxTicket;
+			Stream_ << BattleCostType;
+			Stream_ << BattleCostValue;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -210,8 +228,13 @@ namespace bb
 			Value_["QuestCoolMinutes"] = QuestCoolMinutes;
 			Value_["QuestNextCostGold"] = QuestNextCostGold;
 			Value_["ChangeNickFreeCount"] = ChangeNickFreeCount;
-			Value_["ChangeNickCostDia"] = ChangeNickCostDia;
-			Value_["TutorialRewardDia"] = TutorialRewardDia;
+			Value_["ChangeNickCostType"] = ChangeNickCostType;
+			Value_["ChangeNickCostValue"] = ChangeNickCostValue;
+			Value_["TutorialRewardType"] = TutorialRewardType;
+			Value_["TutorialRewardValue"] = TutorialRewardValue;
+			Value_["MaxTicket"] = MaxTicket;
+			Value_["BattleCostType"] = BattleCostType;
+			Value_["BattleCostValue"] = BattleCostValue;
 		}
 		static wstring StdName(void)
 		{
@@ -226,7 +249,12 @@ namespace bb
 				GetStdName(int32()) + L"," + 
 				GetStdName(TResource()) + L"," + 
 				GetStdName(int32()) + L"," + 
+				GetStdName(EResource()) + L"," + 
 				GetStdName(TResource()) + L"," + 
+				GetStdName(EResource()) + L"," + 
+				GetStdName(TResource()) + L"," + 
+				GetStdName(TResource()) + L"," + 
+				GetStdName(EResource()) + L"," + 
 				GetStdName(TResource());
 		}
 		static wstring MemberName(void)
@@ -242,8 +270,13 @@ namespace bb
 				GetMemberName(int32(), L"QuestCoolMinutes") + L"," + 
 				GetMemberName(TResource(), L"QuestNextCostGold") + L"," + 
 				GetMemberName(int32(), L"ChangeNickFreeCount") + L"," + 
-				GetMemberName(TResource(), L"ChangeNickCostDia") + L"," + 
-				GetMemberName(TResource(), L"TutorialRewardDia");
+				GetMemberName(EResource(), L"ChangeNickCostType") + L"," + 
+				GetMemberName(TResource(), L"ChangeNickCostValue") + L"," + 
+				GetMemberName(EResource(), L"TutorialRewardType") + L"," + 
+				GetMemberName(TResource(), L"TutorialRewardValue") + L"," + 
+				GetMemberName(TResource(), L"MaxTicket") + L"," + 
+				GetMemberName(EResource(), L"BattleCostType") + L"," + 
+				GetMemberName(TResource(), L"BattleCostValue");
 		}
 	};
 	struct SForbiddenWordMeta : public SProto
@@ -338,19 +371,19 @@ namespace bb
 				GetMemberName(int32(), L"DailyRewardAdCount");
 		}
 	};
-	struct SShopServerMeta : public SProto
+	struct SShopMeta : public SProto
 	{
 		int32 Code{};
 		EResource CostType{};
 		TResource CostValue{};
 		int32 RewardCode{};
-		SShopServerMeta()
+		SShopMeta()
 		{
 		}
-		SShopServerMeta(const int32& Code_, const EResource& CostType_, const TResource& CostValue_, const int32& RewardCode_) : Code(Code_), CostType(CostType_), CostValue(CostValue_), RewardCode(RewardCode_)
+		SShopMeta(const int32& Code_, const EResource& CostType_, const TResource& CostValue_, const int32& RewardCode_) : Code(Code_), CostType(CostType_), CostValue(CostValue_), RewardCode(RewardCode_)
 		{
 		}
-		SShopServerMeta(int32&& Code_, EResource&& CostType_, TResource&& CostValue_, int32&& RewardCode_) : Code(std::move(Code_)), CostType(std::move(CostType_)), CostValue(std::move(CostValue_)), RewardCode(std::move(RewardCode_))
+		SShopMeta(int32&& Code_, EResource&& CostType_, TResource&& CostValue_, int32&& RewardCode_) : Code(std::move(Code_)), CostType(std::move(CostType_)), CostValue(std::move(CostValue_)), RewardCode(std::move(RewardCode_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -511,59 +544,14 @@ namespace bb
 				GetMemberName(TResource(), L"RewardValue");
 		}
 	};
-	struct SShopCashServerMeta : public SProto
-	{
-		wstring Pid{};
-		TResource DiaCount{};
-		SShopCashServerMeta()
-		{
-		}
-		SShopCashServerMeta(const wstring& Pid_, const TResource& DiaCount_) : Pid(Pid_), DiaCount(DiaCount_)
-		{
-		}
-		SShopCashServerMeta(wstring&& Pid_, TResource&& DiaCount_) : Pid(std::move(Pid_)), DiaCount(std::move(DiaCount_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Pid;
-			Stream_ >> DiaCount;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Pid"] >> Pid;
-			Value_["DiaCount"] >> DiaCount;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Pid;
-			Stream_ << DiaCount;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Pid"] = Pid;
-			Value_["DiaCount"] = DiaCount;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(wstring()) + L"," + 
-				GetStdName(TResource());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(wstring(), L"Pid") + L"," + 
-				GetMemberName(TResource(), L"DiaCount");
-		}
-	};
 	struct SCharacterMeta : public SProto
 	{
 		int32 Code{};
 		EGrade Grade{};
-		EResource Cost_Type{};
-		TResource Price{};
-		TResource CPRefund{};
+		EResource CostType{};
+		TResource CostValue{};
+		EResource RefundType{};
+		TResource RefundValue{};
 		float MaxVelUp{};
 		float MaxVelDown{};
 		float MaxVelXGround{};
@@ -578,19 +566,20 @@ namespace bb
 		SCharacterMeta()
 		{
 		}
-		SCharacterMeta(const int32& Code_, const EGrade& Grade_, const EResource& Cost_Type_, const TResource& Price_, const TResource& CPRefund_, const float& MaxVelUp_, const float& MaxVelDown_, const float& MaxVelXGround_, const float& MaxVelXAir_, const float& FlapDeltaVelX_, const float& FlapDeltaVelUp_, const float& RunAcc_, const float& StaminaMax_, const float& StaminaPerTick_, const int32& StaminaRegenDelay_, const float& PumpSpeed_) : Code(Code_), Grade(Grade_), Cost_Type(Cost_Type_), Price(Price_), CPRefund(CPRefund_), MaxVelUp(MaxVelUp_), MaxVelDown(MaxVelDown_), MaxVelXGround(MaxVelXGround_), MaxVelXAir(MaxVelXAir_), FlapDeltaVelX(FlapDeltaVelX_), FlapDeltaVelUp(FlapDeltaVelUp_), RunAcc(RunAcc_), StaminaMax(StaminaMax_), StaminaPerTick(StaminaPerTick_), StaminaRegenDelay(StaminaRegenDelay_), PumpSpeed(PumpSpeed_)
+		SCharacterMeta(const int32& Code_, const EGrade& Grade_, const EResource& CostType_, const TResource& CostValue_, const EResource& RefundType_, const TResource& RefundValue_, const float& MaxVelUp_, const float& MaxVelDown_, const float& MaxVelXGround_, const float& MaxVelXAir_, const float& FlapDeltaVelX_, const float& FlapDeltaVelUp_, const float& RunAcc_, const float& StaminaMax_, const float& StaminaPerTick_, const int32& StaminaRegenDelay_, const float& PumpSpeed_) : Code(Code_), Grade(Grade_), CostType(CostType_), CostValue(CostValue_), RefundType(RefundType_), RefundValue(RefundValue_), MaxVelUp(MaxVelUp_), MaxVelDown(MaxVelDown_), MaxVelXGround(MaxVelXGround_), MaxVelXAir(MaxVelXAir_), FlapDeltaVelX(FlapDeltaVelX_), FlapDeltaVelUp(FlapDeltaVelUp_), RunAcc(RunAcc_), StaminaMax(StaminaMax_), StaminaPerTick(StaminaPerTick_), StaminaRegenDelay(StaminaRegenDelay_), PumpSpeed(PumpSpeed_)
 		{
 		}
-		SCharacterMeta(int32&& Code_, EGrade&& Grade_, EResource&& Cost_Type_, TResource&& Price_, TResource&& CPRefund_, float&& MaxVelUp_, float&& MaxVelDown_, float&& MaxVelXGround_, float&& MaxVelXAir_, float&& FlapDeltaVelX_, float&& FlapDeltaVelUp_, float&& RunAcc_, float&& StaminaMax_, float&& StaminaPerTick_, int32&& StaminaRegenDelay_, float&& PumpSpeed_) : Code(std::move(Code_)), Grade(std::move(Grade_)), Cost_Type(std::move(Cost_Type_)), Price(std::move(Price_)), CPRefund(std::move(CPRefund_)), MaxVelUp(std::move(MaxVelUp_)), MaxVelDown(std::move(MaxVelDown_)), MaxVelXGround(std::move(MaxVelXGround_)), MaxVelXAir(std::move(MaxVelXAir_)), FlapDeltaVelX(std::move(FlapDeltaVelX_)), FlapDeltaVelUp(std::move(FlapDeltaVelUp_)), RunAcc(std::move(RunAcc_)), StaminaMax(std::move(StaminaMax_)), StaminaPerTick(std::move(StaminaPerTick_)), StaminaRegenDelay(std::move(StaminaRegenDelay_)), PumpSpeed(std::move(PumpSpeed_))
+		SCharacterMeta(int32&& Code_, EGrade&& Grade_, EResource&& CostType_, TResource&& CostValue_, EResource&& RefundType_, TResource&& RefundValue_, float&& MaxVelUp_, float&& MaxVelDown_, float&& MaxVelXGround_, float&& MaxVelXAir_, float&& FlapDeltaVelX_, float&& FlapDeltaVelUp_, float&& RunAcc_, float&& StaminaMax_, float&& StaminaPerTick_, int32&& StaminaRegenDelay_, float&& PumpSpeed_) : Code(std::move(Code_)), Grade(std::move(Grade_)), CostType(std::move(CostType_)), CostValue(std::move(CostValue_)), RefundType(std::move(RefundType_)), RefundValue(std::move(RefundValue_)), MaxVelUp(std::move(MaxVelUp_)), MaxVelDown(std::move(MaxVelDown_)), MaxVelXGround(std::move(MaxVelXGround_)), MaxVelXAir(std::move(MaxVelXAir_)), FlapDeltaVelX(std::move(FlapDeltaVelX_)), FlapDeltaVelUp(std::move(FlapDeltaVelUp_)), RunAcc(std::move(RunAcc_)), StaminaMax(std::move(StaminaMax_)), StaminaPerTick(std::move(StaminaPerTick_)), StaminaRegenDelay(std::move(StaminaRegenDelay_)), PumpSpeed(std::move(PumpSpeed_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Code;
 			Stream_ >> Grade;
-			Stream_ >> Cost_Type;
-			Stream_ >> Price;
-			Stream_ >> CPRefund;
+			Stream_ >> CostType;
+			Stream_ >> CostValue;
+			Stream_ >> RefundType;
+			Stream_ >> RefundValue;
 			Stream_ >> MaxVelUp;
 			Stream_ >> MaxVelDown;
 			Stream_ >> MaxVelXGround;
@@ -607,9 +596,10 @@ namespace bb
 		{
 			Value_["Code"] >> Code;
 			Value_["Grade"] >> Grade;
-			Value_["Cost_Type"] >> Cost_Type;
-			Value_["Price"] >> Price;
-			Value_["CPRefund"] >> CPRefund;
+			Value_["CostType"] >> CostType;
+			Value_["CostValue"] >> CostValue;
+			Value_["RefundType"] >> RefundType;
+			Value_["RefundValue"] >> RefundValue;
 			Value_["MaxVelUp"] >> MaxVelUp;
 			Value_["MaxVelDown"] >> MaxVelDown;
 			Value_["MaxVelXGround"] >> MaxVelXGround;
@@ -626,9 +616,10 @@ namespace bb
 		{
 			Stream_ << Code;
 			Stream_ << Grade;
-			Stream_ << Cost_Type;
-			Stream_ << Price;
-			Stream_ << CPRefund;
+			Stream_ << CostType;
+			Stream_ << CostValue;
+			Stream_ << RefundType;
+			Stream_ << RefundValue;
 			Stream_ << MaxVelUp;
 			Stream_ << MaxVelDown;
 			Stream_ << MaxVelXGround;
@@ -645,9 +636,10 @@ namespace bb
 		{
 			Value_["Code"] = Code;
 			Value_["Grade"] = Grade;
-			Value_["Cost_Type"] = Cost_Type;
-			Value_["Price"] = Price;
-			Value_["CPRefund"] = CPRefund;
+			Value_["CostType"] = CostType;
+			Value_["CostValue"] = CostValue;
+			Value_["RefundType"] = RefundType;
+			Value_["RefundValue"] = RefundValue;
 			Value_["MaxVelUp"] = MaxVelUp;
 			Value_["MaxVelDown"] = MaxVelDown;
 			Value_["MaxVelXGround"] = MaxVelXGround;
@@ -667,6 +659,7 @@ namespace bb
 				GetStdName(EGrade()) + L"," + 
 				GetStdName(EResource()) + L"," + 
 				GetStdName(TResource()) + L"," + 
+				GetStdName(EResource()) + L"," + 
 				GetStdName(TResource()) + L"," + 
 				GetStdName(float()) + L"," + 
 				GetStdName(float()) + L"," + 
@@ -685,9 +678,10 @@ namespace bb
 			return 
 				GetMemberName(int32(), L"Code") + L"," + 
 				GetMemberName(EGrade(), L"Grade") + L"," + 
-				GetMemberName(EResource(), L"Cost_Type") + L"," + 
-				GetMemberName(TResource(), L"Price") + L"," + 
-				GetMemberName(TResource(), L"CPRefund") + L"," + 
+				GetMemberName(EResource(), L"CostType") + L"," + 
+				GetMemberName(TResource(), L"CostValue") + L"," + 
+				GetMemberName(EResource(), L"RefundType") + L"," + 
+				GetMemberName(TResource(), L"RefundValue") + L"," + 
 				GetMemberName(float(), L"MaxVelUp") + L"," + 
 				GetMemberName(float(), L"MaxVelDown") + L"," + 
 				GetMemberName(float(), L"MaxVelXGround") + L"," + 
@@ -1213,73 +1207,6 @@ namespace bb
 				GetMemberName(SFlyAwayMapInfo(), L"FlyAwayMapInfo");
 		}
 	};
-	struct SIslandMeta : public SProto
-	{
-		int32 PlayCountMax{};
-		TResource ChargeCostGold{};
-		int32 ScoreFactorIsland{};
-		int32 ScoreFactorGold{};
-		int32 RefreshDurationMinute{};
-		SIslandMeta()
-		{
-		}
-		SIslandMeta(const int32& PlayCountMax_, const TResource& ChargeCostGold_, const int32& ScoreFactorIsland_, const int32& ScoreFactorGold_, const int32& RefreshDurationMinute_) : PlayCountMax(PlayCountMax_), ChargeCostGold(ChargeCostGold_), ScoreFactorIsland(ScoreFactorIsland_), ScoreFactorGold(ScoreFactorGold_), RefreshDurationMinute(RefreshDurationMinute_)
-		{
-		}
-		SIslandMeta(int32&& PlayCountMax_, TResource&& ChargeCostGold_, int32&& ScoreFactorIsland_, int32&& ScoreFactorGold_, int32&& RefreshDurationMinute_) : PlayCountMax(std::move(PlayCountMax_)), ChargeCostGold(std::move(ChargeCostGold_)), ScoreFactorIsland(std::move(ScoreFactorIsland_)), ScoreFactorGold(std::move(ScoreFactorGold_)), RefreshDurationMinute(std::move(RefreshDurationMinute_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> PlayCountMax;
-			Stream_ >> ChargeCostGold;
-			Stream_ >> ScoreFactorIsland;
-			Stream_ >> ScoreFactorGold;
-			Stream_ >> RefreshDurationMinute;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["PlayCountMax"] >> PlayCountMax;
-			Value_["ChargeCostGold"] >> ChargeCostGold;
-			Value_["ScoreFactorIsland"] >> ScoreFactorIsland;
-			Value_["ScoreFactorGold"] >> ScoreFactorGold;
-			Value_["RefreshDurationMinute"] >> RefreshDurationMinute;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << PlayCountMax;
-			Stream_ << ChargeCostGold;
-			Stream_ << ScoreFactorIsland;
-			Stream_ << ScoreFactorGold;
-			Stream_ << RefreshDurationMinute;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["PlayCountMax"] = PlayCountMax;
-			Value_["ChargeCostGold"] = ChargeCostGold;
-			Value_["ScoreFactorIsland"] = ScoreFactorIsland;
-			Value_["ScoreFactorGold"] = ScoreFactorGold;
-			Value_["RefreshDurationMinute"] = RefreshDurationMinute;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(int32()) + L"," + 
-				GetStdName(TResource()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(int32(), L"PlayCountMax") + L"," + 
-				GetMemberName(TResource(), L"ChargeCostGold") + L"," + 
-				GetMemberName(int32(), L"ScoreFactorIsland") + L"," + 
-				GetMemberName(int32(), L"ScoreFactorGold") + L"," + 
-				GetMemberName(int32(), L"RefreshDurationMinute");
-		}
-	};
 	struct SGachaMeta : public SProto
 	{
 		EResource CostResource{};
@@ -1446,17 +1373,17 @@ namespace bb
 				GetMemberName(int32(), L"CharCode");
 		}
 	};
-	struct SRewardMeta : public SProto
+	struct SRewardItemMeta : public SProto
 	{
-		ERewardType Type{};
+		wstring Type{};
 		int32 Data{};
-		SRewardMeta()
+		SRewardItemMeta()
 		{
 		}
-		SRewardMeta(const ERewardType& Type_, const int32& Data_) : Type(Type_), Data(Data_)
+		SRewardItemMeta(const wstring& Type_, const int32& Data_) : Type(Type_), Data(Data_)
 		{
 		}
-		SRewardMeta(ERewardType&& Type_, int32&& Data_) : Type(std::move(Type_)), Data(std::move(Data_))
+		SRewardItemMeta(wstring&& Type_, int32&& Data_) : Type(std::move(Type_)), Data(std::move(Data_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1482,60 +1409,60 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(ERewardType()) + L"," + 
+				GetStdName(wstring()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(ERewardType(), L"Type") + L"," + 
+				GetMemberName(wstring(), L"Type") + L"," + 
 				GetMemberName(int32(), L"Data");
 		}
 	};
-	struct SKeyRewardMeta : public SProto
+	struct SCodeRewardItemMeta : public SProto
 	{
 		int32 Code{};
-		SRewardMeta Reward{};
-		SKeyRewardMeta()
+		SRewardItemMeta RewardItem{};
+		SCodeRewardItemMeta()
 		{
 		}
-		SKeyRewardMeta(const int32& Code_, const SRewardMeta& Reward_) : Code(Code_), Reward(Reward_)
+		SCodeRewardItemMeta(const int32& Code_, const SRewardItemMeta& RewardItem_) : Code(Code_), RewardItem(RewardItem_)
 		{
 		}
-		SKeyRewardMeta(int32&& Code_, SRewardMeta&& Reward_) : Code(std::move(Code_)), Reward(std::move(Reward_))
+		SCodeRewardItemMeta(int32&& Code_, SRewardItemMeta&& RewardItem_) : Code(std::move(Code_)), RewardItem(std::move(RewardItem_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Code;
-			Stream_ >> Reward;
+			Stream_ >> RewardItem;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Code"] >> Code;
-			Value_["Reward"] >> Reward;
+			Value_["RewardItem"] >> RewardItem;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Code;
-			Stream_ << Reward;
+			Stream_ << RewardItem;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Code"] = Code;
-			Value_["Reward"] = Reward;
+			Value_["RewardItem"] = RewardItem;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(int32()) + L"," + 
-				GetStdName(SRewardMeta());
+				GetStdName(SRewardItemMeta());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(int32(), L"Code") + L"," + 
-				GetMemberName(SRewardMeta(), L"Reward");
+				GetMemberName(SRewardItemMeta(), L"RewardItem");
 		}
 	};
 	struct SRankMeta : public SProto
@@ -1889,6 +1816,98 @@ namespace bb
 				GetMemberName(int32(), L"Gold") + L"," + 
 				GetMemberName(int32(), L"Diamond") + L"," + 
 				GetMemberName(int32(), L"Champion");
+		}
+	};
+	struct SMultiMeta : public SProto
+	{
+		int32 DisconnectableSeconds{};
+		int32 PunishMinutesForDisconnect{};
+		SMultiMeta()
+		{
+		}
+		SMultiMeta(const int32& DisconnectableSeconds_, const int32& PunishMinutesForDisconnect_) : DisconnectableSeconds(DisconnectableSeconds_), PunishMinutesForDisconnect(PunishMinutesForDisconnect_)
+		{
+		}
+		SMultiMeta(int32&& DisconnectableSeconds_, int32&& PunishMinutesForDisconnect_) : DisconnectableSeconds(std::move(DisconnectableSeconds_)), PunishMinutesForDisconnect(std::move(PunishMinutesForDisconnect_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> DisconnectableSeconds;
+			Stream_ >> PunishMinutesForDisconnect;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["DisconnectableSeconds"] >> DisconnectableSeconds;
+			Value_["PunishMinutesForDisconnect"] >> PunishMinutesForDisconnect;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << DisconnectableSeconds;
+			Stream_ << PunishMinutesForDisconnect;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["DisconnectableSeconds"] = DisconnectableSeconds;
+			Value_["PunishMinutesForDisconnect"] = PunishMinutesForDisconnect;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"DisconnectableSeconds") + L"," + 
+				GetMemberName(int32(), L"PunishMinutesForDisconnect");
+		}
+	};
+	struct SMultiMatchDeniedDurationMeta : public SProto
+	{
+		int32 DisconnectedCount{};
+		int32 DeniedSeconds{};
+		SMultiMatchDeniedDurationMeta()
+		{
+		}
+		SMultiMatchDeniedDurationMeta(const int32& DisconnectedCount_, const int32& DeniedSeconds_) : DisconnectedCount(DisconnectedCount_), DeniedSeconds(DeniedSeconds_)
+		{
+		}
+		SMultiMatchDeniedDurationMeta(int32&& DisconnectedCount_, int32&& DeniedSeconds_) : DisconnectedCount(std::move(DisconnectedCount_)), DeniedSeconds(std::move(DeniedSeconds_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> DisconnectedCount;
+			Stream_ >> DeniedSeconds;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["DisconnectedCount"] >> DisconnectedCount;
+			Value_["DeniedSeconds"] >> DeniedSeconds;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << DisconnectedCount;
+			Stream_ << DeniedSeconds;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["DisconnectedCount"] = DisconnectedCount;
+			Value_["DeniedSeconds"] = DeniedSeconds;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"DisconnectedCount") + L"," + 
+				GetMemberName(int32(), L"DeniedSeconds");
 		}
 	};
 	struct SArrowDodgeMeta : public SProto

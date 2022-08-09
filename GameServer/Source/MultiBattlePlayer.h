@@ -8,7 +8,10 @@ public:
 private:
 	FHit _fHit;
 	FIcon _fIcon;
+	CMultiBattle* _pMultiBattle;
 public:
+	milliseconds LeftMillisecondsToInvalidBattle = g_MetaData->pMultiBattleMeta->DisconnectableMilliseconds;
+	TTime DisconnectEndTime; // 정상 종료시각을 고려할 필요 없음.
 	SMultiBattleInfo BattleInfo;
 
 	CMultiBattlePlayer(
@@ -22,9 +25,18 @@ public:
 		const int8 TeamIndex_,
 		const shared_ptr<SCharacter>& pCharacter_,
 		TBattlesIt itBattle_,
+		CMultiBattle* pMultiBattle_,
 		CUser* Player_);
+	void Link(void) override;
+	void UnLink(void) override;
 	void Icon(const SMultiBattleIconNetCs& Proto_);
-	SBattleEndInfo BattleEnd(const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamEndInfo>& TeamEndInfos_, bool BestPlayer_, TDoneQuestDBs& DoneQuestDBs_);
+private:
+	void _BattleEnd(const SBattleType& BattleType_, bool IsBestPlayer_);
+public:
+	void BattleEnd(TTime Now_, const SBattleType& BattleType_, bool IsBestPlayer_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, bool DoesWin_, TDoneQuestDBs& DoneQuestDBs_);
+	void BattleEndDraw(TTime Now_, const SBattleType& BattleType_, bool IsBestPlayer_, int32 BattlePoint_, TDoneQuestDBs& DoneQuestDBs_);
+	void BattleEndInvalid(TTime Now_);
+	void BattleEndInvalidPunish(void);
 	void Kill(int32 AddedPoint_);
 	void AttackBalloon(int32 AddedPoint_);
 protected:

@@ -32,12 +32,11 @@ namespace bb
 	{
 		SRankingUser UserIsland
 	}
+
 	struct SRankingRankingInfoNetRs
 	{
 		int64 Counter
-		SRankingUserPointMin UserPointMin
-		TRankingRewards Rewards
-		TRankingRewards RewardsSingle
-		TRankingRewards RewardsIsland
+		TRankingPointArray UserPointMinArray
+		TRankingRewardsArray RewardsArray
 	}
 }

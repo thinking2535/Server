@@ -34,42 +34,33 @@ void CallbackMessage(const wstring& Message_)
 	cout << "Message" << endl;
 }
 
-SRankingUserPointMin GetUserPointMin(void)
+TRankingPointArray GetUserPointMin(void)
 {
-	__int32 UserPointMin = 0;
-	__int32 UserPointMinSingle = 0;
-	__int32 UserPointMinIsland = 0;
+	TRankingPointArray UserPointMinArray{};
 
-	if (g_MaxList > 0 && g_Ranking.size() >= g_MaxList)
-		UserPointMin = g_Ranking.operator() < 1 > ().rbegin()->first;
+	for (size_t i = 0; i < g_RankingMapArray.size(); ++i)
+	{
+		if (g_MaxList > 0 && g_RankingMapArray[i].size() >= g_MaxList)
+			UserPointMinArray[i] = g_RankingMapArray[i].operator() < 1 > ().rbegin()->first;
+	}
 
-	if (g_MaxList > 0 && g_RankingSingle.size() >= g_MaxList)
-		UserPointMinSingle = g_RankingSingle.operator() < 1 > ().rbegin()->first;
-
-	if (g_MaxList > 0 && g_RankingIsland.size() >= g_MaxList)
-		UserPointMinIsland = g_RankingIsland.operator() < 1 > ().rbegin()->first;
-
-	return SRankingUserPointMin(UserPointMin, UserPointMinSingle, UserPointMinIsland);
+	return UserPointMinArray;
 }
 SRankingRankingInfoNetRs GetSRankingRankingInfoNetRs(void)
 {
-	return SRankingRankingInfoNetRs(g_RankingConfig.Counter, GetUserPointMin(), g_Rewards, g_RewardsSingle, g_RewardsIsland);
+	return SRankingRankingInfoNetRs(g_RankingConfig.Counter, GetUserPointMin(), g_RewardsArray);
 }
 void BroadCast(void)
 {
-	TRankingUsers RankingUsers;
-	for (auto& i : g_Ranking)
-		RankingUsers.emplace_back(i.second);
+	TRankingUsersArray RankingUsersArray{};
 
-	TRankingUsers RankingUserSingles;
-	for (auto& i : g_RankingSingle)
-		RankingUserSingles.emplace_back(i.second);
+	for (size_t i = 0; i < g_RankingMapArray.size(); ++i)
+	{
+		for (auto& u : g_RankingMapArray[i])
+			RankingUsersArray[i].RankingUsers.emplace_back(u.second);
+	}
 
-	TRankingUsers RankingUserIslands;
-	for (auto& i : g_RankingIsland)
-		RankingUserIslands.emplace_back(i.second);
-
-	g_NetBalance->BroadCast(RankingUsers, RankingUserSingles, RankingUserIslands, g_Rewards, g_RewardsSingle, g_RewardsIsland);
+	g_NetBalance->BroadCast(RankingUsersArray, g_RewardsArray);
 }
 
 void LinkS(const CKey& Key_)
@@ -116,41 +107,17 @@ void RecvUBroadCast(const CKey& Key_, CStream& Stream_)
 {
 	LOG(L"RecvUBroadCast PeerNum:%d", Key_.PeerNum);
 
-	TRankingUsers RankingUsers;
-	Stream_ >> RankingUsers;
+	TRankingUsersArray RankingUsersArray{};
+	Stream_ >> RankingUsersArray;
+	Stream_ >> g_RewardsArray;
 
-	g_Ranking.clear();
+	for (size_t i = 0; i < RankingUsersArray.size(); ++i)
+	{
+		g_RankingMapArray[i].clear();
 
-	for (auto& i : RankingUsers)
-		g_Ranking.emplace(i, i.UID, i.Point);
-
-
-	TRankingUsers RankingUserSingles;
-	Stream_ >> RankingUserSingles;
-
-	g_RankingSingle.clear();
-
-	for (auto& i : RankingUserSingles)
-		g_RankingSingle.emplace(i, i.UID, i.Point);
-
-
-	TRankingUsers RankingUserIslands;
-	Stream_ >> RankingUserIslands;
-
-	g_RankingIsland.clear();
-
-	for (auto& i : RankingUserIslands)
-		g_RankingIsland.emplace(i, i.UID, i.Point);
-
-
-	g_Rewards.clear();
-	Stream_ >> g_Rewards;
-
-	g_RewardsSingle.clear();
-	Stream_ >> g_RewardsSingle;
-
-	g_RewardsIsland.clear();
-	Stream_ >> g_RewardsIsland;
+		for (auto& u : RankingUsersArray[i].RankingUsers)
+			g_RankingMapArray[i].emplace(u, u.UID, u.Point);
+	}
 }
 
 void LinkD(const CKey& Key_)
@@ -195,7 +162,7 @@ bool RowCallback(SQLLEN RowNum_, CStream& Row_)
 	SRankingUser RankingUser;
 	Row_ >> RankingUser;
 
-	g_Ranking.emplace(RankingUser, RankingUser.UID, RankingUser.Point);
+	g_RankingMapArray[(size_t)ERankingType::Multi].emplace(RankingUser, RankingUser.UID, RankingUser.Point);
 	return true;
 }
 void ParamCallback(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -210,7 +177,7 @@ bool RowCallbackSingle(SQLLEN RowNum_, CStream& Row_)
 	SRankingUser RankingUser;
 	Row_ >> RankingUser;
 
-	g_RankingSingle.emplace(RankingUser, RankingUser.UID, RankingUser.Point);
+	g_RankingMapArray[(size_t)ERankingType::Single].emplace(RankingUser, RankingUser.UID, RankingUser.Point);
 	return true;
 }
 void ParamCallbackSingle(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -225,7 +192,7 @@ bool RowCallbackIsland(SQLLEN RowNum_, CStream& Row_)
 	SRankingUser RankingUser;
 	Row_ >> RankingUser;
 
-	g_RankingIsland.emplace(RankingUser, RankingUser.UID, RankingUser.Point);
+	g_RankingMapArray[(size_t)ERankingType::Island].emplace(RankingUser, RankingUser.UID, RankingUser.Point);
 	return true;
 }
 void ParamCallbackIsland(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -242,7 +209,7 @@ bool RowCallbackReward(SQLLEN RowNum_, CStream& Row_)
 	Row_ >> UID;
 	Row_ >> Ranking;
 
-	g_Rewards.emplace(UID, Ranking);
+	g_RewardsArray[(size_t)ERankingType::Multi].emplace(UID, Ranking);
 	return true;
 }
 void ParamCallbackReward(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -259,7 +226,7 @@ bool RowCallbackRewardSingle(SQLLEN RowNum_, CStream& Row_)
 	Row_ >> UID;
 	Row_ >> Ranking;
 
-	g_RewardsSingle.emplace(UID, Ranking);
+	g_RewardsArray[(size_t)ERankingType::Single].emplace(UID, Ranking);
 	return true;
 }
 void ParamCallbackRewardSingle(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -276,7 +243,7 @@ bool RowCallbackRewardIsland(SQLLEN RowNum_, CStream& Row_)
 	Row_ >> UID;
 	Row_ >> Ranking;
 
-	g_RewardsIsland.emplace(UID, Ranking);
+	g_RewardsArray[(size_t)ERankingType::Island].emplace(UID, Ranking);
 	return true;
 }
 void ParamCallbackRewardIsland(SQLRETURN Ret_, __int32 SpRet_, CStream& OutParams_)
@@ -483,74 +450,53 @@ int _tmain(int argc, _TCHAR* argv[])
 			{
 				g_Timers.Proc();
 
-				if (Option->MasterNamePort.Port == 0)
+				if (g_RankingRefreshPeriod.CheckAndNextLoose())
 				{
-					BroadCast();
-
-					auto Now = system_clock::now();
-					if (g_RankingConfig.ExpireTimePoint <= Now)
+					if (Option->MasterNamePort.Port == 0)
 					{
-						// Refresh ////////////////////////////////
-						++g_RankingConfig.Counter;
-						g_RankingConfig.ExpireTimePoint += (((Now - g_RankingConfig.ExpireTimePoint) / minutes(g_GameData->RankingConfigMeta.PeriodMinutes)) + 1) * minutes(g_GameData->RankingConfigMeta.PeriodMinutes);
+						BroadCast();
 
+						auto Now = system_clock::now();
+						if (g_RankingConfig.ExpireTimePoint <= Now)
 						{
-							g_Rewards.clear();
-							__int32 Ranking = 0;
-							for (auto& i : g_Ranking.operator() < 1 > ())
+							// Refresh ////////////////////////////////
+							++g_RankingConfig.Counter;
+							g_RankingConfig.ExpireTimePoint += (((Now - g_RankingConfig.ExpireTimePoint) / minutes(g_GameData->RankingConfigMeta.PeriodMinutes)) + 1) * minutes(g_GameData->RankingConfigMeta.PeriodMinutes);
+
+							for (size_t i = 0; i < g_RankingMapArray.size(); ++i)
 							{
-								if (g_GameData->RankingMaxes[(size_t)ERankingType::Multi] < Ranking)
-									break;
+								g_RewardsArray[i].clear();
+								__int32 Ranking = 0;
+								for (auto& u : g_RankingMapArray[i].operator() < 1 > ())
+								{
+									if (g_GameData->RankingMaxes[i] < Ranking)
+										break;
 
-								g_Rewards.emplace(std::get<0>(g_Ranking[i.second].first)->first, Ranking);
-								++Ranking;
+									g_RewardsArray[i].emplace(std::get<0>(g_RankingMapArray[i][u.second].first)->first, Ranking);
+									++Ranking;
+								}
+
+								g_RankingMapArray[i].clear();
 							}
-						}
 
+							DBPush(SRankingRefreshDBIn(
+								g_RankingConfig,
+								g_RewardsArray[(size_t)ERankingType::Multi],
+								g_RewardsArray[(size_t)ERankingType::Single],
+								g_RewardsArray[(size_t)ERankingType::Island]));
+
+							// g_UserPointMin 값이 크게 낮아져서 랭킹에 들 수 있는 유저가 있지만 바로 갱신되지 않더라도 다음번 갱신때 반영될 것이므로 무시
+							// 이를 해결하려면 여분의 유저까지 랭킹 목록에 보관해야 하고 로직 복잡해지므로
+							g_Net->SendAll(__int32(EProtoRankingNetRs::RankingInfo), GetSRankingRankingInfoNetRs());
+						}
+						else
 						{
-							g_RewardsSingle.clear();
-							__int32 Ranking = 0;
-							for (auto& i : g_RankingSingle.operator() < 1 > ())
-							{
-								if (g_GameData->RankingMaxes[(size_t)ERankingType::Single] < Ranking)
-									break;
-
-								g_RewardsSingle.emplace(std::get<0>(g_RankingSingle[i.second].first)->first, Ranking);
-								++Ranking;
-							}
+							// g_UserPointMin 값이 크게 낮아져서 랭킹에 들 수 있는 유저가 있지만 바로 갱신되지 않더라도 다음번 갱신때 반영될 것이므로 무시
+							// 이를 해결하려면 여분의 유저까지 랭킹 목록에 보관해야 하고 로직 복잡해지므로
+							g_Net->SendAll(__int32(EProtoRankingNetRs::UserPointMin), GetUserPointMin());
 						}
-
-						{
-							g_RewardsIsland.clear();
-							__int32 Ranking = 0;
-							for (auto& i : g_RankingIsland.operator() < 1 > ())
-							{
-								if (g_GameData->RankingMaxes[(size_t)ERankingType::Island] < Ranking)
-									break;
-
-								g_RewardsIsland.emplace(std::get<0>(g_RankingIsland[i.second].first)->first, Ranking);
-								++Ranking;
-							}
-						}
-
-						g_Ranking.clear();
-						g_RankingSingle.clear();
-						g_RankingIsland.clear();
-
-						DBPush(SRankingRefreshDBIn(g_RankingConfig, g_Rewards, g_RewardsSingle, g_RewardsIsland));
-
-						// g_UserPointMin 값이 크게 낮아져서 랭킹에 들 수 있는 유저가 있지만 바로 갱신되지 않더라도 다음번 갱신때 반영될 것이므로 무시
-						// 이를 해결하려면 여분의 유저까지 랭킹 목록에 보관해야 하고 로직 복잡해지므로
-						g_Net->SendAll(__int32(EProtoRankingNetRs::RankingInfo), GetSRankingRankingInfoNetRs());
-					}
-					else
-					{
-						// g_UserPointMin 값이 크게 낮아져서 랭킹에 들 수 있는 유저가 있지만 바로 갱신되지 않더라도 다음번 갱신때 반영될 것이므로 무시
-						// 이를 해결하려면 여분의 유저까지 랭킹 목록에 보관해야 하고 로직 복잡해지므로
-						g_Net->SendAll(__int32(EProtoRankingNetRs::UserPointMin), GetUserPointMin());
 					}
 				}
-
 			}
 
 			this_thread::sleep_for(milliseconds(1));

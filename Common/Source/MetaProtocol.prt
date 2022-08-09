@@ -1,13 +1,11 @@
 include NetProtocol
 include <Rso/Physics/Protocol>
-include <Rso/Unity/Protocol>
 
 namespace bb
 {
 	using namespace rso
 	using namespace core
 	using namespace physics
-	using namespace unity
 
 	enum class ECashItemType
 	{
@@ -54,8 +52,13 @@ namespace bb
 		int32 QuestCoolMinutes
 		TResource QuestNextCostGold
 		int32 ChangeNickFreeCount
-		TResource ChangeNickCostDia
-		TResource TutorialRewardDia
+		EResource ChangeNickCostType
+		TResource ChangeNickCostValue
+		EResource TutorialRewardType
+		TResource TutorialRewardValue
+		TResource MaxTicket
+		EResource BattleCostType
+		TResource BattleCostValue
 	}
 	struct SForbiddenWordMeta
 	{
@@ -67,7 +70,7 @@ namespace bb
 		int32 DailyRewardFreeCount
 		int32 DailyRewardAdCount
 	}
-	struct SShopServerMeta
+	struct SShopMeta
 	{
 		int32 Code
 		EResource CostType
@@ -87,19 +90,15 @@ namespace bb
 		EResource RewardType
 		TResource RewardValue
 	}
-	struct SShopCashServerMeta
-	{
-		wstring Pid
-		TResource DiaCount
-	}
 
 	struct SCharacterMeta
 	{
 		int32 Code
 		EGrade Grade
-		EResource Cost_Type
-		TResource Price
-		TResource CPRefund
+		EResource CostType
+		TResource CostValue
+		EResource RefundType
+		TResource RefundValue
 		float MaxVelUp
 		float MaxVelDown
 		float MaxVelXGround
@@ -174,14 +173,6 @@ namespace bb
 		SArrowDodgeMapInfo ArrowDodgeMapInfo
 		SFlyAwayMapInfo FlyAwayMapInfo
 	}
-	struct SIslandMeta
-	{
-		int32 PlayCountMax
-		TResource ChargeCostGold
-		int32 ScoreFactorIsland
-		int32 ScoreFactorGold
-		int32 RefreshDurationMinute
-	}
 	struct SGachaMeta
 	{
 		EResource CostResource
@@ -201,15 +192,15 @@ namespace bb
 		double Probability
 		int32 CharCode
 	}
-	struct SRewardMeta
+	struct SRewardItemMeta
 	{
-		ERewardType Type
+		wstring Type
 		int32 Data
 	}
-	struct SKeyRewardMeta
+	struct SCodeRewardItemMeta
 	{
 		int32 Code
-		SRewardMeta Reward
+		SRewardItemMeta RewardItem
 	}
 
 	struct SRankMeta
@@ -256,6 +247,16 @@ namespace bb
 		int32 Champion
 	}
 
+	struct SMultiMeta
+	{
+		int32 DisconnectableSeconds
+		int32 PunishMinutesForDisconnect
+	}
+	struct SMultiMatchDeniedDurationMeta
+	{
+		int32 DisconnectedCount
+		int32 DeniedSeconds
+	}
 	struct SArrowDodgeMeta
 	{
 		int32 ArrowDodgePoint

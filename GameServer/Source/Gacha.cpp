@@ -2,7 +2,7 @@
 
 TResources CGacha::_GetRefund(const CCharacter* pCharGot_) const
 {
-	return GetResources(EResource::CP, pCharGot_->CPRefund);
+	return GetResources(pCharGot_->RefundType, pCharGot_->RefundValue);
 }
 CGacha::CGacha(const SGachaMeta& Super_, int32 GachaIndex_, const TProbabilityGrades& ProbabilityGrades_) :
 	SGachaMeta(Super_),
