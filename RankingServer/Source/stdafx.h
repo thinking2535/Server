@@ -44,7 +44,7 @@ using namespace dump;
 #define DLOG(...) __noop(__VA_ARGS__)
 #endif
 
-class CGameData;
+class CMetaData;
 
 using TMonitor = unique_ptr<CProc>;
 using TNet = unique_ptr<net::CServer>;
@@ -58,7 +58,7 @@ using TRecvCFunc = function<void(const CKey&, CStream&)>;
 using TRecvCFuncs = CList<TRecvCFunc>;
 using TRecvSFunc = function<void(const CKey&, CStream&)>;
 using TRecvSFuncs = CList<TRecvSFunc>;
-using TGameData = unique_ptr<CGameData>;
+using TGameData = unique_ptr<CMetaData>;
 
 extern TDB::element_type::TCallbacks g_BinderDB;
 extern TMonitor g_Monitor;
@@ -75,9 +75,9 @@ extern TRankingRewardsArray g_RewardsArray;
 extern TDB g_DB;
 extern TRecvCFuncs g_BinderRecvC;
 extern TRecvSFuncs g_BinderRecvS;
-extern TGameData g_GameData;
+extern TGameData g_MetaData;
 
-#include "GameData.h"
+#include "MetaData.h"
 #include "Network.h"
 #include "NetworkServer.h"
 #include "DataBase.h"

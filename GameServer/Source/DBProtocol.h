@@ -38,11 +38,11 @@ namespace bb
 		FlyAwayBattleEnd,
 		Gacha,
 		RankReward,
+		QuestSet,
 		QuestNew,
 		QuestDel,
 		QuestDone,
 		QuestReward,
-		QuestNext,
 		QuestDailyCompleteReward,
 		ChangeNickBegin,
 		ChangeNickEnd,
@@ -1762,6 +1762,59 @@ namespace bb
 				GetMemberName(int32(), L"LastGotRewardRankIndex");
 		}
 	};
+	struct SQuestSetDBIn : public SProto
+	{
+		TUID UID{};
+		TQuestSlotIndex SlotIndex{};
+		int32 NewQuestCode{};
+		SQuestSetDBIn()
+		{
+		}
+		SQuestSetDBIn(const TUID& UID_, const TQuestSlotIndex& SlotIndex_, const int32& NewQuestCode_) : UID(UID_), SlotIndex(SlotIndex_), NewQuestCode(NewQuestCode_)
+		{
+		}
+		SQuestSetDBIn(TUID&& UID_, TQuestSlotIndex&& SlotIndex_, int32&& NewQuestCode_) : UID(std::move(UID_)), SlotIndex(std::move(SlotIndex_)), NewQuestCode(std::move(NewQuestCode_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> UID;
+			Stream_ >> SlotIndex;
+			Stream_ >> NewQuestCode;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["UID"] >> UID;
+			Value_["SlotIndex"] >> SlotIndex;
+			Value_["NewQuestCode"] >> NewQuestCode;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << UID;
+			Stream_ << SlotIndex;
+			Stream_ << NewQuestCode;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["UID"] = UID;
+			Value_["SlotIndex"] = SlotIndex;
+			Value_["NewQuestCode"] = NewQuestCode;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(TQuestSlotIndex()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
+				GetMemberName(int32(), L"NewQuestCode");
+		}
+	};
 	struct SQuestNewDBIn : public SProto
 	{
 		TUID UID{};
@@ -1910,22 +1963,24 @@ namespace bb
 	struct SQuestRewardDBIn : public SRewardDB
 	{
 		TQuestSlotIndex SlotIndex{};
+		int32 NewQuestCode{};
 		system_clock::time_point CoolEndTime{};
 		int32 DailyCompleteCount{};
 		system_clock::time_point DailyCompleteRefreshTime{};
 		SQuestRewardDBIn()
 		{
 		}
-		SQuestRewardDBIn(const SRewardDB& Super_, const TQuestSlotIndex& SlotIndex_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardDB(Super_), SlotIndex(SlotIndex_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
+		SQuestRewardDBIn(const SRewardDB& Super_, const TQuestSlotIndex& SlotIndex_, const int32& NewQuestCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardDB(Super_), SlotIndex(SlotIndex_), NewQuestCode(NewQuestCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
 		{
 		}
-		SQuestRewardDBIn(SRewardDB&& Super_, TQuestSlotIndex&& SlotIndex_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardDB(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
+		SQuestRewardDBIn(SRewardDB&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& NewQuestCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardDB(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), NewQuestCode(std::move(NewQuestCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			SRewardDB::operator << (Stream_);
 			Stream_ >> SlotIndex;
+			Stream_ >> NewQuestCode;
 			Stream_ >> CoolEndTime;
 			Stream_ >> DailyCompleteCount;
 			Stream_ >> DailyCompleteRefreshTime;
@@ -1934,6 +1989,7 @@ namespace bb
 		{
 			SRewardDB::operator << (Value_);
 			Value_["SlotIndex"] >> SlotIndex;
+			Value_["NewQuestCode"] >> NewQuestCode;
 			Value_["CoolEndTime"] >> CoolEndTime;
 			Value_["DailyCompleteCount"] >> DailyCompleteCount;
 			Value_["DailyCompleteRefreshTime"] >> DailyCompleteRefreshTime;
@@ -1942,6 +1998,7 @@ namespace bb
 		{
 			SRewardDB::operator >> (Stream_);
 			Stream_ << SlotIndex;
+			Stream_ << NewQuestCode;
 			Stream_ << CoolEndTime;
 			Stream_ << DailyCompleteCount;
 			Stream_ << DailyCompleteRefreshTime;
@@ -1950,6 +2007,7 @@ namespace bb
 		{
 			SRewardDB::operator >> (Value_);
 			Value_["SlotIndex"] = SlotIndex;
+			Value_["NewQuestCode"] = NewQuestCode;
 			Value_["CoolEndTime"] = CoolEndTime;
 			Value_["DailyCompleteCount"] = DailyCompleteCount;
 			Value_["DailyCompleteRefreshTime"] = DailyCompleteRefreshTime;
@@ -1959,6 +2017,7 @@ namespace bb
 			return 
 				GetStdName(SRewardDB()) + L"," + 
 				GetStdName(TQuestSlotIndex()) + L"," + 
+				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point());
@@ -1968,62 +2027,10 @@ namespace bb
 			return 
 				GetMemberName(SRewardDB(), L"") + L"," + 
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
+				GetMemberName(int32(), L"NewQuestCode") + L"," + 
 				GetMemberName(system_clock::time_point(), L"CoolEndTime") + L"," + 
 				GetMemberName(int32(), L"DailyCompleteCount") + L"," + 
 				GetMemberName(system_clock::time_point(), L"DailyCompleteRefreshTime");
-		}
-	};
-	struct SQuestNextDBIn : public SProto
-	{
-		TUID UID{};
-		TQuestSlotIndex SlotIndex{};
-		int32 NewQuestCode{};
-		SQuestNextDBIn()
-		{
-		}
-		SQuestNextDBIn(const TUID& UID_, const TQuestSlotIndex& SlotIndex_, const int32& NewQuestCode_) : UID(UID_), SlotIndex(SlotIndex_), NewQuestCode(NewQuestCode_)
-		{
-		}
-		SQuestNextDBIn(TUID&& UID_, TQuestSlotIndex&& SlotIndex_, int32&& NewQuestCode_) : UID(std::move(UID_)), SlotIndex(std::move(SlotIndex_)), NewQuestCode(std::move(NewQuestCode_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> UID;
-			Stream_ >> SlotIndex;
-			Stream_ >> NewQuestCode;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["UID"] >> UID;
-			Value_["SlotIndex"] >> SlotIndex;
-			Value_["NewQuestCode"] >> NewQuestCode;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << UID;
-			Stream_ << SlotIndex;
-			Stream_ << NewQuestCode;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["UID"] = UID;
-			Value_["SlotIndex"] = SlotIndex;
-			Value_["NewQuestCode"] = NewQuestCode;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TUID()) + L"," + 
-				GetStdName(TQuestSlotIndex()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
-				GetMemberName(int32(), L"NewQuestCode");
 		}
 	};
 	struct SQuestDailyCompleteRewardDBIn : public SRewardDB

@@ -23,23 +23,17 @@ void CUser::RetAndClose(ERet Ret_)
 	SendRet(Ret_);
 	WillClose();
 }
-void CUser::_QuestRefresh(void)
+void CUser::Certify(void)
 {
-	TQuestSlotIndexCodes NewQuests;
+	g_Net->Certify(Key());
+	_SendLogin();
 
-	_Quest.Refresh(NewQuests);
-
+	auto NewQuests = _Quest.FillEmptySlotAndGetNewQuests();
 	if (!NewQuests.empty())
 	{
 		Push(SQuestNewDBIn(GetUID(), NewQuests));
 		Send(SQuestGotNetSc(std::move(NewQuests)));
 	}
-}
-void CUser::Certify(void)
-{
-	g_Net->Certify(Key());
-	_SendLogin();
-	_QuestRefresh();
 }
 void CUser::CertifyAndLobby(void)
 {
@@ -225,6 +219,29 @@ ERet CUser::BuyPackage(const SBuyPackageNetCs& Proto_)
 
 	return ERet::Ok;
 }
+ERet CUser::BuyResource(const SBuyResourceNetCs& Proto_)
+{
+	auto exchangeValue = g_MetaData->getExchangeValue(Proto_.resourceTypeData.Type);
+	if (!exchangeValue)
+		return ERet::InvalidProtocol;
+
+	if (Proto_.resourceTypeData.Data <= 0)
+		return ERet::InvalidProtocol;
+
+	if (Proto_.resourceTypeData.Data > GetResourceFreeSpace(_User.Resources[(size_t)Proto_.resourceTypeData.Type], Proto_.resourceTypeData.Type))
+		return ERet::InvalidProtocol;
+
+	auto costValue = getCostValue(*exchangeValue, Proto_.resourceTypeData.Data);
+	if (!HaveCost(exchangeValue->costResourceType, costValue))
+		return ERet::NotEnoughMoney;
+
+	AddResourceCore(Proto_.resourceTypeData);
+	SubResourceCore(exchangeValue->costResourceType, costValue);
+	Push(SSetResourcesDBIn(GetUID(), _User.Resources));
+	Send(SBuyResourceNetSc(_User.Resources));
+
+	return ERet::Ok;
+}
 ERet CUser::Purchase(void)
 {
 	return ERet::InvalidProtocol;
@@ -318,13 +335,21 @@ bool CUser::HaveCost(const TResources& Cost_)
 {
 	return ::HaveCost(_User.Resources, Cost_);
 }
-void CUser::AddResourceCore(EResource Resource_, TResource Data_)
+void CUser::AddResourceCore(SResourceTypeData resourceTypeData)
 {
-	::AddResource(_User.Resources, Resource_, Data_);
+	AddResourceCore(resourceTypeData.Type, resourceTypeData.Data);
 }
-void CUser::SubResourceCore(EResource Resource_, TResource Data_)
+void CUser::AddResourceCore(EResource ResourceType_, TResource Data_)
 {
-	::SubResource(_User.Resources, Resource_, Data_);
+	_User.Resources[(size_t)ResourceType_] = ::AddResource(_User.Resources[(size_t)ResourceType_], ResourceType_, Data_);
+}
+void CUser::SubResourceCore(SResourceTypeData resourceTypeData)
+{
+	SubResourceCore(resourceTypeData.Type, resourceTypeData.Data);
+}
+void CUser::SubResourceCore(EResource ResourceType_, TResource Data_)
+{
+	_User.Resources[(size_t)ResourceType_] = ::SubResource(_User.Resources[(size_t)ResourceType_], ResourceType_, Data_);
 }
 void CUser::AddResourcesCore(const TResources& Resources_)
 {
@@ -938,39 +963,6 @@ ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 
 	return ERet::Ok;
 }
-ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
-{
-	auto Reward = _Quest.Reward(Proto_.SlotIndex);
-
-	if (!Reward)
-		return ERet::InvalidProtocol;
-
-	//	count	time	상태
-	//	달성	미만	달성, 보상대기
-	//	달성	이상	달성, 보상대기
-	//	미달	미만	쿨타임
-	//	미달	이상	미달성
-
-	auto Now = system_clock::now();
-	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
-	{
-		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_MetaData->QuestDailyComplete.RefreshDuration)) // 다음 주기에 도래했으면
-		{
-			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
-			_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * ElapsedDurationCount);
-			_User.QuestDailyCompleteCount = 0;
-		}
-
-		if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount)
-			++_User.QuestDailyCompleteCount;
-	}
-
-	auto RewardDB = RewardCore(*Reward->second);
-	Push(SQuestRewardDBIn(RewardDB, Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
-	Send(SQuestRewardNetSc(RewardDB, Proto_.SlotIndex, Reward->first, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
-
-	return ERet::Ok;
-}
 optional<CQuest::TDone> CUser::_QuestDone(EQuestType QuestType_, int32 Count_)
 {
 	auto itQuest = _Quest.Get(QuestType_);
@@ -1017,19 +1009,43 @@ void CUser::QuestDone(EQuestType QuestType_, int32 Count_)
 
 	QuestDone(itQuest, Count_);
 }
-ERet CUser::QuestNext(const SQuestNextNetCs& Proto_)
+ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 {
-	auto Next = _Quest.Next(Proto_);
-	if (!Next)
+	auto Reward = _Quest.Reward(Proto_.SlotIndex);
+	if (!Reward)
 		return ERet::InvalidProtocol;
 
-	int32 NewQuestCode = 0;
+	//	time	count	상태
+	//	미만	.		쿨타임
+	//	이상	미달	진행중
+	//	이상	달성	보상대기
 
-	if (*Next)
-		NewQuestCode = (*Next)->Code;
+	auto Now = system_clock::now();
+	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
+	{
+		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_MetaData->QuestDailyComplete.RefreshDuration)) // 다음 주기에 도래했으면
+		{
+			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
+			_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * ElapsedDurationCount);
+			_User.QuestDailyCompleteCount = 0;
+		}
 
-	Push(SQuestNextDBIn(GetUID(), Proto_.SlotIndex, NewQuestCode));
-	Send(SQuestNextNetSc(Proto_.SlotIndex, NewQuestCode));
+		if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount)
+			++_User.QuestDailyCompleteCount;
+	}
+
+	auto RewardDB = RewardCore(*Reward->second);
+
+	int32 newCode = 0;
+	TTime newCoolEndTime;
+	if (Reward->first != nullptr)
+	{
+		newCode = Reward->first->Code;
+		newCoolEndTime = Reward->first->CoolEndTime;
+	}
+
+	Push(SQuestRewardDBIn(RewardDB, Proto_.SlotIndex, newCode, newCoolEndTime, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
+	Send(SQuestRewardNetSc(RewardDB, Proto_.SlotIndex, newCode, newCoolEndTime, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
 }
@@ -1038,12 +1054,12 @@ void CUser::QuestSet(TQuestSlotIndex SlotIndex_, int32 Code_)
 	if (!_Quest.Set(SlotIndex_, Code_))
 		return;
 
-	Push(SQuestNextDBIn(GetUID(), SlotIndex_, Code_));
-	Send(SQuestNextNetSc(SlotIndex_, Code_));
+	Push(SQuestSetDBIn(GetUID(), SlotIndex_, Code_));
+	Send(SQuestSetNetSc(SlotIndex_, Code_));
 }
 ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto_)
 {
-	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirmentCount)
+	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount)
 		return ERet::InvalidProtocol;
 
 	auto Now = system_clock::now();
@@ -1066,25 +1082,20 @@ ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto
 }
 ERet CUser::ChangeNickRequest(const SChangeNickNetCs& Proto_)
 {
-	if (Proto_.Nick.size() < c_NickLengthMin)
+	if (Proto_.Nick.size() < minNicknameLength)
 		return ERet::NickLengthUnderMin;
 
-	if (Proto_.Nick.size() > c_NickLengthMax)
+	if (Proto_.Nick.size() > maxNicknameLength)
 		return ERet::NickLengthOverMax;
 
 	if (Proto_.Nick == GetNick())
 		return ERet::InvalidProtocol;
 
-	auto Nick = u16string_to_wstring(Proto_.Nick);
-	wcslwr((wchar_t*)Nick.c_str());
-
-	for (auto& i : g_MetaData->ForbiddenWords)
+	auto forbiddenWord = GetForbiddenWord(g_MetaData->ForbiddenWords, Proto_.Nick);
+	if (!forbiddenWord.empty())
 	{
-		if (Nick.find(i) != string::npos)
-		{
-			Send(SChangeNickFailNetSc(EGameRet::Ok, i));
-			return ERet::Ok;
-		}
+		Send(SChangeNickFailNetSc(EGameRet::Ok, forbiddenWord));
+		return ERet::Ok;
 	}
 
 	if (_User.ChangeNickFreeCount <= 0 &&
@@ -1101,13 +1112,9 @@ void CUser::ChangeNickResult(EGameRet GameRet_)
 	if (GameRet_ == EGameRet::Ok)
 	{
 		if (_User.ChangeNickFreeCount <= 0)
-		{
 			SubResourceCore(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue);
-		}
 		else
-		{
 			--_User.ChangeNickFreeCount;
-		}
 
 		Push(SChangeNickEndDBIn(GetUID(), _User.Resources, _User.ChangeNickFreeCount));
 	}

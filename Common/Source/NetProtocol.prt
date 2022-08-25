@@ -18,8 +18,9 @@ namespace bb
 	typedef int32 TRank
 	typedef int8 TTeamCnt
 	typedef uint8 TQuestSlotIndex
+	typedef vector<wstring> TForbiddenWords
 
-	const TVer c_Ver_Main 41
+	const TVer c_Ver_Main 42
 
 	const int32 c_FPS 60
 	const int64 c_NetworkTickSync 500000
@@ -68,6 +69,8 @@ namespace bb
 	const int64 c_RegenDelayTickCount 20000000
 
 	const int32 c_QuestCnt_Max 5
+	const int32 minNicknameLength 2
+	const int32 maxNicknameLength 18
 
 	enum class EProtoNetCs
 	{
@@ -79,6 +82,7 @@ namespace bb
 		Buy
 		BuyChar
 		BuyPackage
+		BuyResource
 		DailyReward
 		SelectChar
 
@@ -98,7 +102,6 @@ namespace bb
 		GachaX10
 		RankReward
 		QuestReward
-		QuestNext
 		QuestDailyCompleteReward
 		ChangeNick
 		CouponUse
@@ -123,6 +126,7 @@ namespace bb
 		Buy
 		BuyChar
 		BuyPackage
+		BuyResource
 		DailyReward
 		DailyRewardFail
 
@@ -156,9 +160,9 @@ namespace bb
 		GachaFailed
 		RankReward
 		QuestGot
+		QuestSet
 		QuestDone
 		QuestReward
-		QuestNext
 		QuestDailyCompleteReward
 		ChangeNick
 		ChangeNickFail
@@ -482,7 +486,14 @@ namespace bb
 	struct SBuyPackageNetSc : SRewardDB
 	{
 		int32 Code
-
+	}
+	struct SBuyResourceNetCs
+	{
+		SResourceTypeData resourceTypeData
+	}
+	struct SBuyResourceNetSc
+	{
+		TResources ResourcesLeft
 	}
 
 	struct SDailyRewardNetCs
@@ -889,6 +900,11 @@ namespace bb
 	{
 		TQuestSlotIndexCodes Quests
 	}
+	struct SQuestSetNetSc
+	{
+		TQuestSlotIndex SlotIndex
+		int32 NewQuestCode
+	}
 	struct SQuestDoneNetSc
 	{
 		TQuestSlotIndex SlotIndex
@@ -901,18 +917,10 @@ namespace bb
 	struct SQuestRewardNetSc : SRewardDB
 	{
 		TQuestSlotIndex SlotIndex
+		int32 newCode
 		time_point CoolEndTime
 		int32 DailyCompleteCount
 		time_point DailyCompleteRefreshTime
-	}
-	struct SQuestNextNetCs
-	{
-		TQuestSlotIndex SlotIndex
-	}
-	struct SQuestNextNetSc
-	{
-		TQuestSlotIndex SlotIndex
-		int32 NewCode
 	}
 	struct SQuestDailyCompleteRewardNetCs
 	{

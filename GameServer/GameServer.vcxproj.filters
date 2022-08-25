@@ -105,6 +105,9 @@
     <ClCompile Include="Source\FlyAwayLand.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\MetaProtocolExtension.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\stdafx.h">
@@ -219,6 +222,9 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\FlyAwayLand.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MetaProtocolExtension.h">
       <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>

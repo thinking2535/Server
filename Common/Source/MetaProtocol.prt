@@ -90,6 +90,16 @@ namespace bb
 		EResource RewardType
 		TResource RewardValue
 	}
+	struct ExchangeValue
+	{
+		EResource costResourceType
+		double rate
+	}
+	struct ShopExchangeMeta
+	{
+		EResource targetResourceType
+		ExchangeValue exchangeValue
+	}
 
 	struct SCharacterMeta
 	{
@@ -218,19 +228,17 @@ namespace bb
 		int32 Point
 		int32 RewardCode
 	}
-
 	struct SQuestMeta
 	{
 		EQuestType QuestType
 		int32 Code
-		int32 RequirmentCount
-		wstring Param
-		wstring Operator
+		int32 unitCompleteCount
+		int32 completeCount
 		int32 RewardCode
 	}
 	struct SQuestDailyCompleteMeta
 	{
-		int32 RequirmentCount
+		int32 RequirementCount
 		int32 RewardCode
 		int32 RefreshMinutes
 	}

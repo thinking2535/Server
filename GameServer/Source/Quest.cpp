@@ -1,5 +1,25 @@
 #include "stdafx.h"
 
+bool CQuest::_SQuest::isCompleted()
+{
+	return Count >= pQuest->completeCount;
+}
+bool CQuest::_SQuest::done(int32 count)
+{
+	if (CoolEndTime > system_clock::now())
+		return false;
+
+	if (isCompleted())
+		return false;
+
+	if (count < pQuest->unitCompleteCount)
+		return false;
+
+	++Count;
+
+	return true;
+}
+
 // 최대한 보유한 EQuestType 이 나오지 않도록 (단, EQuestType::Max가 보유할 수 있는 퀘스트 개수보다 많을 경우는 허용)
 const SQuest& CQuest::_New(void)
 {
@@ -21,10 +41,6 @@ const SQuest& CQuest::_New(void)
 
 	auto& Quests = g_MetaData->GetQuest((EQuestType)NewQuestIndex);
 	return Quests[rand() % Quests.size()];
-}
-bool CQuest::_IsValid(const SQuestBase& Quest_) const
-{
-	return (Quest_.CoolEndTime == TTime());
 }
 bool CQuest::Add(const TQuestDBs::value_type& itQuest_)
 {
@@ -65,19 +81,8 @@ TQuestDBs CQuest::GetQuestDBs(void) const
 }
 optional<CQuest::TDone> CQuest::Done(TQuestsIt itQuest_, int32 Count_)
 {
-	if (!_IsValid(itQuest_->second))
+	if (!itQuest_->second.done(Count_))
 		return {};
-
-	if (itQuest_->second.Count >= itQuest_->second.pQuest->RequirmentCount) // Is Completed
-		return {};
-
-	if (!itQuest_->second.pQuest->Check(Count_))
-		return {};
-
-	if (itQuest_->second.Count + Count_ > itQuest_->second.pQuest->RequirmentCount)
-		itQuest_->second.Count = itQuest_->second.pQuest->RequirmentCount;
-	else
-		itQuest_->second.Count += Count_;
 
 	return TDone(itQuest_->first, itQuest_->second.Count);
 }
@@ -90,8 +95,10 @@ optional<CQuest::TDone> CQuest::Done(EQuestType QuestType_, int32 Count_)
 
 	return Done(itQuest, Count_);
 }
-void CQuest::Refresh(TQuestSlotIndexCodes& NewQuests_) // 로긴시에 c_QuestCnt_Max 보다 적게 퀘스트가 있는경우 추가하기 위함
+TQuestSlotIndexCodes CQuest::FillEmptySlotAndGetNewQuests(void) // 로긴시에 c_QuestCnt_Max 보다 적게 퀘스트가 있는경우 추가하기 위함
 {
+	TQuestSlotIndexCodes NewQuests;
+
 	TQuestSlotIndex SlotIndex = 0;
 	auto it = _Quests.begin();
 
@@ -105,13 +112,15 @@ void CQuest::Refresh(TQuestSlotIndexCodes& NewQuests_) // 로긴시에 c_QuestCnt_Ma
 
 		auto& NewQuest = _New();
 		_Quests.emplace(SlotIndex, _SQuest(SQuestBase(NewQuest.Code, 0, TTime()), &NewQuest));
-		NewQuests_.emplace_back(SQuestSlotIndexCode(SlotIndex, NewQuest.Code));
+		NewQuests.emplace_back(SQuestSlotIndexCode(SlotIndex, NewQuest.Code));
 
 		++SlotIndex;
 
 		if (it == _Quests.end())
 			it = _Quests.begin();
 	}
+
+	return NewQuests;
 }
 optional<CQuest::_TReward> CQuest::Reward(TQuestSlotIndex SlotIndex_) // return : New Quest Type
 {
@@ -119,43 +128,20 @@ optional<CQuest::_TReward> CQuest::Reward(TQuestSlotIndex SlotIndex_) // return 
 	if (itQuest == _Quests.end())
 		return {};
 
-	if (itQuest->second.Count < itQuest->second.pQuest->RequirmentCount)
+	if (!itQuest->second.isCompleted())
 		return {};
 
+	auto reward = itQuest->second.pQuest->pReward;
 	if (_Quests.size() > c_QuestCnt_Max)
 	{
 		_Quests.erase(itQuest);
-		return _TReward{};
+		return _TReward(nullptr, reward);
 	}
 	else
 	{
-		return _TReward(itQuest->second.CoolEndTime = system_clock::now() + minutes(g_MetaData->ConfigMeta.QuestCoolMinutes), itQuest->second.pQuest->pReward);
-	}
-}
-optional<const SQuest*> CQuest::Next(const SQuestNextNetCs& Proto_)
-{
-	auto itQuest = _Quests.find(Proto_.SlotIndex);
-	if (itQuest == _Quests.end())
-		return {};
-
-	if (_Quests.size() <= c_QuestCnt_Max)
-	{
-		auto Now = system_clock::now();
-
-		if (_IsValid(itQuest->second))
-		{
-			if (itQuest->second.Count >= itQuest->second.pQuest->RequirmentCount) // 완료했거나 자원을 안쓰겠다고 했으면
-				return {};
-		}
-
 		auto* pNewQuest = &_New();
-		itQuest->second = _SQuest(SQuestBase(pNewQuest->Code, 0, TTime()), pNewQuest);
-		return pNewQuest;
-	}
-	else
-	{
-		_Quests.erase(itQuest);
-		return nullptr;
+		itQuest->second = _SQuest(SQuestBase(pNewQuest->Code, 0, system_clock::now() + minutes(g_MetaData->ConfigMeta.QuestCoolMinutes)), pNewQuest);
+		return _TReward(&itQuest->second, reward);
 	}
 }
 optional<const SQuest*> CQuest::Set(TQuestSlotIndex SlotIndex_, int32 NewCode_)

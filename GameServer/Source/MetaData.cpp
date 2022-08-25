@@ -27,10 +27,7 @@ CMetaData::CMetaData() :
 		MaxResources[(size_t)EResource::Ticket] = ConfigMeta.MaxTicket;
 
 		// ForbiddenWords
-		Stream.LoadFile(L"../../MetaData/ForbiddenWord.bin");
-		Stream >> ForbiddenWords;
-		for (auto& i : ForbiddenWords)
-			wcslwr((wchar_t*)i.c_str());
+		ForbiddenWords = GetForbiddenWords();
 
 
 		// Character ////////////////////
@@ -175,6 +172,22 @@ CMetaData::CMetaData() :
 			DailyReward.Insert(i.Probability, i);
 
 
+		// Shop Exchange //////////////////////////
+		{
+			Stream.LoadFile(L"../../MetaData/ShopExchange.bin");
+			list<ShopExchangeMeta> shopExchangeMetas;
+			Stream >> shopExchangeMetas;
+
+			for (auto& i : shopExchangeMetas)
+			{
+				ASSERTION(i.targetResourceType != i.exchangeValue.costResourceType);
+
+				auto ib = _exchangeValues.emplace(i.targetResourceType, i.exchangeValue);
+				ASSERTION(ib.second);
+			}
+		}
+
+
 		// Gacha ///////////////////////////////
 		Stream.LoadFile(L"../../MetaData/Gacha.bin");
 		Stream >> _GachaMetas;
@@ -235,38 +248,12 @@ CMetaData::CMetaData() :
 			auto itReward = _Rewards.find(Quest.RewardCode);
 
 			ASSERTIONA(
-				Quest.RequirmentCount >= 0 &&
+				Quest.unitCompleteCount >= 0 &&
+				Quest.completeCount >= 0 &&
 				itReward != _Rewards.end()
 				, L"Invalid QuestType [%d][%d]", i, (int)Quest.QuestType);
 
-			TQuestCheckFunc QuestCheckFunc;
-
-			if (Quest.Operator == L"<=")
-			{
-				QuestCheckFunc = [](int32 Param_, int32 CheckValue_) { return Param_ <= CheckValue_; };
-			}
-			else if (Quest.Operator == L"<")
-			{
-				QuestCheckFunc = [](int32 Param_, int32 CheckValue_) { return Param_ < CheckValue_; };
-			}
-			else if (Quest.Operator == L">=")
-			{
-				QuestCheckFunc = [](int32 Param_, int32 CheckValue_) { return Param_ >= CheckValue_; };
-			}
-			else if (Quest.Operator == L">")
-			{
-				QuestCheckFunc = [](int32 Param_, int32 CheckValue_) { return Param_ > CheckValue_; };
-			}
-			else if (Quest.Operator == L"==")
-			{
-				QuestCheckFunc = [](int32 Param_, int32 CheckValue_) { return Param_ == CheckValue_; };
-			}
-			else
-			{
-				THROWEXA(L"Invalid Quest Operator [%s]", Quest.Operator);
-			}
-
-			_QuestTypes[(size_t)Quests[i].QuestType].emplace_back(SQuest(Quest, &itReward->second, QuestCheckFunc));
+			_QuestTypes[(size_t)Quests[i].QuestType].emplace_back(SQuest(Quest, &itReward->second));
 		}
 
 		// 포인터를 얻어와야 하므로 vecter가 모두 추가된 후에 처리
@@ -304,7 +291,7 @@ CMetaData::CMetaData() :
 		if (itQuestDailyCompleteReward == _Rewards.end())
 			THROWEX();
 
-		ASSERTIONA(QuestDailyCompletes.front().RequirmentCount > 0, L"Invalid QuestDailyCompleteMeta.RequirmentCount");
+		ASSERTIONA(QuestDailyCompletes.front().RequirementCount > 0, L"Invalid QuestDailyCompleteMeta.RequirementCount");
 		QuestDailyComplete = SQuestDailyComplete(QuestDailyCompletes.front(), &itQuestDailyCompleteReward->second);
 
 
@@ -572,4 +559,12 @@ const SCoupon* CMetaData::GetCoupon(const wstring& Key_) const
 		return nullptr;
 
 	return itCoupon->second;
+}
+optional<ExchangeValue> CMetaData::getExchangeValue(EResource targetResource)
+{
+	auto it = _exchangeValues.find(targetResource);
+	if (it == _exchangeValues.end())
+		return {};
+
+	return it->second;
 }

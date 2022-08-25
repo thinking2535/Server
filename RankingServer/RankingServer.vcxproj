@@ -36,7 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\DataBase.cpp" />
-    <ClCompile Include="Source\GameData.cpp" />
+    <ClCompile Include="Source\MetaData.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Network.cpp" />
     <ClCompile Include="Source\NetworkServer.cpp" />
@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\DataBase.h" />
-    <ClInclude Include="Source\GameData.h" />
+    <ClInclude Include="Source\MetaData.h" />
     <ClInclude Include="Source\Network.h" />
     <ClInclude Include="Source\NetworkServer.h" />
     <ClInclude Include="Source\Protocol.h" />

@@ -544,6 +544,98 @@ namespace bb
 				GetMemberName(TResource(), L"RewardValue");
 		}
 	};
+	struct ExchangeValue : public SProto
+	{
+		EResource costResourceType{};
+		double rate{};
+		ExchangeValue()
+		{
+		}
+		ExchangeValue(const EResource& costResourceType_, const double& rate_) : costResourceType(costResourceType_), rate(rate_)
+		{
+		}
+		ExchangeValue(EResource&& costResourceType_, double&& rate_) : costResourceType(std::move(costResourceType_)), rate(std::move(rate_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> costResourceType;
+			Stream_ >> rate;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["costResourceType"] >> costResourceType;
+			Value_["rate"] >> rate;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << costResourceType;
+			Stream_ << rate;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["costResourceType"] = costResourceType;
+			Value_["rate"] = rate;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(EResource()) + L"," + 
+				GetStdName(double());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(EResource(), L"costResourceType") + L"," + 
+				GetMemberName(double(), L"rate");
+		}
+	};
+	struct ShopExchangeMeta : public SProto
+	{
+		EResource targetResourceType{};
+		ExchangeValue exchangeValue{};
+		ShopExchangeMeta()
+		{
+		}
+		ShopExchangeMeta(const EResource& targetResourceType_, const ExchangeValue& exchangeValue_) : targetResourceType(targetResourceType_), exchangeValue(exchangeValue_)
+		{
+		}
+		ShopExchangeMeta(EResource&& targetResourceType_, ExchangeValue&& exchangeValue_) : targetResourceType(std::move(targetResourceType_)), exchangeValue(std::move(exchangeValue_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> targetResourceType;
+			Stream_ >> exchangeValue;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["targetResourceType"] >> targetResourceType;
+			Value_["exchangeValue"] >> exchangeValue;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << targetResourceType;
+			Stream_ << exchangeValue;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["targetResourceType"] = targetResourceType;
+			Value_["exchangeValue"] = exchangeValue;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(EResource()) + L"," + 
+				GetStdName(ExchangeValue());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(EResource(), L"targetResourceType") + L"," + 
+				GetMemberName(ExchangeValue(), L"exchangeValue");
+		}
+	};
 	struct SCharacterMeta : public SProto
 	{
 		int32 Code{};
@@ -1607,53 +1699,48 @@ namespace bb
 	{
 		EQuestType QuestType{};
 		int32 Code{};
-		int32 RequirmentCount{};
-		wstring Param{};
-		wstring Operator{};
+		int32 unitCompleteCount{};
+		int32 completeCount{};
 		int32 RewardCode{};
 		SQuestMeta()
 		{
 		}
-		SQuestMeta(const EQuestType& QuestType_, const int32& Code_, const int32& RequirmentCount_, const wstring& Param_, const wstring& Operator_, const int32& RewardCode_) : QuestType(QuestType_), Code(Code_), RequirmentCount(RequirmentCount_), Param(Param_), Operator(Operator_), RewardCode(RewardCode_)
+		SQuestMeta(const EQuestType& QuestType_, const int32& Code_, const int32& unitCompleteCount_, const int32& completeCount_, const int32& RewardCode_) : QuestType(QuestType_), Code(Code_), unitCompleteCount(unitCompleteCount_), completeCount(completeCount_), RewardCode(RewardCode_)
 		{
 		}
-		SQuestMeta(EQuestType&& QuestType_, int32&& Code_, int32&& RequirmentCount_, wstring&& Param_, wstring&& Operator_, int32&& RewardCode_) : QuestType(std::move(QuestType_)), Code(std::move(Code_)), RequirmentCount(std::move(RequirmentCount_)), Param(std::move(Param_)), Operator(std::move(Operator_)), RewardCode(std::move(RewardCode_))
+		SQuestMeta(EQuestType&& QuestType_, int32&& Code_, int32&& unitCompleteCount_, int32&& completeCount_, int32&& RewardCode_) : QuestType(std::move(QuestType_)), Code(std::move(Code_)), unitCompleteCount(std::move(unitCompleteCount_)), completeCount(std::move(completeCount_)), RewardCode(std::move(RewardCode_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> QuestType;
 			Stream_ >> Code;
-			Stream_ >> RequirmentCount;
-			Stream_ >> Param;
-			Stream_ >> Operator;
+			Stream_ >> unitCompleteCount;
+			Stream_ >> completeCount;
 			Stream_ >> RewardCode;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["QuestType"] >> QuestType;
 			Value_["Code"] >> Code;
-			Value_["RequirmentCount"] >> RequirmentCount;
-			Value_["Param"] >> Param;
-			Value_["Operator"] >> Operator;
+			Value_["unitCompleteCount"] >> unitCompleteCount;
+			Value_["completeCount"] >> completeCount;
 			Value_["RewardCode"] >> RewardCode;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << QuestType;
 			Stream_ << Code;
-			Stream_ << RequirmentCount;
-			Stream_ << Param;
-			Stream_ << Operator;
+			Stream_ << unitCompleteCount;
+			Stream_ << completeCount;
 			Stream_ << RewardCode;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["QuestType"] = QuestType;
 			Value_["Code"] = Code;
-			Value_["RequirmentCount"] = RequirmentCount;
-			Value_["Param"] = Param;
-			Value_["Operator"] = Operator;
+			Value_["unitCompleteCount"] = unitCompleteCount;
+			Value_["completeCount"] = completeCount;
 			Value_["RewardCode"] = RewardCode;
 		}
 		static wstring StdName(void)
@@ -1662,8 +1749,7 @@ namespace bb
 				GetStdName(EQuestType()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(wstring()) + L"," + 
-				GetStdName(wstring()) + L"," + 
+				GetStdName(int32()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
@@ -1671,47 +1757,46 @@ namespace bb
 			return 
 				GetMemberName(EQuestType(), L"QuestType") + L"," + 
 				GetMemberName(int32(), L"Code") + L"," + 
-				GetMemberName(int32(), L"RequirmentCount") + L"," + 
-				GetMemberName(wstring(), L"Param") + L"," + 
-				GetMemberName(wstring(), L"Operator") + L"," + 
+				GetMemberName(int32(), L"unitCompleteCount") + L"," + 
+				GetMemberName(int32(), L"completeCount") + L"," + 
 				GetMemberName(int32(), L"RewardCode");
 		}
 	};
 	struct SQuestDailyCompleteMeta : public SProto
 	{
-		int32 RequirmentCount{};
+		int32 RequirementCount{};
 		int32 RewardCode{};
 		int32 RefreshMinutes{};
 		SQuestDailyCompleteMeta()
 		{
 		}
-		SQuestDailyCompleteMeta(const int32& RequirmentCount_, const int32& RewardCode_, const int32& RefreshMinutes_) : RequirmentCount(RequirmentCount_), RewardCode(RewardCode_), RefreshMinutes(RefreshMinutes_)
+		SQuestDailyCompleteMeta(const int32& RequirementCount_, const int32& RewardCode_, const int32& RefreshMinutes_) : RequirementCount(RequirementCount_), RewardCode(RewardCode_), RefreshMinutes(RefreshMinutes_)
 		{
 		}
-		SQuestDailyCompleteMeta(int32&& RequirmentCount_, int32&& RewardCode_, int32&& RefreshMinutes_) : RequirmentCount(std::move(RequirmentCount_)), RewardCode(std::move(RewardCode_)), RefreshMinutes(std::move(RefreshMinutes_))
+		SQuestDailyCompleteMeta(int32&& RequirementCount_, int32&& RewardCode_, int32&& RefreshMinutes_) : RequirementCount(std::move(RequirementCount_)), RewardCode(std::move(RewardCode_)), RefreshMinutes(std::move(RefreshMinutes_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> RequirmentCount;
+			Stream_ >> RequirementCount;
 			Stream_ >> RewardCode;
 			Stream_ >> RefreshMinutes;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["RequirmentCount"] >> RequirmentCount;
+			Value_["RequirementCount"] >> RequirementCount;
 			Value_["RewardCode"] >> RewardCode;
 			Value_["RefreshMinutes"] >> RefreshMinutes;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << RequirmentCount;
+			Stream_ << RequirementCount;
 			Stream_ << RewardCode;
 			Stream_ << RefreshMinutes;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["RequirmentCount"] = RequirmentCount;
+			Value_["RequirementCount"] = RequirementCount;
 			Value_["RewardCode"] = RewardCode;
 			Value_["RefreshMinutes"] = RefreshMinutes;
 		}
@@ -1725,7 +1810,7 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int32(), L"RequirmentCount") + L"," + 
+				GetMemberName(int32(), L"RequirementCount") + L"," + 
 				GetMemberName(int32(), L"RewardCode") + L"," + 
 				GetMemberName(int32(), L"RefreshMinutes");
 		}

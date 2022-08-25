@@ -16,6 +16,7 @@
 #include <Rso/GameUtil/OptionJson.h>
 #include <Rso/Base/Timers.h>
 #include <GameServer/Common/ServerToServerProtocol.h>
+#include <GameServer/Common/NetProtocol.h>
 #include "Protocol.h"
 #include <GameServer/Common/Base.h>
 
@@ -25,16 +26,7 @@ using namespace monitor;
 using namespace game;
 using namespace gameutil;
 
-using TMonitor = unique_ptr<CProc>;
-using TAuthNet = unique_ptr<CAuth>;
-using TOutObject = CAuth::TOutObject;
-using TTimers = CTimers<wstring>;
-
-extern TMonitor g_Monitor;
-extern TTimers g_Timers;
-extern CLog g_Log;
-extern CPeriod<seconds> g_TimerPeriod;
-extern TAuthNet  g_AuthNet;
+#include "MetaData.h"
 
 #define LOG(...) g_Log.Push(GET_DEBUG_FORMAT(__VA_ARGS__))
 #ifdef _DEBUG
@@ -42,5 +34,20 @@ extern TAuthNet  g_AuthNet;
 #else
 #define DLOG(...) __noop(__VA_ARGS__)
 #endif
+
+class CMetaData;
+
+using TMonitor = unique_ptr<CProc>;
+using TAuthNet = unique_ptr<CAuth>;
+using TOutObject = CAuth::TOutObject;
+using TTimers = CTimers<wstring>;
+using TGameData = unique_ptr<CMetaData>;
+
+extern TMonitor g_Monitor;
+extern TTimers g_Timers;
+extern CLog g_Log;
+extern CPeriod<seconds> g_TimerPeriod;
+extern TAuthNet  g_AuthNet;
+extern TGameData g_MetaData;
 
 void TimersCallback(wstring& Data_);

@@ -96,6 +96,13 @@ ERet BuyPackageNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->BuyPackage(Proto);
 }
+ERet BuyResourceNetCs(CUser* User_, CStream& Stream_)
+{
+	SBuyResourceNetCs Proto;
+	Stream_ >> Proto;
+
+	return User_->BuyResource(Proto);
+}
 ERet DailyRewardNetCs(CUser* User_, CStream& Stream_)
 {
 	SDailyRewardNetCs Proto;
@@ -236,13 +243,6 @@ ERet QuestRewardNetCs(CUser* User_, CStream& Stream_)
 	Stream_ >> Proto;
 
 	return User_->QuestReward(Proto);
-}
-ERet QuestNextNetCs(CUser* User_, CStream& Stream_)
-{
-	SQuestNextNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->QuestNext(Proto);
 }
 ERet QuestDailyCompleteRewardNetCs(CUser* User_, CStream& Stream_)
 {

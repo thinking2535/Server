@@ -62,7 +62,6 @@ public:
 	void SendRet(ERet Ret_);
 	void SendMsg(const wstring& Msg_);
 	void RetAndClose(ERet Ret_);
-	void _QuestRefresh(void);
 	void Certify(void);
 	void CertifyAndLobby(void);
 	void Login(ELanguage Language_, const SUserLoginInfo& Info_);
@@ -84,6 +83,7 @@ public:
 	ERet Buy(const SBuyNetCs& Proto_);
 	ERet BuyChar(const SBuyCharNetCs& Proto_);
 	ERet BuyPackage(const SBuyPackageNetCs& Proto_);
+	ERet BuyResource(const SBuyResourceNetCs& Proto_);
 	ERet Purchase(void);
 	ERet ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 PurchaseTime_, int32 PurchaseType_);
 	void ChangeNickBeginDB(void);
@@ -94,8 +94,10 @@ public:
 	bool HaveCost(EResource CostType_, TResource Cost_);
 	bool HaveCost(const TResources& Cost_);
 	inline TResource GetResource(EResource Resource_) const { return _User.Resources[(size_t)Resource_]; }
-	void AddResourceCore(EResource Resource_, TResource Data_);
-	void SubResourceCore(EResource Resource_, TResource Data_);
+	void AddResourceCore(SResourceTypeData resourceTypeData);
+	void AddResourceCore(EResource ResourceType_, TResource Data_);
+	void SubResourceCore(SResourceTypeData resourceTypeData);
+	void SubResourceCore(EResource ResourceType_, TResource Data_);
 	void AddResourcesCore(const TResources& Resources_);
 	void SubResourcesCore(const TResources& Resources_);
 	void AddResources(const TResources& Resources_);
@@ -147,7 +149,6 @@ public:
 	SRewardDB RewardCore(const SReward& Reward_);
 	SRewardDB RewardsCore(const list<const SReward*>& Rewards_);
 	ERet RankReward(const SRankRewardNetCs& Proto_);
-	ERet QuestReward(const SQuestRewardNetCs& Proto_);
 private:
 	optional<CQuest::TDone> _QuestDone(EQuestType QuestType_, int32 Count_);
 public:
@@ -155,7 +156,7 @@ public:
 	void QuestDone(CQuest::TQuestsIt itQuest_, int32 Count_);
 	void QuestDone(TQuestSlotIndex SlotIndex_, int32 Count_);
 	void QuestDone(EQuestType QuestType_, int32 Count_);
-	ERet QuestNext(const SQuestNextNetCs& Proto_);
+	ERet QuestReward(const SQuestRewardNetCs& Proto_);
 	void QuestSet(TQuestSlotIndex SlotIndex_, int32 Code_);
 	ERet QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto_);
 	ERet ChangeNickRequest(const SChangeNickNetCs& Proto_);

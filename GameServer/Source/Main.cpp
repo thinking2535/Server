@@ -427,10 +427,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SGachaDBIn, SDummyDBOut>(L"dbo.spGacha", true, DummyDBOut);
 		DBAddCmd<SRankRewardDBIn, SDummyDBOut>(L"dbo.spRankReward", true, DummyDBOut);
 		DBAddCmd<SQuestNewDBIn, SDummyDBOut>(L"dbo.spQuestNew", true, DummyDBOut);
+		DBAddCmd<SQuestSetDBIn, SDummyDBOut>(L"dbo.spQuestSet", true, DummyDBOut);
 		DBAddCmd<SQuestDelDBIn, SDummyDBOut>(L"dbo.spQuestDel", true, DummyDBOut);
 		DBAddCmd<SQuestDoneDBIn, SDummyDBOut>(L"dbo.spQuestDone", true, DummyDBOut);
 		DBAddCmd<SQuestRewardDBIn, SDummyDBOut>(L"dbo.spQuestReward", true, DummyDBOut);
-		DBAddCmd<SQuestNextDBIn, SDummyDBOut>(L"dbo.spQuestNext", true, DummyDBOut);
 		DBAddCmd<SQuestDailyCompleteRewardDBIn, SDummyDBOut>(L"dbo.spQuestDailyCompleteReward", true, DummyDBOut);
 		DBAddCmd<SChangeNickBeginDBIn, SDummyDBOut>(L"dbo.spChangeNickBegin", true, ChangeNickBeginDBOut);
 		DBAddCmd<SChangeNickEndDBIn, SDummyDBOut>(L"dbo.spChangeNickEnd", true, ChangeNickEndDBOut);
@@ -456,6 +456,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Buy, BuyNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyChar, BuyCharNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyPackage, BuyPackageNetCs);
+		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyResource, BuyResourceNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::DailyReward, DailyRewardNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SelectChar, SelectCharNetCs);
@@ -477,7 +478,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::GachaX10, GachaX10NetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RankReward, RankRewardNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::QuestReward, QuestRewardNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::QuestNext, QuestNextNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::QuestDailyCompleteReward, QuestDailyCompleteRewardNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ChangeNick, ChangeNickNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::CouponUse, CouponUseNetCs);

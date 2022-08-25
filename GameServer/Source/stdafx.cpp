@@ -97,36 +97,83 @@ TResources MakeResources(TResource Data_)
 
 	return Resources;
 }
+
+TResource GetResourceFreeSpace(TResource CurrentResource_, EResource ResourceType_)
+{
+	return GetResourceFreeSpace(CurrentResource_, (size_t)ResourceType_);
+}
+TResource GetResourceFreeSpace(TResource CurrentResource_, size_t Index_)
+{
+	return g_MetaData->MaxResources[Index_] - CurrentResource_;
+}
+TResources GetResourceFreeSpaces(const TResources& CurrentResources_, EResource ResourceType_)
+{
+	TResources ResourceFreeSpaces;
+
+	for (size_t i = 0; i < CurrentResources_.size(); ++i)
+		ResourceFreeSpaces[i] = GetResourceFreeSpace(CurrentResources_[i], i);
+
+	return ResourceFreeSpaces;
+}
+
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
-	if (Resources_[Index_] + Data_ > g_MetaData->MaxResources[Index_] || Resources_[Index_] + Data_ < 0)
-		Resources_[Index_] = g_MetaData->MaxResources[Index_];
-	else
-		Resources_[Index_] += Data_;
+	Resources_[Index_] = AddResource(Resources_[Index_], Index_, Data_);
 }
-void AddResource(TResources& Resources_, EResource Resource_, TResource Data_)
+void AddResource(TResources& Resources_, EResource ResourceType_, TResource Data_)
 {
-	AddResource(Resources_, (size_t)Resource_, Data_);
+	AddResource(Resources_, (size_t)ResourceType_, Data_);
 }
 void AddResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_)
 {
 	AddResource(Resources_, ResourceTypeData_.Type, ResourceTypeData_.Data);
 }
+
+TResource AddResource(TResource Resource_, size_t Index_, TResource Data_)
+{
+	if (Resource_ + Data_ > g_MetaData->MaxResources[Index_] || Resource_ + Data_ < 0)
+		return g_MetaData->MaxResources[Index_];
+	else
+		return Resource_ + Data_;
+}
+TResource AddResource(TResource Resource_, EResource ResourceType_, TResource Data_)
+{
+	return AddResource(Resource_, (size_t)ResourceType_, Data_);
+}
+TResource AddResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_)
+{
+	return AddResource(Resource_, ResourceTypeData_.Type, ResourceTypeData_.Data);
+}
+
 void SubResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
-	if (Resources_[Index_] - Data_ < 0)
-		Resources_[Index_] = 0;
-	else
-		Resources_[Index_] -= Data_;
+	Resources_[Index_] = SubResource(Resources_[Index_], Index_, Data_);
 }
-void SubResource(TResources& Resources_, EResource Resource_, TResource Data_)
+void SubResource(TResources& Resources_, EResource ResourceType_, TResource Data_)
 {
-	SubResource(Resources_, (size_t)Resource_, Data_);
+	SubResource(Resources_, (size_t)ResourceType_, Data_);
 }
 void SubResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_)
 {
 	SubResource(Resources_, ResourceTypeData_.Type, ResourceTypeData_.Data);
 }
+
+TResource SubResource(TResource Resource_, size_t Index_, TResource Data_)
+{
+	if (Resource_ - Data_ < 0)
+		return 0;
+	else
+		return Resource_ - Data_;
+}
+TResource SubResource(TResource Resource_, EResource ResourceType_, TResource Data_)
+{
+	return SubResource(Resource_, (size_t)ResourceType_, Data_);
+}
+TResource SubResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_)
+{
+	return SubResource(Resource_, ResourceTypeData_.Type, ResourceTypeData_.Data);
+}
+
 void AddResources(TResources& Resources_, const TResources& Added_)
 {
 	for (size_t i = 0; i < Resources_.size(); ++i)

@@ -28,11 +28,11 @@ namespace bb
 		FlyAwayBattleEnd
 		Gacha
 		RankReward
+		QuestSet
 		QuestNew
 		QuestDel
 		QuestDone
 		QuestReward
-		QuestNext
 		QuestDailyCompleteReward
 		ChangeNickBegin
 		ChangeNickEnd
@@ -245,6 +245,12 @@ namespace bb
 	{
 		int32 LastGotRewardRankIndex
 	}
+	struct SQuestSetDBIn
+	{
+		TUID UID
+		TQuestSlotIndex SlotIndex
+		int32 NewQuestCode
+	}
 	struct SQuestNewDBIn
 	{
 		TUID UID
@@ -264,15 +270,10 @@ namespace bb
 	struct SQuestRewardDBIn : SRewardDB
 	{
 		TQuestSlotIndex SlotIndex
+		int32 NewQuestCode
 		time_point CoolEndTime
 		int32 DailyCompleteCount
 		time_point DailyCompleteRefreshTime
-	}
-	struct SQuestNextDBIn
-	{
-		TUID UID
-		TQuestSlotIndex SlotIndex
-		int32 NewQuestCode
 	}
 	struct SQuestDailyCompleteRewardDBIn : SRewardDB
 	{

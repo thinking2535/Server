@@ -29,13 +29,13 @@ CFlyAwayBattlePlayer::CFlyAwayBattlePlayer(
 }
 void CFlyAwayBattlePlayer::BattleEnd(int64 Tick_)
 {
-	QuestDone(EQuestType::PlaySingle, 1);
+	QuestDone(EQuestType::PlayIsland, 1);
 
 	if (BattleInfo.PassedCount > 0)
 		QuestDone(EQuestType::IslandCount, BattleInfo.PassedCount);
 
 	if (BattleInfo.Point > 0)
-		QuestDone(EQuestType::SinglePlayScoreGet, BattleInfo.Point);
+		QuestDone(EQuestType::IslandScoreGet, BattleInfo.Point);
 
 	switch (pPlayer->GetSelectedChar()->Grade)
 	{

@@ -16,32 +16,15 @@ struct SRankReward : public SRankRewardMeta
 };
 using TMapIndexPoses = pair<int32, const TPoses*>;
 
-using TQuestCheckFunc = function<bool(int32 Param_, int32 CheckValue_)>;
 struct SQuest : public SQuestMeta
 {
 	const SReward* pReward = nullptr;
 
-private:
-	TQuestCheckFunc CheckFunc;
-	int32 Param = 0;
-
 public:
-	SQuest(const SQuestMeta& Super_, const SReward* pReward_, TQuestCheckFunc CheckFunc_) :
+	SQuest(const SQuestMeta& Super_, const SReward* pReward_) :
 		SQuestMeta(Super_),
-		pReward(pReward_),
-		CheckFunc(CheckFunc_)
+		pReward(pReward_)
 	{
-		try
-		{
-			Param = stoi(Super_.Param);
-		}
-		catch (...)
-		{
-		}
-	}
-	bool Check(int32 CheckValue_) const
-	{
-		return CheckFunc(Param, CheckValue_);
 	}
 };
 struct SQuestDailyComplete : public SQuestDailyCompleteMeta
@@ -179,13 +162,16 @@ private:
 
 public:
 	SQuestDailyComplete QuestDailyComplete;
-	vector<wstring> ForbiddenWords;
+	TForbiddenWords ForbiddenWords;
 	SServerConfigMeta ServerConfigMeta;
 	SConfigMeta ConfigMeta;
 	TResources MaxResources;
 	SShopConfigServerMeta ShopConfig;
 	map<int32, SShopItem> ShopItems;
 	map<int32, SShopPackage> ShopPackages;
+private:
+	map<EResource, ExchangeValue> _exchangeValues;
+public:
 	CRandomBox<double, SShopDailyRewardServerMeta> DailyReward;
 	vector<int32> DefaultChars;
 	TCoreCheckSum CheckSumMeta = 0;
@@ -214,4 +200,5 @@ public:
 	const SQuest* GetQuest(int32 Code_) const;
 	const SCoupon* GetCoupon(int32 Code_) const;
 	const SCoupon* GetCoupon(const wstring& Key_) const;
+	optional<ExchangeValue> getExchangeValue(EResource targetResource);
 };

@@ -1,10 +1,10 @@
 #pragma once
 
-class CGameData
+class CMetaData
 {
 public:
 	SRankingConfigMeta RankingConfigMeta;
 	vector<__int32> RankingMaxes;
 
-	CGameData();
+	CMetaData();
 };

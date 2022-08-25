@@ -264,7 +264,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		wcout.imbue(std::locale("korean"));
 
 		LOG(L"Initializing GameData");
-		g_GameData.reset(new TGameData::element_type());
+		g_MetaData.reset(new TGameData::element_type());
 
 		COptionJson<SOption> Option(L"Option.ini", false);
 		COptionJson<SDBOption> DBOption(L"DBOption.ini", false);
@@ -325,7 +325,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (Option->MasterNamePort.Port == 0)
 		{
 			{
-				DBPush(SRankingConfigLoadDBIn(CDateTime(SDateTime(WCSToMBS(g_GameData->RankingConfigMeta.BaseTime)), minutes(9 * 60)).ToTimePoint() + minutes(g_GameData->RankingConfigMeta.PeriodMinutes)));
+				DBPush(SRankingConfigLoadDBIn(CDateTime(SDateTime(WCSToMBS(g_MetaData->RankingConfigMeta.BaseTime)), minutes(9 * 60)).ToTimePoint() + minutes(g_MetaData->RankingConfigMeta.PeriodMinutes)));
 
 				while (g_RankingConfig.Counter == 0)
 				{
@@ -461,7 +461,7 @@ int _tmain(int argc, _TCHAR* argv[])
 						{
 							// Refresh ////////////////////////////////
 							++g_RankingConfig.Counter;
-							g_RankingConfig.ExpireTimePoint += (((Now - g_RankingConfig.ExpireTimePoint) / minutes(g_GameData->RankingConfigMeta.PeriodMinutes)) + 1) * minutes(g_GameData->RankingConfigMeta.PeriodMinutes);
+							g_RankingConfig.ExpireTimePoint += (((Now - g_RankingConfig.ExpireTimePoint) / minutes(g_MetaData->RankingConfigMeta.PeriodMinutes)) + 1) * minutes(g_MetaData->RankingConfigMeta.PeriodMinutes);
 
 							for (size_t i = 0; i < g_RankingMapArray.size(); ++i)
 							{
@@ -469,7 +469,7 @@ int _tmain(int argc, _TCHAR* argv[])
 								__int32 Ranking = 0;
 								for (auto& u : g_RankingMapArray[i].operator() < 1 > ())
 								{
-									if (g_GameData->RankingMaxes[i] < Ranking)
+									if (g_MetaData->RankingMaxes[i] < Ranking)
 										break;
 
 									g_RewardsArray[i].emplace(std::get<0>(g_RankingMapArray[i][u.second].first)->first, Ranking);

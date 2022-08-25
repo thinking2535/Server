@@ -27,7 +27,8 @@ namespace bb
 	using TRank = int32;
 	using TTeamCnt = int8;
 	using TQuestSlotIndex = uint8;
-	const TVer c_Ver_Main = 41;
+	using TForbiddenWords = vector<wstring>;
+	const TVer c_Ver_Main = 42;
 	const int32 c_FPS = 60;
 	const int64 c_NetworkTickSync = 500000;
 	const int64 c_NetworkTickBuffer = c_NetworkTickSync+500000;
@@ -70,6 +71,8 @@ namespace bb
 	const int64 c_ChainKillDelayTickCount = 50000000;
 	const int64 c_RegenDelayTickCount = 20000000;
 	const int32 c_QuestCnt_Max = 5;
+	const int32 minNicknameLength = 2;
+	const int32 maxNicknameLength = 18;
 	enum class EProtoNetCs
 	{
 		Chat,
@@ -80,6 +83,7 @@ namespace bb
 		Buy,
 		BuyChar,
 		BuyPackage,
+		BuyResource,
 		DailyReward,
 		SelectChar,
 		BattleTouch,
@@ -95,7 +99,6 @@ namespace bb
 		GachaX10,
 		RankReward,
 		QuestReward,
-		QuestNext,
 		QuestDailyCompleteReward,
 		ChangeNick,
 		CouponUse,
@@ -120,6 +123,7 @@ namespace bb
 		Buy,
 		BuyChar,
 		BuyPackage,
+		BuyResource,
 		DailyReward,
 		DailyRewardFail,
 		BattleSync,
@@ -149,9 +153,9 @@ namespace bb
 		GachaFailed,
 		RankReward,
 		QuestGot,
+		QuestSet,
 		QuestDone,
 		QuestReward,
-		QuestNext,
 		QuestDailyCompleteReward,
 		ChangeNick,
 		ChangeNickFail,
@@ -1892,6 +1896,84 @@ namespace bb
 			return 
 				GetMemberName(SRewardDB(), L"") + L"," + 
 				GetMemberName(int32(), L"Code");
+		}
+	};
+	struct SBuyResourceNetCs : public SProto
+	{
+		SResourceTypeData resourceTypeData{};
+		SBuyResourceNetCs()
+		{
+		}
+		SBuyResourceNetCs(const SResourceTypeData& resourceTypeData_) : resourceTypeData(resourceTypeData_)
+		{
+		}
+		SBuyResourceNetCs(SResourceTypeData&& resourceTypeData_) : resourceTypeData(std::move(resourceTypeData_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> resourceTypeData;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["resourceTypeData"] >> resourceTypeData;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << resourceTypeData;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["resourceTypeData"] = resourceTypeData;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(SResourceTypeData());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(SResourceTypeData(), L"resourceTypeData");
+		}
+	};
+	struct SBuyResourceNetSc : public SProto
+	{
+		TResources ResourcesLeft{};
+		SBuyResourceNetSc()
+		{
+		}
+		SBuyResourceNetSc(const TResources& ResourcesLeft_) : ResourcesLeft(ResourcesLeft_)
+		{
+		}
+		SBuyResourceNetSc(TResources&& ResourcesLeft_) : ResourcesLeft(std::move(ResourcesLeft_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> ResourcesLeft;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["ResourcesLeft"] >> ResourcesLeft;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << ResourcesLeft;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["ResourcesLeft"] = ResourcesLeft;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TResources());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TResources(), L"ResourcesLeft");
 		}
 	};
 	struct SDailyRewardNetCs : public SProto
@@ -5071,6 +5153,52 @@ namespace bb
 				GetMemberName(TQuestSlotIndexCodes(), L"Quests");
 		}
 	};
+	struct SQuestSetNetSc : public SProto
+	{
+		TQuestSlotIndex SlotIndex{};
+		int32 NewQuestCode{};
+		SQuestSetNetSc()
+		{
+		}
+		SQuestSetNetSc(const TQuestSlotIndex& SlotIndex_, const int32& NewQuestCode_) : SlotIndex(SlotIndex_), NewQuestCode(NewQuestCode_)
+		{
+		}
+		SQuestSetNetSc(TQuestSlotIndex&& SlotIndex_, int32&& NewQuestCode_) : SlotIndex(std::move(SlotIndex_)), NewQuestCode(std::move(NewQuestCode_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> SlotIndex;
+			Stream_ >> NewQuestCode;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["SlotIndex"] >> SlotIndex;
+			Value_["NewQuestCode"] >> NewQuestCode;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << SlotIndex;
+			Stream_ << NewQuestCode;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["SlotIndex"] = SlotIndex;
+			Value_["NewQuestCode"] = NewQuestCode;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TQuestSlotIndex()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
+				GetMemberName(int32(), L"NewQuestCode");
+		}
+	};
 	struct SQuestDoneNetSc : public SProto
 	{
 		TQuestSlotIndex SlotIndex{};
@@ -5159,22 +5287,24 @@ namespace bb
 	struct SQuestRewardNetSc : public SRewardDB
 	{
 		TQuestSlotIndex SlotIndex{};
+		int32 newCode{};
 		system_clock::time_point CoolEndTime{};
 		int32 DailyCompleteCount{};
 		system_clock::time_point DailyCompleteRefreshTime{};
 		SQuestRewardNetSc()
 		{
 		}
-		SQuestRewardNetSc(const SRewardDB& Super_, const TQuestSlotIndex& SlotIndex_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardDB(Super_), SlotIndex(SlotIndex_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
+		SQuestRewardNetSc(const SRewardDB& Super_, const TQuestSlotIndex& SlotIndex_, const int32& newCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardDB(Super_), SlotIndex(SlotIndex_), newCode(newCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
 		{
 		}
-		SQuestRewardNetSc(SRewardDB&& Super_, TQuestSlotIndex&& SlotIndex_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardDB(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
+		SQuestRewardNetSc(SRewardDB&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& newCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardDB(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), newCode(std::move(newCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			SRewardDB::operator << (Stream_);
 			Stream_ >> SlotIndex;
+			Stream_ >> newCode;
 			Stream_ >> CoolEndTime;
 			Stream_ >> DailyCompleteCount;
 			Stream_ >> DailyCompleteRefreshTime;
@@ -5183,6 +5313,7 @@ namespace bb
 		{
 			SRewardDB::operator << (Value_);
 			Value_["SlotIndex"] >> SlotIndex;
+			Value_["newCode"] >> newCode;
 			Value_["CoolEndTime"] >> CoolEndTime;
 			Value_["DailyCompleteCount"] >> DailyCompleteCount;
 			Value_["DailyCompleteRefreshTime"] >> DailyCompleteRefreshTime;
@@ -5191,6 +5322,7 @@ namespace bb
 		{
 			SRewardDB::operator >> (Stream_);
 			Stream_ << SlotIndex;
+			Stream_ << newCode;
 			Stream_ << CoolEndTime;
 			Stream_ << DailyCompleteCount;
 			Stream_ << DailyCompleteRefreshTime;
@@ -5199,6 +5331,7 @@ namespace bb
 		{
 			SRewardDB::operator >> (Value_);
 			Value_["SlotIndex"] = SlotIndex;
+			Value_["newCode"] = newCode;
 			Value_["CoolEndTime"] = CoolEndTime;
 			Value_["DailyCompleteCount"] = DailyCompleteCount;
 			Value_["DailyCompleteRefreshTime"] = DailyCompleteRefreshTime;
@@ -5208,6 +5341,7 @@ namespace bb
 			return 
 				GetStdName(SRewardDB()) + L"," + 
 				GetStdName(TQuestSlotIndex()) + L"," + 
+				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point());
@@ -5217,94 +5351,10 @@ namespace bb
 			return 
 				GetMemberName(SRewardDB(), L"") + L"," + 
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
+				GetMemberName(int32(), L"newCode") + L"," + 
 				GetMemberName(system_clock::time_point(), L"CoolEndTime") + L"," + 
 				GetMemberName(int32(), L"DailyCompleteCount") + L"," + 
 				GetMemberName(system_clock::time_point(), L"DailyCompleteRefreshTime");
-		}
-	};
-	struct SQuestNextNetCs : public SProto
-	{
-		TQuestSlotIndex SlotIndex{};
-		SQuestNextNetCs()
-		{
-		}
-		SQuestNextNetCs(const TQuestSlotIndex& SlotIndex_) : SlotIndex(SlotIndex_)
-		{
-		}
-		SQuestNextNetCs(TQuestSlotIndex&& SlotIndex_) : SlotIndex(std::move(SlotIndex_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> SlotIndex;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["SlotIndex"] >> SlotIndex;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << SlotIndex;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["SlotIndex"] = SlotIndex;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TQuestSlotIndex());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TQuestSlotIndex(), L"SlotIndex");
-		}
-	};
-	struct SQuestNextNetSc : public SProto
-	{
-		TQuestSlotIndex SlotIndex{};
-		int32 NewCode{};
-		SQuestNextNetSc()
-		{
-		}
-		SQuestNextNetSc(const TQuestSlotIndex& SlotIndex_, const int32& NewCode_) : SlotIndex(SlotIndex_), NewCode(NewCode_)
-		{
-		}
-		SQuestNextNetSc(TQuestSlotIndex&& SlotIndex_, int32&& NewCode_) : SlotIndex(std::move(SlotIndex_)), NewCode(std::move(NewCode_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> SlotIndex;
-			Stream_ >> NewCode;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["SlotIndex"] >> SlotIndex;
-			Value_["NewCode"] >> NewCode;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << SlotIndex;
-			Stream_ << NewCode;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["SlotIndex"] = SlotIndex;
-			Value_["NewCode"] = NewCode;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TQuestSlotIndex()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
-				GetMemberName(int32(), L"NewCode");
 		}
 	};
 	struct SQuestDailyCompleteRewardNetCs : public SProto

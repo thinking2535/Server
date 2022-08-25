@@ -54,8 +54,6 @@ using namespace mssql;
 #include <GameServer/Common/ServerToServerProtocol.h>
 #include "ToolProtocol.h"
 
-
-
 #define LOG(...) g_Log.Push(GET_DEBUG_FORMAT(__VA_ARGS__))
 #ifdef _DEBUG
 #define DLOG(...) g_Log.Push(GET_DEBUG_FORMAT(__VA_ARGS__))
@@ -231,6 +229,7 @@ extern TCouponDB g_pCouponDB;
 #include "EnginePumpControl.h"
 #include "EngineParachuteControl.h"
 #include "BattlePlayerObject.h"
+#include "MetaProtocolExtension.h"
 
 template<typename _TType> struct SBinder {};
 template<> struct SBinder<SRetNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Ret); };
@@ -246,6 +245,7 @@ template<> struct SBinder<SUnsetCharNetSc> { static const int32 ProtoNum = int32
 template<> struct SBinder<SBuyNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Buy); };
 template<> struct SBinder<SBuyCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyChar); };
 template<> struct SBinder<SBuyPackageNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyPackage); };
+template<> struct SBinder<SBuyResourceNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyResource); };
 template<> struct SBinder<SDailyRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyReward); };
 template<> struct SBinder<SDailyRewardFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyRewardFail); };
 
@@ -279,9 +279,9 @@ template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(
 template<> struct SBinder<SGachaFailedNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaFailed); };
 template<> struct SBinder<SRankRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RankReward); };
 template<> struct SBinder<SQuestGotNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestGot); };
+template<> struct SBinder<SQuestSetNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestSet); };
 template<> struct SBinder<SQuestDoneNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestDone); };
 template<> struct SBinder<SQuestRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestReward); };
-template<> struct SBinder<SQuestNextNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestNext); };
 template<> struct SBinder<SQuestDailyCompleteRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestDailyCompleteReward); };
 template<> struct SBinder<SChangeNickNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ChangeNick); };
 template<> struct SBinder<SChangeNickFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::ChangeNickFail); };
@@ -325,11 +325,11 @@ template<> struct SDBBinder<SFlyAwayBattleEndDBIn> { static const int32 SpNum = 
 
 template<> struct SDBBinder<SGachaDBIn> { static const int32 SpNum = int32(EProtoDB::Gacha); };
 template<> struct SDBBinder<SRankRewardDBIn> { static const int32 SpNum = int32(EProtoDB::RankReward); };
+template<> struct SDBBinder<SQuestSetDBIn> { static const int32 SpNum = int32(EProtoDB::QuestSet); };
 template<> struct SDBBinder<SQuestNewDBIn> { static const int32 SpNum = int32(EProtoDB::QuestNew); };
 template<> struct SDBBinder<SQuestDelDBIn> { static const int32 SpNum = int32(EProtoDB::QuestDel); };
 template<> struct SDBBinder<SQuestDoneDBIn> { static const int32 SpNum = int32(EProtoDB::QuestDone); };
 template<> struct SDBBinder<SQuestRewardDBIn> { static const int32 SpNum = int32(EProtoDB::QuestReward); };
-template<> struct SDBBinder<SQuestNextDBIn> { static const int32 SpNum = int32(EProtoDB::QuestNext); };
 template<> struct SDBBinder<SQuestDailyCompleteRewardDBIn> { static const int32 SpNum = int32(EProtoDB::QuestDailyCompleteReward); };
 template<> struct SDBBinder<SChangeNickBeginDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeNickBegin); };
 template<> struct SDBBinder<SChangeNickEndDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeNickEnd); };
@@ -429,12 +429,27 @@ TExp DurationToExp(const _TDuration& Duration_)
 bool HaveCost(const TResources& Resources_, EResource CostType_, TResource Cost_);
 bool HaveCost(const TResources& Resources_, const TResources& Cost_);
 TResources MakeResources(TResource Data_);
+
+TResource GetResourceFreeSpace(TResource CurrentResource_, EResource ResourceType_);
+TResource GetResourceFreeSpace(TResource CurrentResource_, size_t Index_);
+TResources GetResourceFreeSpaces(const TResources& CurrentResources_, EResource ResourceType_);
+
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_);
 void AddResource(TResources& Resources_, EResource Resource_, TResource Data_);
 void AddResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_);
+
+TResource AddResource(TResource Resource_, size_t Index_, TResource Data_);
+TResource AddResource(TResource Resource_, EResource ResourceType_, TResource Data_);
+TResource AddResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_);
+
 void SubResource(TResources& Resources_, size_t Index_, TResource Data_);
 void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
 void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
+
+TResource SubResource(TResource Resource_, size_t Index_, TResource Data_);
+TResource SubResource(TResource Resource_, EResource ResourceType_, TResource Data_);
+TResource SubResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_);
+
 void AddResources(TResources& Resources_, const TResources& Added_);
 void SubResources(TResources& Resources_, const TResources& Added_);
 void SetResource(TResources& Resources_, size_t Index_, TResource Data_);

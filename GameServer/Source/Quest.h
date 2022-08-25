@@ -6,7 +6,7 @@ class CQuest
 public:
 	using TDone = pair<TQuestSlotIndex, int32>; // SlotIndex, Count
 private:
-	using _TReward = pair<TTime, const SReward*>;
+	using _TReward = pair<const SQuestBase*, const SReward*>;
 	struct _SQuest : public SQuestBase
 	{
 		const SQuest* pQuest = nullptr;
@@ -15,6 +15,8 @@ private:
 			SQuestBase(Super_), pQuest(pQuest_)
 		{
 		}
+		bool isCompleted();
+		bool done(int32 count);
 	};
 	using _TQuests = map<TQuestSlotIndex, _SQuest>;
 public:
@@ -23,7 +25,6 @@ private:
 	_TQuests _Quests;
 
 	const SQuest& _New(void);
-	bool _IsValid(const SQuestBase& Quest_) const;
 
 public:
 	bool Add(const TQuestDBs::value_type& itQuest_);
@@ -33,8 +34,7 @@ public:
 	TQuestDBs GetQuestDBs(void) const;
 	optional<TDone> Done(TQuestsIt itQuest_, int32 Count_);
 	optional<TDone> Done(EQuestType QuestType_, int32 Count_);
-	void Refresh(TQuestSlotIndexCodes& NewQuests_);
+	TQuestSlotIndexCodes FillEmptySlotAndGetNewQuests(void);
 	optional<_TReward> Reward(TQuestSlotIndex SlotIndex_);
-	optional<const SQuest*> Next(const SQuestNextNetCs& Proto_);
 	optional<const SQuest*> Set(TQuestSlotIndex SlotIndex_, int32 NewCode_);
 };

@@ -21,7 +21,7 @@ TRankingRewardsArray g_RewardsArray;
 TDB g_DB;
 TRecvCFuncs g_BinderRecvC;
 TRecvSFuncs g_BinderRecvS;
-TGameData g_GameData;
+TGameData g_MetaData;
 CDump g_Dump;
 
 void TimersCallback(wstring& Data_)

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include <GameServer/Common/Base.h>
 
-CGameData::CGameData() :
+CMetaData::CMetaData() :
 	RankingConfigMeta(GetSRankingConfigMeta())
 {
 	try

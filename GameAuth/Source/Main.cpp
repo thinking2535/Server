@@ -2,6 +2,7 @@
 #include <Rso/Win/ConsoleCtrlHandler.h>
 #include <Rso/MobileUtil/ReceiptToken.h>
 #include <GameServer/Common/GameServerProtocol.h>
+#include <GameServer/Common/Base.h>
 
 using namespace mobileutil;
 
@@ -92,7 +93,17 @@ void UnLinkC(const CKey& Key_, ENetRet NetRet_)
 {
 	DLOG(L"UnLinkC PeerNum:%d NetRet:%d", Key_.PeerNum, (__int32)NetRet_);
 }
+EGameRet CheckCreateUser(const SCaCreate& CaCreate_)
+{
+	if (CaCreate_.Nick.size() < minNicknameLength ||
+		CaCreate_.Nick.size() > maxNicknameLength)
+		return EGameRet::InvalidNickLength;
 
+	if (!GetForbiddenWord(g_MetaData->forbiddenWords, CaCreate_.Nick).empty())
+		return EGameRet::InvalidNick;
+
+	return EGameRet::Ok;
+}
 int _tmain(int argc, _TCHAR* argv[])
 {
 	try
@@ -128,6 +139,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		g_AuthNet.reset(new TAuthNet::element_type(
 			EAddressFamily::INET,
+			CheckCreateUser,
 			LinkM, UnLinkM, RecvM, LinkC, UnLinkC, DBCallback,
 			*DBOption,
 			CNamePort(Option->MasterBindPort),

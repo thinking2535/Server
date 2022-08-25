@@ -18,7 +18,7 @@
     <ClCompile Include="Source\NetworkServer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\GameData.cpp">
+    <ClCompile Include="Source\MetaData.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\DataBase.cpp">
@@ -44,7 +44,7 @@
     <ClInclude Include="Source\NetworkServer.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="Source\GameData.h">
+    <ClInclude Include="Source\MetaData.h">
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="Source\DataBase.h">
