@@ -32,47 +32,25 @@ void CMultiBattle::_HitCallback(int32 AttackerIndex_, int32 TargetIndex_)
 	else
 		Attacker->Kill(AddedPoint);
 }
-void CMultiBattle::_RegenCallback(int32 PlayerIndex_)
-{
-}
 void CMultiBattle::_IconCallback(int32 PlayerIndex_, const SMultiBattleIconNetCs& Proto_)
 {
-	BroadCast(SMultiBattleIconNetSc(PlayerIndex_, Proto_.Code));
+	_BroadCast(SMultiBattleIconNetSc(PlayerIndex_, Proto_.Code));
 }
-void CMultiBattle::_FixedUpdate(int64 Tick_)
-{
-	if (_pEngine->GetTick() >= _EndTick && _pEngine->IsStarted())
-		_pEngine->Stop();
-
-	for (auto& i : _MultiBattlePlayers)
-		i->CheckRegen(Tick_);
-}
-CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo* pBattleTypeInfo_, const TMatch::element_type::TMatchedUsers& Users_, TBattlesIt itBattle_) :
-	CBattle(BattleType_),
-	_pBattleTypeInfo(pBattleTypeInfo_)
+CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const TMatch::element_type::TMatchedUsers& Users_, TBattlesIt itBattle_) :
+	CBattle(BattleType_, g_MetaData->GetMultiMap()),
+	_pMultiMap(static_cast<const SMultiMap*>(_pMap))
 {
 	// 실력으로 정렬
 	vector<CUser*> Users;
 	std::transform(Users_.begin(), Users_.end(), std::back_inserter(Users), [](TPeerCnt PeerNum_) { return g_Users.get(PeerNum_); });
 	std::sort(Users.begin(), Users.end(), [](const CUser* User0_, const CUser* User1_) { return User0_->GetPoint() < User1_->GetPoint(); });
 
-	auto [MapIndex, Map] = g_MetaData->GetMultiMap();
-	_MapIndex = MapIndex;
-	_pRootObject = make_shared<CObject2D>(GetDefaultTransform(Map.PropPosition));
-
-
 	// Structure /////////////////////////////////
-	list<shared_ptr<CCollider2D>> StructureColliders;
-	for (auto& s : Map.Structures)
-		StructureColliders.emplace_back(make_shared<CRectCollider2D>(s, CEngineGlobal::c_StructureNumber, s.RectCollider2D));
-
-	auto pCollectionCollider = make_shared<CCollectionCollider2D>(GetDefaultTransform(Map.PropPosition), CEngineGlobal::c_ContainerNumber);
-	SetCollectionToCollectionCollider2D(StructureColliders, pCollectionCollider);
-	_pEngine->AddObject(pCollectionCollider);
-
+	for (auto& s : _pMultiMap->Structures)
+		_pEngine->AddObject(make_shared<CRectCollider2D>(s, CEngineGlobal::c_StructureNumber, s.RectCollider2D, _pRootObject.get()));
 
 	// Moving Structures //////////////////////////
-	for (auto& s : Map.StructureMoves)
+	for (auto& s : _pMultiMap->StructureMoves)
 	{
 		list<shared_ptr<CCollider2D>> Colliders;
 		for (auto& c : s.Colliders)
@@ -80,17 +58,14 @@ CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo
 
 		auto pShuttleObject = make_shared<CShuttleObject2D>(
 			GetDefaultTransform(s.BeginPos),
+			std::move(Colliders),
 			s.BeginPos,
 			s.EndPos,
 			s.Velocity,
 			s.Delay,
 			SStructMove(true, 1, 0.0f));
 
-		auto pShuttleCollider = make_shared<CCollectionCollider2D>(ZeroTransform, CEngineGlobal::c_ContainerNumber);
-		SetCollectionToCollectionCollider2D(Colliders, pShuttleCollider);
-		SetColliderToMovingObject2D(pShuttleCollider, pShuttleObject);
-
-		pShuttleObject->SetParent(_pRootObject);
+		pShuttleObject->SetParent(_pRootObject.get());
 		_ShuttleStructures.emplace_back(pShuttleObject.get());
 		_pEngine->AddMovingObject(std::move(pShuttleObject));
 	}
@@ -126,10 +101,20 @@ CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo
 		}
 
 		auto pMeta = Users[i]->GetSelectedChar();
-		auto& Pos = Map.Poses[i];
+		auto& Pos = _pMultiMap->Poses[i];
 
-		auto pCharacter = make_unique<SCharacter>(false, 0, c_BalloonCountForRegen, SPumpInfo(), SParachuteInfo(), SStaminaInfo(Tick, pMeta->StaminaMax), CEngineGlobal::GetFaceWithPosition(Pos),
-			SPoint(0.0f, c_Gravity), CEngineGlobal::GetInvulnerableEndTick(Tick), 0, 0, 0);
+		auto pCharacter = make_unique<SCharacter>(
+			false,
+			0,
+			c_BalloonCountForRegen,
+			SPumpInfo(),
+			SParachuteInfo(),
+			SStaminaInfo(Tick, pMeta->pCharacterTypeMeta->StaminaMax),
+			CEngineGlobal::GetFaceWithX(Pos.X),
+			CEngineGlobal::GetInvulnerableEndTick(Tick),
+			0,
+			0,
+			0);
 
 		auto pMultiBattlePlayer = make_shared<CMultiBattlePlayer>(
 			SBattlePlayer(
@@ -139,7 +124,6 @@ CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo
 				TeamIndex,
 				Users[i]->GetSelectedCharCode()),
 			std::bind(&CMultiBattle::_HitCallback, this, _1, _2),
-			std::bind(&CMultiBattle::_RegenCallback, this, _1),
 			std::bind(&CMultiBattle::_IconCallback, this, _1, _2),
 			(int32)i,
 			Pos,
@@ -150,13 +134,11 @@ CMultiBattle::CMultiBattle(const SBattleType& BattleType_, const SBattleTypeInfo
 			this,
 			Users[i]);
 
-		pMultiBattlePlayer->pPlayerObject->SetParent(_pRootObject);
+		pMultiBattlePlayer->pPlayerObject->SetParent(_pRootObject.get());
 		_AddBattlePlayer(pMultiBattlePlayer);
 	}
 
-	_pEngine->fFixedUpdate = std::bind(&CMultiBattle::_FixedUpdate, this, _1);
-
-	BroadCast(GetBattleBeginNetSc());
+	_BroadCast(GetBattleBeginNetSc());
 }
 CMultiBattle::~CMultiBattle()
 {
@@ -183,31 +165,32 @@ CMultiBattle::~CMultiBattle()
 		// 팀수가 6 이고 동점이 없을 경우 : 1.0, 0.6, 0.2, -0.2, -0.6, -1.0
 		// 팀수가 6 이고 동점이 있을 경우 : 1.0, 1.0, 0.2, -0.2, -0.6, -0.6
 
-
 		// 개인이 전투중 얻은 Point를 팀 정보에 합산
 		vector<STeamBattleInfo> TeamBattleInfos(_BattleType.TeamCount); // TeamIndex로 참조하기위한 원본
 		for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
 		{
-			auto& TeamBattleInfo = TeamBattleInfos[_MultiBattlePlayers[i]->TeamIndex];
-			TeamBattleInfo.Point += _MultiBattlePlayers[i]->BattleInfo.Point;
+			auto& player = _MultiBattlePlayers[i];
+			auto& TeamBattleInfo = TeamBattleInfos[player->TeamIndex];
+			TeamBattleInfo.Point += player->BattleInfo.Point;
+			TeamBattleInfo.playerIndices.emplace_back(i);
 		}
 
 		// 점수 별로 정리하되 점수가 같으면 list에 추가
-		map<int32, _STeamBattleInfo, greater<int32>> PointTeamIndexGroups; // Key : 팀별점수,  Value : 팀인덱스 (팀 점수로 정렬)
+		map<int32, list<TTeamCnt>, greater<int32>> PointTeamIndexGroups; // Key : 팀별점수,  Value : 팀인덱스 (팀 점수로 정렬)
 		for (size_t i = 0; i < TeamBattleInfos.size(); ++i)
 		{
-			auto& TeamBattleInfo = TeamBattleInfos[i];
-			auto ib = PointTeamIndexGroups.emplace(TeamBattleInfo.Point, _STeamBattleInfo(&TeamBattleInfo));
-			ib.first->second.TeamIndexGroup.emplace_back(i);
+			auto ib = PointTeamIndexGroups.emplace(TeamBattleInfos[i].Point, list<TTeamCnt>());
+			ib.first->second.emplace_back(i);
 		}
 
 		int32 BestPoint = -1;
 		set<int32> BestPlayerIndices;
 		int32 BattleRanking = 0;
 
+		// Ranking, BestPlayer 설정
 		for (auto it = PointTeamIndexGroups.begin(); it != PointTeamIndexGroups.end(); ++it)
 		{
-			for (auto& TeamIndex : it->second.TeamIndexGroup)
+			for (auto& TeamIndex : it->second)
 			{
 				auto& TeamBattleInfo = TeamBattleInfos[TeamIndex];
 				TeamBattleInfo.Ranking = BattleRanking;
@@ -217,16 +200,17 @@ CMultiBattle::~CMultiBattle()
 				{
 					for (int32 i = 0; i < _MultiBattlePlayers.size(); ++i)
 					{
-						if (_MultiBattlePlayers[i]->TeamIndex != TeamIndex)
+						auto& player = _MultiBattlePlayers[i];
+						if (player->TeamIndex != TeamIndex)
 							continue;
 
-						if (_MultiBattlePlayers[i]->BattleInfo.Point > BestPoint)
+						if (player->BattleInfo.Point > BestPoint)
 						{
-							BestPoint = _MultiBattlePlayers[i]->BattleInfo.Point;
+							BestPoint = player->BattleInfo.Point;
 							BestPlayerIndices.clear();
 							BestPlayerIndices.emplace(i);
 						}
-						else if (_MultiBattlePlayers[i]->BattleInfo.Point == BestPoint)
+						else if (player->BattleInfo.Point == BestPoint)
 						{
 							BestPlayerIndices.emplace(i);
 						}
@@ -234,7 +218,7 @@ CMultiBattle::~CMultiBattle()
 				}
 			}
 
-			BattleRanking += (int32)it->second.TeamIndexGroup.size();
+			BattleRanking += (int32)it->second.size();
 		}
 
 		TDoneQuestDBs DoneQuestDBs; // 디비쿼리를 한번에 하기위해 CUser, 또는 CBattlePlayer가 담당하지 않음.
@@ -244,58 +228,78 @@ CMultiBattle::~CMultiBattle()
 		{
 			for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
 			{
-				auto& Me = _MultiBattlePlayers[i];
-
 				_MultiBattlePlayers[i]->BattleEndDraw(
 					Now,
 					_BattleType,
 					BestPlayerIndices.find((int32)i) != BestPlayerIndices.end(), // Is BestPlayer
-					Me->BattleInfo.Point,
 					DoneQuestDBs);
 			}
 		}
 		else
 		{
-			vector<SBattleEndPlayer> BattleEndPlayers;
-			BattleEndPlayers.reserve(_MultiBattlePlayers.size());
+			vector<double> changedEloPoints(_MultiBattlePlayers.size());
 
-			// Calculate Point
-			for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
+			// 이긴 팀의 모든 멤버와 진 팀의 모든 멤버와 elo 계산
 			{
-				auto& Me = _MultiBattlePlayers[i];
-				auto& MyTeam = TeamBattleInfos[Me->TeamIndex];
+				auto itWinnerTeamIndices = PointTeamIndexGroups.begin();
 
-				int32 AddedGold = 0;
-				int32 AddedPoint = 0;
-
-				if (MyTeam.Point > 0)
+				for (auto& winnerTeamIndex : itWinnerTeamIndices->second)
 				{
-					auto& BattleReward = (_pBattleTypeInfo->BattleReward)[MyTeam.Ranking];
+					for (auto& winnerPlayerIndex : TeamBattleInfos[winnerTeamIndex].playerIndices)
+					{
+						auto itLoserTeamIndices = itWinnerTeamIndices;
+						++itLoserTeamIndices;
 
-					AddedGold = BattleReward.Gold;
-					AddedPoint = BattleReward.Points[(size_t)g_MetaData->RankTiers.get(Me->GetPoint())->second.Rank];
+						for (; itLoserTeamIndices != PointTeamIndexGroups.end(); ++itLoserTeamIndices)
+						{
+							for (auto& loserTeamIndex : itLoserTeamIndices->second)
+							{
+								for (auto& loserPlayerIndex : TeamBattleInfos[loserTeamIndex].playerIndices)
+								{
+									auto changedEloPoint = eloController.getAddedPoint(
+										_MultiBattlePlayers[winnerPlayerIndex]->GetUser()->GetUserDB().eloPoint,
+										_MultiBattlePlayers[loserPlayerIndex]->GetUser()->GetUserDB().eloPoint,
+										1.0);
+
+									changedEloPoints[winnerPlayerIndex] += changedEloPoint;
+									changedEloPoints[loserPlayerIndex] -= changedEloPoint;
+								}
+							}
+						}
+
+					}
 				}
-
-				BattleEndPlayers.emplace_back(SBattleEndPlayer(AddedPoint, AddedGold, Me->BattleInfo.Point));
 			}
 
-			vector<STeamRanking> OrderedTeamRankings;
-			for (auto& i : PointTeamIndexGroups)
-				OrderedTeamRankings.emplace_back(STeamRanking(STeamBattleInfo(i.second.pTeamBattleInfo->Ranking, i.first), i.second.TeamIndexGroup));
+			vector<BattleEndInfo> battleEndInfos;
+			battleEndInfos.reserve(_MultiBattlePlayers.size());
+			for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
+			{
+				auto& player = _MultiBattlePlayers[i];
+				auto& teamBattleInfo = TeamBattleInfos[player->TeamIndex];
 
-			auto& FirstTeamIndexGroup = OrderedTeamRankings[0].TeamIndexGroup;
+				TResources addedResources{};
+
+				if (teamBattleInfo.Ranking == 0)
+				{
+					auto rewardResourceType = g_MetaData->getMultiBattleDiaRewardType();
+					addedResources[(size_t)rewardResourceType] = g_MetaData->pMultiBattleConfig->rewardDiaValue;
+				}
+
+				battleEndInfos.emplace_back(BattleEndInfo(changedEloPoints[i], player->BattleInfo.Point, addedResources));
+			}
 
 			for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
 			{
-				auto MyTeamIndex = _MultiBattlePlayers[i]->TeamIndex;
+				auto& player = _MultiBattlePlayers[i];
+				auto& battleEndInfo = battleEndInfos[i];
 
-				_MultiBattlePlayers[i]->BattleEnd(
+				player->BattleEnd(
 					Now,
 					_BattleType,
 					BestPlayerIndices.find((int32)i) != BestPlayerIndices.end(), // Is BestPlayer
-					BattleEndPlayers,
-					OrderedTeamRankings,
-					std::find(FirstTeamIndexGroup.begin(), FirstTeamIndexGroup.end(), MyTeamIndex) != FirstTeamIndexGroup.end(),
+					battleEndInfo,
+					TeamBattleInfos[player->TeamIndex].Ranking,
 					DoneQuestDBs);
 			}
 		}
@@ -315,15 +319,15 @@ CMultiBattle::~CMultiBattle()
 
 			for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
 			{
-				int32 CharCode = _MultiBattlePlayers[i]->CharCode;
+				auto& player = _MultiBattlePlayers[i];
 
 				if (IsValidRankingInfo() && BattleEndInfos[i].Point > g_RankingInfo.UserPointMinArray[(size_t)ERankingType::Multi])
 					RankingUsersChanged.emplace_back(
 						SRankingUser(
 							BattleEndInfos[i].UID,
-							_MultiBattlePlayers[i]->Nick,
-							CharCode,
-							_MultiBattlePlayers[i]->CountryCode,
+							player->Nick,
+							player->CharCode,
+							player->CountryCode,
 							BattleEndInfos[i].Point));
 			}
 
@@ -331,9 +335,6 @@ CMultiBattle::~CMultiBattle()
 				g_NetRanking->Send(g_NetRankingKey.PeerNum, (int32)EProtoRankingNetSr::UpdateMulti, SRankingUpdateMultiNetSr(std::move(RankingUsersChanged)));
 		}
 	}
-
-	for (auto& i : _MultiBattlePlayers)
-		i->BattleEndSession();
 }
 bool CMultiBattle::_CanEngineStart(void) const
 {
@@ -387,7 +388,7 @@ SMultiBattleBeginNetSc CMultiBattle::GetBattleBeginNetSc(void) const
 	return SMultiBattleBeginNetSc(
 		SBattle(
 			_BattleType,
-			_MapIndex),
+			_pMultiMap->index),
 		std::move(Players),
 		std::move(DisconnectEndTimes),
 		std::move(BattleInfos),
@@ -411,7 +412,7 @@ bool CMultiBattle::Update(void)
 			_IsStarted = true;
 			_CheckAndStartEngine();
 			_EndTick = (g_Option.EndlessGame ? (numeric_limits<int64>::max)() : GetPlayTicks());
-			BroadCast(SMultiBattleStartNetSc(_EndTick));
+			_BroadCast(SMultiBattleStartNetSc(_EndTick));
 		}
 	}
 	else if (_pEngine->GetTick() >= _EndTick)
@@ -439,10 +440,10 @@ void CMultiBattle::Link(int32 PlayerIndex_)
 	_DisconnectedPlayerIndices.erase(PlayerIndex_);
 	_pEngine->Update();
 	_CheckAndStartEngine();
-	Send(PlayerIndex_, GetBattleBeginNetSc());
+	_Send(PlayerIndex_, GetBattleBeginNetSc());
 	// _pEngine->Send(); 는 SMultiBattleUnLinkNetSc 보냈을 때 호출하였고, 이후로 Tick이 흐르지 않았으므로 여기서 호출할 필요 없음.
 
-	BroadCastExcept(PlayerIndex_, SMultiBattleLinkNetSc(_pEngine->GetTick(), PlayerIndex_));
+	_BroadCastExcept(PlayerIndex_, SMultiBattleLinkNetSc(_pEngine->GetTick(), PlayerIndex_));
 }
 void CMultiBattle::UnLink(int32 PlayerIndex_)
 {
@@ -456,6 +457,14 @@ void CMultiBattle::UnLink(int32 PlayerIndex_)
 		_pEngine->Stop();
 	}
 
-	// 유저는 나갔지만 _MultiBattlePlayers 는 전투 종료까지 삭제되는 것이 아니므로 BroadCastExcept 를 호출하여 불필요한 Send 호출 피하도록
-	BroadCastExcept(PlayerIndex_, SMultiBattleUnLinkNetSc(_pEngine->GetTick(), PlayerIndex_, _MultiBattlePlayers[PlayerIndex_]->DisconnectEndTime));
+	// 유저는 나갔지만 _MultiBattlePlayers 는 전투 종료까지 삭제되는 것이 아니므로 _BroadCastExcept 를 호출하여 불필요한 Send 호출 피하도록
+	_BroadCastExcept(PlayerIndex_, SMultiBattleUnLinkNetSc(_pEngine->GetTick(), PlayerIndex_, _MultiBattlePlayers[PlayerIndex_]->DisconnectEndTime));
+}
+void CMultiBattle::_fixedUpdate()
+{
+	if (_pEngine->GetTick() >= _EndTick && _pEngine->IsStarted())
+		_pEngine->Stop();
+
+	for (auto& i : _MultiBattlePlayers)
+		i->CheckRegen(_pEngine->GetTick());
 }

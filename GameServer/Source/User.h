@@ -29,7 +29,6 @@ class CUser
 	bool _BattleJoining = false;
 	CBattlePlayer* _pBattlePlayer = nullptr;
 	set<wstring> _Coupons;
-	TPackages _Packages;
 
 public:
 	CUser(TSessionsIt itSession_);
@@ -42,7 +41,7 @@ public:
 	inline TUID GetUID(void) const { return _itSession->first; }
 	inline const TNick& GetNick(void) const { return _itSession->second.Account.Nick; }
 	inline EOS GetOS(void) const { return _LoginInfo.Option.OS; }
-	inline TResources& GetResources(void) { return _User.Resources; }
+	inline const TResources& GetResources(void) const { return _User.Resources; }
 	inline const CCharacter* GetSelectedChar(void) const { return _pSelectedChar; }
 	inline bool InBattle(void) const
 	{
@@ -82,27 +81,26 @@ private:
 public:
 	ERet Buy(const SBuyNetCs& Proto_);
 	ERet BuyChar(const SBuyCharNetCs& Proto_);
-	ERet BuyPackage(const SBuyPackageNetCs& Proto_);
+	ERet buyCharacter(const CCharacter* pCharacter);
 	ERet BuyResource(const SBuyResourceNetCs& Proto_);
 	ERet Purchase(void);
 	ERet ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 PurchaseTime_, int32 PurchaseType_);
 	void ChangeNickBeginDB(void);
 	void ChangeNickEndDB(void);
 	void ChangeNickEndFailDB(EGameRet GameRet_);
-	ERet DailyReward(const SDailyRewardNetCs& Proto_);
 	void SetLevel(TLevel Level_);
-	bool HaveCost(EResource CostType_, TResource Cost_);
-	bool HaveCost(const TResources& Cost_);
-	inline TResource GetResource(EResource Resource_) const { return _User.Resources[(size_t)Resource_]; }
-	void AddResourceCore(SResourceTypeData resourceTypeData);
+	bool doesHaveCost(EResource costType, TResource costValue);
+	bool doesHaveCost(const SResourceTypeData& cost);
+	bool doesHaveCost(const TResources& cost);
+	void AddResourceCore(const SResourceTypeData& resourceTypeData);
 	void AddResourceCore(EResource ResourceType_, TResource Data_);
-	void SubResourceCore(SResourceTypeData resourceTypeData);
-	void SubResourceCore(EResource ResourceType_, TResource Data_);
 	void AddResourcesCore(const TResources& Resources_);
-	void SubResourcesCore(const TResources& Resources_);
 	void AddResources(const TResources& Resources_);
 	void SetResources(const TResources& Resources_);
-	void SetPoint(int32 Point_);
+private:
+	void _setPoint(int32 point);
+public:
+	void setPoint(int32 point);
 	void SetChar(list<int32>& CharCodes_);
 	void UnsetChar(list<int32>& CharCodes_);
 	ERet Chat(const SChatNetCs& Proto_);
@@ -125,8 +123,9 @@ public:
 	SBattleEndInfo GetSBattleEndInfo(void) const;
 private:
 	TDoneQuests _MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	void _addEloPoint(double addedEloPoint);
 public:
-	void MultiBattleEnd(TTime Now_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
+	void MultiBattleEnd(TTime Now_, const BattleEndInfo& battleEndInfo, int32 myTeamRanking, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
 	void MultiBattleEndDraw(TTime Now_, int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
 	void MultiBattleEndInvalid(TTime Now_);
 	void MultiBattleEndInvalidPunish(void);
@@ -134,17 +133,12 @@ public:
 
 	ERet ArrowDodgeBattleJoin(void);
 	ERet ArrowDodgeBattleEnd(const SArrowDodgeBattleEndNetCs& Proto_);
-	void ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
+	void ArrowDodgeBattleEnd(int64 tick, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
 
 	ERet FlyAwayBattleJoin(void);
 	ERet FlyAwayBattleEnd(const SFlyAwayBattleEndNetCs& Proto_);
-	void FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
+	void FlyAwayBattleEnd(int64 tick, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
 
-	ERet Gacha(const SGachaNetCs& Proto_);
-	ERet GachaX10(const SGachaX10NetCs& Proto_);
-	void GachaSucceeded(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_);
-	void GachaX10Succeeded(const TResources& Cost_, int32 GachaIndex_, list<int32> CharCodeList_, const TResources& Refund_);
-	void GachaFailed(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_, const TResources& Refund_);
 	void _RewardCore(const SReward& Reward_, list<int32>& CharsAdded_);
 	SRewardDB RewardCore(const SReward& Reward_);
 	SRewardDB RewardsCore(const list<const SReward*>& Rewards_);

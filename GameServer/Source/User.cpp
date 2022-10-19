@@ -111,7 +111,6 @@ void CUser::SetLoginDBOutCore(SLoginDBOut& Out_)
 		Push(SQuestDelDBIn(GetUID(), QuestsNotExist));
 
 	_Coupons = std::move(Out_.Coupons);
-	_Packages = std::move(Out_.Packages);
 
 	if (_User.NewNick.empty())
 		CertifyAndLobby();
@@ -139,19 +138,17 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 					TResources{},
 					0,
 					g_MetaData->GetDefaultChar(),
-					g_MetaData->ArrowDodgeMeta.PlayCountMax,
+					g_MetaData->arrowDodgeConfigMeta.PlayCountMax,
 					Now,
-					g_MetaData->FlyAwayMeta.PlayCountMax,
+					g_MetaData->flyAwayConfigMeta.PlayCountMax,
 					Now,
 					Now,
-					g_MetaData->ConfigMeta.ChangeNickFreeCount,
-					Now + minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute),
-					g_MetaData->ShopConfig.DailyRewardFreeCount + g_MetaData->ShopConfig.DailyRewardAdCount)),
-				Now,
-				_User.Language,
-				_LoginInfo.Option.OS,
-				_LoginInfo.CountryCodeMinuteOffset.CountryCode,
-				g_MetaData->DefaultChars));
+					g_MetaData->ConfigMeta.ChangeNickFreeCount)),
+			Now,
+			_User.Language,
+			_LoginInfo.Option.OS,
+			_LoginInfo.CountryCodeMinuteOffset.CountryCode,
+			g_MetaData->DefaultChars));
 	}
 	else
 	{
@@ -161,63 +158,59 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 
 void CUser::_SendLogin(void)
 {
-	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _Chars, system_clock::now(), _Quest.GetQuestDBs(), _Packages));
+	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _Chars, system_clock::now(), _Quest.GetQuestDBs()));
 }
 ERet CUser::Buy(const SBuyNetCs& Proto_)
 {
-	auto itGoods = g_MetaData->ShopItems.find(Proto_.Code);
-	if (itGoods == g_MetaData->ShopItems.end())
-		return ERet::InvalidGoodsID;
+	auto itGoods = g_MetaData->shopItems.find(Proto_.Code);
+	if (itGoods == g_MetaData->shopItems.end())
+		return ERet::InvalidProtocol;
 
-	if (!HaveCost(itGoods->second.Cost))
-		return ERet::NotEnoughMoney;
+	auto ret = itGoods->second->buy(this);
+	if (ret != ERet::Ok)
+		return ret;
 
-	SubResourcesCore(itGoods->second.Cost);
-	auto RewardDB = RewardCore(*itGoods->second.pReward);
-	Push(SBuyDBIn(RewardDB));
-	Send(SBuyNetSc(RewardDB, Proto_.Code));
-	
 	return ERet::Ok;
 }
 ERet CUser::BuyChar(const SBuyCharNetCs& Proto_)
 {
-	if (_Chars.find(Proto_.Code) != _Chars.end())
+	auto pCharacter = g_MetaData->GetCharacter(Proto_.Code);
+	if (pCharacter == nullptr)
 		return ERet::InvalidProtocol;
 
-	auto pChar = g_MetaData->GetCharacter(Proto_.Code);
-	if (!HaveCost(pChar->CostType, pChar->CostValue))
-	{
-		return ERet::NotEnoughMoney;
-	}
-
-	SubResourceCore(pChar->CostType, pChar->CostValue);
-	_Chars.emplace(Proto_.Code);
-
-	Push(SBuyCharDBIn(GetUID(), _User.Resources, Proto_.Code));
-	Send(SBuyCharNetSc(Proto_.Code));
-
-	return ERet::Ok;
+	return buyCharacter(pCharacter);
 }
-ERet CUser::BuyPackage(const SBuyPackageNetCs& Proto_)
+ERet CUser::buyCharacter(const CCharacter* pCharacter)
 {
-	auto itPackage = g_MetaData->ShopPackages.find(Proto_.Code);
-	if (itPackage == g_MetaData->ShopPackages.end())
+	if (!pCharacter->canBuy())
 		return ERet::InvalidProtocol;
 
-	if (_Packages.find(Proto_.Code) != _Packages.end())
-		return ERet::AlreadyHave;
+	if (_Chars.find(pCharacter->Code) != _Chars.end())
+		return ERet::InvalidProtocol;
 
-	if (!HaveCost(itPackage->second.CostType, itPackage->second.CostValue))
-		return ERet::NotEnoughMoney;
+	if (pCharacter->isNFTCharacter())
+	{
+		_Chars.emplace(pCharacter->Code);
 
-	SubResourceCore(itPackage->second.CostType, itPackage->second.CostValue);
-	_Packages.emplace(Proto_.Code);
+		Push(SBuyCharDBIn(GetUID(), _User.Resources, pCharacter->Code));
+		Send(SBuyCharNetSc(pCharacter->Code));
 
-	auto RewardDB = RewardCore(*itPackage->second.pReward);
-	Push(SBuyPackageDBIn(RewardDB, Proto_.Code));
-	Send(SBuyPackageNetSc(RewardDB, Proto_.Code));
+		return ERet::Ok;
+	}
+	else
+	{
+		auto cost = pCharacter->getCost();
+		if (!doesHaveCost(cost))
+			return ERet::NotEnoughMoney;
 
-	return ERet::Ok;
+		AddResourceCore(-cost);
+		_Chars.emplace(pCharacter->Code);
+
+		Push(SBuyCharDBIn(GetUID(), _User.Resources, pCharacter->Code));
+		Send(SBuyCharNetSc(pCharacter->Code));
+
+		return ERet::Ok;
+	}
 }
 ERet CUser::BuyResource(const SBuyResourceNetCs& Proto_)
 {
@@ -228,15 +221,15 @@ ERet CUser::BuyResource(const SBuyResourceNetCs& Proto_)
 	if (Proto_.resourceTypeData.Data <= 0)
 		return ERet::InvalidProtocol;
 
-	if (Proto_.resourceTypeData.Data > GetResourceFreeSpace(_User.Resources[(size_t)Proto_.resourceTypeData.Type], Proto_.resourceTypeData.Type))
+	if (Proto_.resourceTypeData.Data > getResourceFreeSpace(_User.Resources[(size_t)Proto_.resourceTypeData.Type], Proto_.resourceTypeData.Type))
 		return ERet::InvalidProtocol;
 
 	auto costValue = getCostValue(*exchangeValue, Proto_.resourceTypeData.Data);
-	if (!HaveCost(exchangeValue->costResourceType, costValue))
+	if (!doesHaveCost(exchangeValue->costResourceType, costValue))
 		return ERet::NotEnoughMoney;
 
 	AddResourceCore(Proto_.resourceTypeData);
-	SubResourceCore(exchangeValue->costResourceType, costValue);
+	AddResourceCore(exchangeValue->costResourceType, -costValue);
 	Push(SSetResourcesDBIn(GetUID(), _User.Resources));
 	Send(SBuyResourceNetSc(_User.Resources));
 
@@ -295,47 +288,25 @@ void CUser::ChangeNickEndFailDB(EGameRet GameRet_)
 	else
 		CertifyAndLobby();
 }
-ERet CUser::DailyReward(const SDailyRewardNetCs& Proto_)
-{
-	auto Now = system_clock::now();
-
-	if (Now >= _User.DailyRewardExpiredTime)
-	{
-		_User.DailyRewardExpiredTime += (((Now - _User.DailyRewardExpiredTime) / minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute)) + 1) * minutes(g_MetaData->ShopConfig.DailyRewardDurationMinute);
-		_User.DailyRewardCountLeft = g_MetaData->ShopConfig.DailyRewardAdCount + g_MetaData->ShopConfig.DailyRewardFreeCount;
-	}
-
-	if (_User.DailyRewardCountLeft <= 0 || (_User.DailyRewardCountLeft <= g_MetaData->ShopConfig.DailyRewardAdCount && !Proto_.IsWatchedAd))
-	{
-		Send(SDailyRewardFailNetSc());
-		return ERet::Ok;
-	}
-
-	--_User.DailyRewardCountLeft;
-	auto& DailyRewardMeta = g_MetaData->DailyReward.Get();
-
-	AddResourceCore(DailyRewardMeta.RewardType, DailyRewardMeta.RewardValue);
-	Push(SDailyRewardDBIn(GetUID(), _User.Resources, _User.DailyRewardExpiredTime, _User.DailyRewardCountLeft));
-	Send(SDailyRewardNetSc(SResourceTypeData(DailyRewardMeta.RewardType, DailyRewardMeta.RewardValue), _User.DailyRewardExpiredTime, _User.DailyRewardCountLeft));
-
-	return ERet::Ok;
-}
-
 void CUser::SetLevel(TLevel Level_)
 {
 	_User.Exp = g_MetaData->LevelToExp(Level_);
 	Push(SSetUserExpDBIn(GetUID(), _User.Exp));
 	Send(SUserExpNetSc(_User.Exp));
 }
-bool CUser::HaveCost(EResource CostType_, TResource Cost_)
+bool CUser::doesHaveCost(EResource costType, TResource costValue)
 {
-	return ::HaveCost(_User.Resources, CostType_, Cost_);
+	return ::doesHaveCost(_User.Resources, costType, costValue);
 }
-bool CUser::HaveCost(const TResources& Cost_)
+bool CUser::doesHaveCost(const SResourceTypeData& cost)
 {
-	return ::HaveCost(_User.Resources, Cost_);
+	return ::doesHaveCost(_User.Resources, cost);
 }
-void CUser::AddResourceCore(SResourceTypeData resourceTypeData)
+bool CUser::doesHaveCost(const TResources& cost)
+{
+	return ::doesHaveCost(_User.Resources, cost);
+}
+void CUser::AddResourceCore(const SResourceTypeData& resourceTypeData)
 {
 	AddResourceCore(resourceTypeData.Type, resourceTypeData.Data);
 }
@@ -343,21 +314,9 @@ void CUser::AddResourceCore(EResource ResourceType_, TResource Data_)
 {
 	_User.Resources[(size_t)ResourceType_] = ::AddResource(_User.Resources[(size_t)ResourceType_], ResourceType_, Data_);
 }
-void CUser::SubResourceCore(SResourceTypeData resourceTypeData)
-{
-	SubResourceCore(resourceTypeData.Type, resourceTypeData.Data);
-}
-void CUser::SubResourceCore(EResource ResourceType_, TResource Data_)
-{
-	_User.Resources[(size_t)ResourceType_] = ::SubResource(_User.Resources[(size_t)ResourceType_], ResourceType_, Data_);
-}
 void CUser::AddResourcesCore(const TResources& Resources_)
 {
 	::AddResources(_User.Resources, Resources_);
-}
-void CUser::SubResourcesCore(const TResources& Resources_)
-{
-	::SubResources(_User.Resources, Resources_);
 }
 void CUser::AddResources(const TResources& Resources_)
 {
@@ -371,14 +330,18 @@ void CUser::SetResources(const TResources& Resources_)
 	Push(SSetResourcesDBIn(GetUID(), _User.Resources));
 	Send(SResourcesNetSc(_User.Resources));
 }
-void CUser::SetPoint(int32 Point_)
+void CUser::_setPoint(int32 point)
 {
-	_User.Point = Point_;
+	_User.Point = point;
+
 	if (_User.Point > _User.PointBest)
 		_User.PointBest = _User.Point;
-
+}
+void CUser::setPoint(int32 point)
+{
+	_setPoint(point);
 	Push(SSetPointDBIn(GetUID(), _User.Point, _User.PointBest));
-	Send(SSetPointNetSc(Point_));
+	Send(SSetPointNetSc(_User.Point));
 }
 void CUser::SetChar(list<int32>& CharCodes_)
 {
@@ -541,7 +504,7 @@ ERet CUser::MultiBattleJoin(void)
 	if (!_CanMatchable(system_clock::now()))
 		return ERet::InvalidProtocol;
 
-	if (!HaveCost(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue))
+	if (!doesHaveCost(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue))
 		return ERet::InvalidProtocol;
 
 	_BattleJoining = true;
@@ -566,7 +529,7 @@ ERet CUser::MultiBattleOut(void)
 SBattleEndInfo CUser::GetSBattleEndInfo(void) const
 {
 	return SBattleEndInfo(
-		GetUID(), _User.Resources, _User.Point, _User.PointBest,
+		GetUID(), _User.Resources, _User.eloPoint, _User.Point, _User.PointBest,
 		_User.WinCountSolo, _User.LoseCountSolo, _User.WinCountMulti, _User.LoseCountMulti,
 		_User.BattlePointBest, _User.KillTotal, _User.ChainKillTotal, _User.BlowBalloonTotal);
 }
@@ -580,37 +543,56 @@ TDoneQuests CUser::_MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests
 
 	return DoneQeusts;
 }
-void CUser::MultiBattleEnd(TTime Now_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
+void CUser::_addEloPoint(double addedEloPoint)
 {
-	auto& BattleEndPlayer = BattleEndPlayers_[_pBattlePlayer->PlayerIndex];
-	auto DoneQeusts = _MultiBattleEnd(BattleEndPlayer.BattlePoint, DoneQuests_, DoneQuestDBs_);
+	_User.eloPoint += addedEloPoint;
 
-	if (BattleEndPlayer.AddedPoint > 0)
+	decltype(_User.Point) newPoint = 0;
+
+	// 변화치 만큼 정수 변수 증가
+	auto intAddedEloPoint = static_cast<decltype(_User.Point)>(addedEloPoint);
+	if (intAddedEloPoint > 0)
 	{
-		if (_User.Point + BattleEndPlayer.AddedPoint > _User.Point)
-			_User.Point += BattleEndPlayer.AddedPoint;
+		if (_User.Point + intAddedEloPoint < _User.Point)
+			newPoint = MaxValue<decltype(_User.Point)>();
 		else
-			_User.Point = MaxValue<int32>();
+			newPoint = _User.Point + intAddedEloPoint;
 	}
-	else if (BattleEndPlayer.AddedPoint < 0)
+	else
 	{
-		if (_User.Point + BattleEndPlayer.AddedPoint > 0)
-			_User.Point += BattleEndPlayer.AddedPoint;
+		if (_User.Point + intAddedEloPoint < 0)
+			newPoint = 0;
 		else
-			_User.Point = 0;
+			newPoint = _User.Point + intAddedEloPoint;
 	}
 
-	if (_User.Point > _User.PointBest)
-		_User.PointBest = _User.Point;
+	// 정수 elo 만큼 1 이동
+	auto intEloPoint = static_cast<decltype(_User.Point)>(_User.eloPoint);
+	if (newPoint > intEloPoint)
+		--newPoint;
+	else if (newPoint < intEloPoint)
+		++newPoint;
 
-	SubResourceCore(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue);
-	AddResourceCore(EResource::Gold, BattleEndPlayer.AddedGold);
+	// 0보다 작지 않도록
+	if (newPoint < 0)
+		newPoint = 0;
+
+	_setPoint(newPoint);
+}
+void CUser::MultiBattleEnd(TTime Now_, const BattleEndInfo& battleEndInfo, int32 myTeamRanking, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
+{
+	auto DoneQeusts = _MultiBattleEnd(battleEndInfo.battlePoint, DoneQuests_, DoneQuestDBs_);
+
+	_addEloPoint(battleEndInfo.addedEloPoint);
+	AddResourceCore(g_MetaData->ConfigMeta.BattleCostType, -g_MetaData->ConfigMeta.BattleCostValue);
+
+	AddResourcesCore(battleEndInfo.addedResources);
 	_BattleEndAndUpdateMatchBlockEndTime(Now_);
-	Send(SMultiBattleEndNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), _User.Resources, BattleEndPlayers_, OrderedTeamRankings_, DoneQeusts));
+	Send(SMultiBattleEndNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), myTeamRanking, _User.Resources, _User.eloPoint, _User.Point, battleEndInfo.battlePoint, DoneQeusts));
 }
 void CUser::MultiBattleEndDraw(TTime Now_, int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
 {
-	SubResourceCore(g_MetaData->ConfigMeta.BattleCostType, g_MetaData->ConfigMeta.BattleCostValue);
+	AddResourceCore(g_MetaData->ConfigMeta.BattleCostType, -g_MetaData->ConfigMeta.BattleCostValue);
 	_BattleEndAndUpdateMatchBlockEndTime(Now_);
 	Send(SMultiBattleEndDrawNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), _User.Resources, _MultiBattleEnd(BattlePoint_, DoneQuests_, DoneQuestDBs_)));
 }
@@ -628,7 +610,7 @@ void CUser::MultiBattleEndInvalidPunish(void)
 	else
 		_User.InvalidDisconnectInfo.Count = 1;
 
-	_User.InvalidDisconnectInfo.EndTime = Now + g_MetaData->pMultiBattleMeta->PunishMinutesForDisconnect;
+	_User.InvalidDisconnectInfo.EndTime = Now + g_MetaData->pMultiBattleConfig->PunishMinutesForDisconnect;
 	_UpdateMatchBlockEndTime(Now);
 
 	_BattleEnd();
@@ -659,22 +641,22 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	auto NewRefreshTime = _User.SingleRefreshTime;
 	auto Now = system_clock::now();
 
-	if (NewPlayCount < g_MetaData->ArrowDodgeMeta.PlayCountMax)
+	if (NewPlayCount < g_MetaData->arrowDodgeConfigMeta.PlayCountMax)
 	{
-		auto UnitDuration = minutes(g_MetaData->ArrowDodgeMeta.RefreshDurationMinute);
+		auto UnitDuration = minutes(g_MetaData->arrowDodgeConfigMeta.RefreshDurationMinute);
 		auto ElapsedMinutes = duration_cast<minutes>(Now - NewRefreshTime);
 		auto ElapsedCount = ElapsedMinutes / UnitDuration;
 		NewPlayCount += ElapsedCount;
 
-		if (NewPlayCount > g_MetaData->ArrowDodgeMeta.PlayCountMax)
-			NewPlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
+		if (NewPlayCount > g_MetaData->arrowDodgeConfigMeta.PlayCountMax)
+			NewPlayCount = g_MetaData->arrowDodgeConfigMeta.PlayCountMax;
 
-		if (NewPlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
+		if (NewPlayCount >= g_MetaData->arrowDodgeConfigMeta.PlayCountMax)
 			NewRefreshTime = Now;
 		else
 			NewRefreshTime += (UnitDuration * ElapsedCount);
 	}
-	else if (NewPlayCount >= g_MetaData->ArrowDodgeMeta.PlayCountMax)
+	else if (NewPlayCount >= g_MetaData->arrowDodgeConfigMeta.PlayCountMax)
 	{
 		NewRefreshTime = Now;
 	}
@@ -687,12 +669,12 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 	if (NewPlayCount < 1)
 	{
 		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold))
+		if (!doesHaveCost(CostType, g_MetaData->arrowDodgeConfigMeta.ChargeCostGold))
 			return ERet::NotEnoughMoney;
 
-		SubResourceCore(CostType, g_MetaData->ArrowDodgeMeta.ChargeCostGold);
-		GoldCost = g_MetaData->ArrowDodgeMeta.ChargeCostGold;
-		NewPlayCount = g_MetaData->ArrowDodgeMeta.PlayCountMax;
+		AddResourceCore(CostType, -g_MetaData->arrowDodgeConfigMeta.ChargeCostGold);
+		GoldCost = g_MetaData->arrowDodgeConfigMeta.ChargeCostGold;
+		NewPlayCount = g_MetaData->arrowDodgeConfigMeta.PlayCountMax;
 		NewRefreshTime = Now;
 	}
 
@@ -723,7 +705,7 @@ ERet CUser::ArrowDodgeBattleEnd(const SArrowDodgeBattleEndNetCs& Proto_)
 
 	return ERet::Ok;
 }
-void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
+void CUser::ArrowDodgeBattleEnd(int64 tick, const SArrowDodgeBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
 {
 	int32 CharCode = GetSelectedCharCode();
 
@@ -742,19 +724,18 @@ void CUser::ArrowDodgeBattleEnd(int64 Tick_, const SArrowDodgeBattleInfo& Battle
 	if (BattleInfo_.Point > _User.SinglePointBest)
 		_User.SinglePointBest = BattleInfo_.Point;
 
-	if (BattleInfo_.Tick > _User.SingleBestTick)
-		_User.SingleBestTick = BattleInfo_.Tick;
+	auto addedGold = (BattleInfo_.Gold + BattleInfo_.Point / g_MetaData->arrowDodgeConfigMeta.scorePerGold);
 
 	TResources Added{};
-	::AddResource(Added, EResource::Gold, BattleInfo_.Gold);
+	::AddResource(Added, EResource::Gold, addedGold);
 	AddResourcesCore(Added);
 
 	TDoneQuestDBs DoneQuestDBs;
 	TDoneQuests DoneQuestNets;
 
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, _User.SingleBestTick, std::move(DoneQuestDBs)));
-	Send(SArrowDodgeBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
+	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, std::move(DoneQuestDBs)));
+	Send(SArrowDodgeBattleEndNetSc(SingleBattleEndNetSc(tick, _User.Resources, std::move(DoneQuestNets))));
 	_BattleEnd();
 }
 
@@ -770,22 +751,22 @@ ERet CUser::FlyAwayBattleJoin(void)
 	auto NewRefreshTime = _User.IslandRefreshTime;
 	auto Now = system_clock::now();
 
-	if (NewPlayCount < g_MetaData->FlyAwayMeta.PlayCountMax)
+	if (NewPlayCount < g_MetaData->flyAwayConfigMeta.PlayCountMax)
 	{
-		auto UnitDuration = minutes(g_MetaData->FlyAwayMeta.RefreshDurationMinute);
+		auto UnitDuration = minutes(g_MetaData->flyAwayConfigMeta.RefreshDurationMinute);
 		auto ElapsedMinutes = duration_cast<minutes>(Now - NewRefreshTime);
 		auto ElapsedCount = ElapsedMinutes / UnitDuration;
 		NewPlayCount += ElapsedCount;
 
-		if (NewPlayCount > g_MetaData->FlyAwayMeta.PlayCountMax)
-			NewPlayCount = g_MetaData->FlyAwayMeta.PlayCountMax;
+		if (NewPlayCount > g_MetaData->flyAwayConfigMeta.PlayCountMax)
+			NewPlayCount = g_MetaData->flyAwayConfigMeta.PlayCountMax;
 
-		if (NewPlayCount >= g_MetaData->FlyAwayMeta.PlayCountMax)
+		if (NewPlayCount >= g_MetaData->flyAwayConfigMeta.PlayCountMax)
 			NewRefreshTime = Now;
 		else
 			NewRefreshTime += (UnitDuration * ElapsedCount);
 	}
-	else if (NewPlayCount >= g_MetaData->FlyAwayMeta.PlayCountMax)
+	else if (NewPlayCount >= g_MetaData->flyAwayConfigMeta.PlayCountMax)
 	{
 		NewRefreshTime = Now;
 	}
@@ -798,12 +779,12 @@ ERet CUser::FlyAwayBattleJoin(void)
 	if (NewPlayCount < 1)
 	{
 		auto CostType = EResource::Gold;
-		if (!HaveCost(CostType, g_MetaData->FlyAwayMeta.ChargeCostGold))
+		if (!doesHaveCost(CostType, g_MetaData->flyAwayConfigMeta.ChargeCostGold))
 			return ERet::NotEnoughMoney;
 
-		SubResourceCore(CostType, g_MetaData->FlyAwayMeta.ChargeCostGold);
-		GoldCost = g_MetaData->FlyAwayMeta.ChargeCostGold;
-		NewPlayCount = g_MetaData->FlyAwayMeta.PlayCountMax;
+		AddResourceCore(CostType, -g_MetaData->flyAwayConfigMeta.ChargeCostGold);
+		GoldCost = g_MetaData->flyAwayConfigMeta.ChargeCostGold;
+		NewPlayCount = g_MetaData->flyAwayConfigMeta.PlayCountMax;
 		NewRefreshTime = Now;
 	}
 
@@ -834,7 +815,7 @@ ERet CUser::FlyAwayBattleEnd(const SFlyAwayBattleEndNetCs& Proto_)
 
 	return ERet::Ok;
 }
-void CUser::FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
+void CUser::FlyAwayBattleEnd(int64 tick, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_)
 {
 	int32 CharCode = GetSelectedCharCode();
 
@@ -853,74 +834,21 @@ void CUser::FlyAwayBattleEnd(int64 Tick_, const SFlyAwayBattleInfo& BattleInfo_,
 	if (BattleInfo_.Point > _User.IslandPointBest)
 		_User.IslandPointBest = BattleInfo_.Point;
 
-	if (BattleInfo_.PassedCount > _User.IslandPassedCountBest)
-		_User.IslandPassedCountBest = BattleInfo_.PassedCount;
+	auto addedGold = (BattleInfo_.Gold + BattleInfo_.Point / g_MetaData->flyAwayConfigMeta.scorePerGold);
 
 	TResources Added{};
-	::AddResource(Added, EResource::Gold, BattleInfo_.Gold);
+	::AddResource(Added, EResource::Gold, addedGold);
 	AddResourcesCore(Added);
 
 	TDoneQuestDBs DoneQuestDBs;
 	TDoneQuests DoneQuestNets;
 
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandPassedCountBest, std::move(DoneQuestDBs)));
-	Send(SFlyAwayBattleEndNetSc(Tick_, _User.Resources, std::move(DoneQuestNets)));
+	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandComboBest, std::move(DoneQuestDBs)));
+	Send(SFlyAwayBattleEndNetSc(SingleBattleEndNetSc(tick, _User.Resources, std::move(DoneQuestNets))));
 	_BattleEnd();
 }
 
-ERet CUser::Gacha(const SGachaNetCs& Proto_)
-{
-	auto Gacha = g_MetaData->GetGacha(Proto_.GachaIndex);
-	if (Gacha == nullptr)
-		return ERet::InvalidProtocol;
-
-	//if (Gacha->DoesAllHave(_Chars))
-	//	return ERet::NoMoreNewCharacter;
-
-	return Gacha->Get(this, _Chars);
-}
-ERet CUser::GachaX10(const SGachaX10NetCs& Proto_)
-{
-	auto Gacha = g_MetaData->GetGacha(Proto_.GachaIndex);
-	if (Gacha == nullptr)
-		return ERet::InvalidProtocol;
-
-	//if (Gacha->DoesAllHave(_Chars))
-	//	return ERet::NoMoreNewCharacter;
-
-	return Gacha->GetX10(this, _Chars);
-}
-void CUser::GachaSucceeded(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_)
-{
-	SubResourcesCore(Cost_);
-	_Chars.emplace(CharCode_);
-	Push(SGachaDBIn(GetUID(), _User.Resources, list<int32>{CharCode_}));
-	Send(SGachaNetSc(Cost_, GachaIndex_, CharCode_));
-}
-void CUser::GachaX10Succeeded(const TResources& Cost_, int32 GachaIndex_, list<int32> CharCodeList_, const TResources& Refund_)
-{
-	SubResourcesCore(Cost_);
-	AddResourcesCore(Refund_);
-	list<int32> NewCharCodeList;
-	for (auto i : CharCodeList_)
-	{
-		if (_Chars.find(i) == _Chars.end())
-		{
-			NewCharCodeList.emplace_back(i);
-			_Chars.emplace(i);
-		}
-	}
-	Push(SGachaDBIn(GetUID(), _User.Resources, NewCharCodeList));
-	Send(SGachaX10NetSc(Cost_, GachaIndex_, CharCodeList_, Refund_));
-}
-void CUser::GachaFailed(const TResources& Cost_, int32 GachaIndex_, int32 CharCode_, const TResources& Refund_)
-{
-	SubResourcesCore(Cost_);
-	AddResourcesCore(Refund_);
-	Push(SGachaDBIn(GetUID(), _User.Resources, list<int32>()));
-	Send(SGachaFailedNetSc(SGachaNetSc(Cost_, GachaIndex_, CharCode_), Refund_));
-}
 void CUser::_RewardCore(const SReward& Reward_, list<int32>& CharsAdded_)
 {
 	AddResourcesCore(Reward_.Resources);
@@ -930,7 +858,7 @@ void CUser::_RewardCore(const SReward& Reward_, list<int32>& CharsAdded_)
 		if (_Chars.emplace(i->Code).second)
 			CharsAdded_.emplace_back(i->Code);
 		else
-			AddResourceCore(i->RefundType, i->RefundValue);
+			AddResourceCore(i->pCharacterTypeMeta->RefundType, i->pCharacterTypeMeta->RefundValue);
 	}
 }
 SRewardDB CUser::RewardCore(const SReward& Reward_)
@@ -952,14 +880,16 @@ SRewardDB CUser::RewardsCore(const list<const SReward*>& Rewards_)
 }
 ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 {
-	auto pRankReward = g_MetaData->GetRankReward(_User.PointBest, _User.LastGotRewardRankIndex + 1);
+	auto pRankReward = g_MetaData->GetRankReward(_User.PointBest, _User.NextRewardRankIndex);
 	if (pRankReward == nullptr)
 		return ERet::InvalidProtocol;
 
-	++_User.LastGotRewardRankIndex;
+	++_User.NextRewardRankIndex;
 	auto RewardDB = RewardCore(*pRankReward);
-	Push(SRankRewardDBIn(RewardDB, _User.LastGotRewardRankIndex));
-	Send(SRankRewardNetSc(RewardDB, _User.LastGotRewardRankIndex));
+	Push(SRankRewardDBIn(RewardDB, _User.NextRewardRankIndex));
+	Send(SRankRewardNetSc(
+		SRewardInfo(GetUID(), _User.Resources, pRankReward->getCharacterCodes()),
+		_User.NextRewardRankIndex));
 
 	return ERet::Ok;
 }
@@ -1021,16 +951,16 @@ ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 	//	이상	달성	보상대기
 
 	auto Now = system_clock::now();
-	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
+	if (_User.QuestDailyCompleteCount < g_MetaData->questConfig.dailyRequirementCount && Now >= _User.QuestDailyCompleteRefreshTime) // 미달성이고, 쿨타임이 아니면
 	{
-		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_MetaData->QuestDailyComplete.RefreshDuration)) // 다음 주기에 도래했으면
+		if (Now >= (_User.QuestDailyCompleteRefreshTime + g_MetaData->questConfig.dailyRefreshMinutes)) // 다음 주기에 도래했으면
 		{
-			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
-			_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * ElapsedDurationCount);
+			auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->questConfig.dailyRefreshMinutes;
+			_User.QuestDailyCompleteRefreshTime += (g_MetaData->questConfig.dailyRefreshMinutes * ElapsedDurationCount);
 			_User.QuestDailyCompleteCount = 0;
 		}
 
-		if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount)
+		if (_User.QuestDailyCompleteCount < g_MetaData->questConfig.dailyRequirementCount)
 			++_User.QuestDailyCompleteCount;
 	}
 
@@ -1045,7 +975,13 @@ ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 	}
 
 	Push(SQuestRewardDBIn(RewardDB, Proto_.SlotIndex, newCode, newCoolEndTime, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
-	Send(SQuestRewardNetSc(RewardDB, Proto_.SlotIndex, newCode, newCoolEndTime, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
+	Send(SQuestRewardNetSc(
+		SRewardInfo(GetUID(), _User.Resources, Reward->second->getCharacterCodes()),
+		Proto_.SlotIndex,
+		newCode,
+		newCoolEndTime,
+		_User.QuestDailyCompleteCount,
+		_User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
 }
@@ -1059,24 +995,28 @@ void CUser::QuestSet(TQuestSlotIndex SlotIndex_, int32 Code_)
 }
 ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto_)
 {
-	if (_User.QuestDailyCompleteCount < g_MetaData->QuestDailyComplete.RequirementCount)
+	if (_User.QuestDailyCompleteCount < g_MetaData->questConfig.dailyRequirementCount)
 		return ERet::InvalidProtocol;
 
 	auto Now = system_clock::now();
-	if (Now < _User.QuestDailyCompleteRefreshTime) // 이미 쿨타임일지라도, 완료되었다면 시간이 어떠한 사유로 바뀌었으나, 시간 변동으로인해 보상을 더 받게되는 일이 없도록 주기를 정상 1회 증가
+	// 이미 쿨타임 일지라도, 완료되었다면 시간이 어떠한 사유로 바뀌었으나
+	// 시간 변동으로 인해 보상을 더 받게되는 일이 없도록 주기를 정상 1회 증가
+	if (Now < _User.QuestDailyCompleteRefreshTime)
 	{
-		_User.QuestDailyCompleteRefreshTime += g_MetaData->QuestDailyComplete.RefreshDuration;
+		_User.QuestDailyCompleteRefreshTime += g_MetaData->questConfig.dailyRefreshMinutes;
 	}
 	else // _User.QuestDailyCompleteRefreshTime 이 과거라면, 가장 가까운 미래의 주기에 해당하는 시각으로 변경
 	{
-		auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->QuestDailyComplete.RefreshDuration;
-		_User.QuestDailyCompleteRefreshTime += (g_MetaData->QuestDailyComplete.RefreshDuration * (ElapsedDurationCount + 1));
+		auto ElapsedDurationCount = (Now - _User.QuestDailyCompleteRefreshTime) / g_MetaData->questConfig.dailyRefreshMinutes;
+		_User.QuestDailyCompleteRefreshTime += (g_MetaData->questConfig.dailyRefreshMinutes * (ElapsedDurationCount + 1));
 	}
 
 	_User.QuestDailyCompleteCount = 0;
-	auto RewardDB = RewardCore(*g_MetaData->QuestDailyComplete.pReward);
+	auto RewardDB = RewardCore(*g_MetaData->questConfig.pReward);
 	Push(SQuestDailyCompleteRewardDBIn(RewardDB, _User.QuestDailyCompleteRefreshTime));
-	Send(SQuestDailyCompleteRewardNetSc(RewardDB, _User.QuestDailyCompleteRefreshTime));
+	Send(SQuestDailyCompleteRewardNetSc(
+		SRewardInfo(GetUID(), _User.Resources, g_MetaData->questConfig.pReward->getCharacterCodes()),
+		_User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
 }
@@ -1099,7 +1039,7 @@ ERet CUser::ChangeNickRequest(const SChangeNickNetCs& Proto_)
 	}
 
 	if (_User.ChangeNickFreeCount <= 0 &&
-		!HaveCost(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue))
+		!doesHaveCost(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue))
 		return ERet::NotEnoughMoney;
 
 	_User.NewNick = Proto_.Nick;
@@ -1112,7 +1052,7 @@ void CUser::ChangeNickResult(EGameRet GameRet_)
 	if (GameRet_ == EGameRet::Ok)
 	{
 		if (_User.ChangeNickFreeCount <= 0)
-			SubResourceCore(g_MetaData->ConfigMeta.ChangeNickCostType, g_MetaData->ConfigMeta.ChangeNickCostValue);
+			AddResourceCore(g_MetaData->ConfigMeta.ChangeNickCostType, -g_MetaData->ConfigMeta.ChangeNickCostValue);
 		else
 			--_User.ChangeNickFreeCount;
 
@@ -1155,7 +1095,9 @@ void CUser::CouponUseOut(const SCouponUseCouponDBIn& In_, int32 Code_)
 
 	auto RewardDB = RewardCore(*pCoupon->pReward);
 	Push(SCouponUseDBIn(RewardDB, In_.Key));
-	Send(SCouponUseNetSc(RewardDB, pCoupon->pReward->Resources));
+	Send(SCouponUseNetSc(
+		SRewardInfo(GetUID(), _User.Resources, pCoupon->pReward->getCharacterCodes()),
+		pCoupon->pReward->Resources));
 }
 ERet CUser::TutorialReward(const STutorialRewardNetCs& Proto_)
 {
@@ -1199,7 +1141,9 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 
 		list<const SReward*> Rewards;
 
-		TRankingRewardArray RankingRewardArray{};
+		TRankingArray myRankingArray; // 등수를 전송하여 클라에서 등수로 보상 보여주도록
+		myRankingArray.fill(-1);
+
 		for (size_t i = 0; i < g_RankingInfo.RewardsArray.size(); ++i)
 		{
 			auto itReward = g_RankingInfo.RewardsArray[i].find(GetUID());
@@ -1208,14 +1152,14 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 				auto itRankingReward = g_MetaData->RankingReward[i].get(itReward->second);
 				if (itRankingReward != g_MetaData->RankingReward[i].end())
 				{
-					RankingRewardArray[i] = itRankingReward->second->first;
-					Rewards.emplace_back(&itRankingReward->second->second);
+					myRankingArray[i] = itReward->second; // 등수
+					Rewards.emplace_back(itRankingReward->second.get());
 				}
 			}
 		}
 
 		bool DoesHaveReward = false;
-		for (auto& i : RankingRewardArray)
+		for (auto& i : myRankingArray)
 		{
 			if (i != 0)
 			{
@@ -1231,7 +1175,10 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		_User.RankingRewardedCounter = g_RankingInfo.Counter;
 		auto RewardDB = RewardsCore(Rewards);
 		Push(SRankingRewardDBIn(RewardDB, _User.RankingRewardedCounter));
-		Send(SRankingRewardNetSc(RewardDB, _User.RankingRewardedCounter, std::move(RankingRewardArray)));
+		Send(SRankingRewardNetSc(
+			SRewardInfo(GetUID(), _User.Resources, getCharacterCodesWithRewards(Rewards)),
+			_User.RankingRewardedCounter,
+			std::move(myRankingArray)));
 	}
 	catch (const ERet Ret_)
 	{
@@ -1259,7 +1206,7 @@ void CUser::_FixMatchBLockEndTime(void)
 }
 void CUser::_UpdateMatchBlockEndTime(TTime Now_)
 {
-	auto itMatchDeniedSecond = g_MetaData->pMultiBattleMeta->MatchDeniedSecondsSelector.get(_User.InvalidDisconnectInfo.Count);
+	auto itMatchDeniedSecond = g_MetaData->pMultiBattleConfig->MatchDeniedSecondsSelector.get(_User.InvalidDisconnectInfo.Count);
 
 	_User.InvalidDisconnectInfo.MatchBlockEndTime = Now_ + itMatchDeniedSecond->second;
 	_FixMatchBLockEndTime();

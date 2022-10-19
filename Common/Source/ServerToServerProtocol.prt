@@ -37,6 +37,6 @@ namespace bb
 	{
 		int64 Counter
 		TRankingPointArray UserPointMinArray
-		TRankingRewardsArray RewardsArray
+		TRankingsArray RewardsArray
 	}
 }

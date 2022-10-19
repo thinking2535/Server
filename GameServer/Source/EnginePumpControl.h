@@ -23,7 +23,8 @@ public:
 private:
     void _Pump(void);
 public:
-    bool Pump(void);
+    bool canPump();
+    void pump();
     void FixedUpdate(void);
     void Clear(void);
 };

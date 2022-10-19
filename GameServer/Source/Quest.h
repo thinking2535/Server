@@ -9,9 +9,9 @@ private:
 	using _TReward = pair<const SQuestBase*, const SReward*>;
 	struct _SQuest : public SQuestBase
 	{
-		const SQuest* pQuest = nullptr;
+		const Quest* pQuest = nullptr;
 
-		_SQuest(const SQuestBase& Super_, const SQuest* pQuest_) :
+		_SQuest(const SQuestBase& Super_, const Quest* pQuest_) :
 			SQuestBase(Super_), pQuest(pQuest_)
 		{
 		}
@@ -24,7 +24,7 @@ public:
 private:
 	_TQuests _Quests;
 
-	const SQuest& _New(void);
+	const Quest& _New(void);
 
 public:
 	bool Add(const TQuestDBs::value_type& itQuest_);
@@ -36,5 +36,5 @@ public:
 	optional<TDone> Done(EQuestType QuestType_, int32 Count_);
 	TQuestSlotIndexCodes FillEmptySlotAndGetNewQuests(void);
 	optional<_TReward> Reward(TQuestSlotIndex SlotIndex_);
-	optional<const SQuest*> Set(TQuestSlotIndex SlotIndex_, int32 NewCode_);
+	optional<const Quest*> Set(TQuestSlotIndex SlotIndex_, int32 NewCode_);
 };

@@ -21,7 +21,7 @@ bool CQuest::_SQuest::done(int32 count)
 }
 
 // 최대한 보유한 EQuestType 이 나오지 않도록 (단, EQuestType::Max가 보유할 수 있는 퀘스트 개수보다 많을 경우는 허용)
-const SQuest& CQuest::_New(void)
+const Quest& CQuest::_New(void)
 {
 	auto NewQuestIndex = rand() % ((size_t)EQuestType::Max - _Quests.size());
 
@@ -131,7 +131,7 @@ optional<CQuest::_TReward> CQuest::Reward(TQuestSlotIndex SlotIndex_) // return 
 	if (!itQuest->second.isCompleted())
 		return {};
 
-	auto reward = itQuest->second.pQuest->pReward;
+	auto reward = itQuest->second.pQuest->pReward.get();
 	if (_Quests.size() > c_QuestCnt_Max)
 	{
 		_Quests.erase(itQuest);
@@ -140,11 +140,11 @@ optional<CQuest::_TReward> CQuest::Reward(TQuestSlotIndex SlotIndex_) // return 
 	else
 	{
 		auto* pNewQuest = &_New();
-		itQuest->second = _SQuest(SQuestBase(pNewQuest->Code, 0, system_clock::now() + minutes(g_MetaData->ConfigMeta.QuestCoolMinutes)), pNewQuest);
+		itQuest->second = _SQuest(SQuestBase(pNewQuest->Code, 0, system_clock::now() + g_MetaData->questConfig.coolMinutes), pNewQuest);
 		return _TReward(&itQuest->second, reward);
 	}
 }
-optional<const SQuest*> CQuest::Set(TQuestSlotIndex SlotIndex_, int32 NewCode_)
+optional<const Quest*> CQuest::Set(TQuestSlotIndex SlotIndex_, int32 NewCode_)
 {
 	auto itQuest = _Quests.find(SlotIndex_);
 	if (itQuest == _Quests.end())

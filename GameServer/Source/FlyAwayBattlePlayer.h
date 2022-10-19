@@ -3,19 +3,20 @@
 class CFlyAwayBattlePlayer : public CBattlePlayer
 {
 public:
-	using FGetItem = function<void(int64 Tick_, const shared_ptr<CFlyAwayItem>& pItem_)>;
-	using FLand = function<void(int64 Tick_, const shared_ptr<CFlyAwayLand>& pLand_)>;
+	using FGetItem = function<void(const CFlyAwayItem* pItem_)>;
+	using FLand = function<void(const CFlyAwayLand* pLand_)>;
+	using FDead = function<void()>;
 
 private:
 	FGetItem _fGetItem;
 	FLand _fLand;
+	FDead _fDead;
 public:
 	CFlyAwayBattle* pFlyAwayBattle;
 	SFlyAwayBattleInfo BattleInfo;
 
 	CFlyAwayBattlePlayer(
 		const SBattlePlayer Super_,
-		FRegen fRegen_,
 		const SPoint& InitialPos_,
 		const SCharacterMeta* const pMeta_,
 		const shared_ptr<SCharacter>& pCharacter_,
@@ -23,13 +24,17 @@ public:
 		CUser* Player_,
 		FGetItem fGetItem_,
 		FLand fLand_,
+		FDead fDead,
 		CFlyAwayBattle* pFlyAwayBattle_);
-	void BattleEnd(int64 Tick_);
+	void Link(void) override;
+	void BattleEnd(int64 tick);
 protected:
-	void _FixedUpdate(int64 Tick_) override;
-	bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) override;
-	bool _CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) override;
-	bool _CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_) override;
+	void _FixedUpdate(int64 tick) override;
+	bool _CollisionEnter(int64 tick, const SCollision2D& Collision_) override;
+	bool _CollisionStay(int64 tick, const SCollision2D& Collision_) override;
+	bool _CollisionExit(int64 tick, const SCollision2D& Collision_) override;
+	bool _TriggerEnter(const CCollider2D* pCollider_) override;
 public:
 	void SetItem(const SFlyAwayItemMeta& Meta_);
+	void addStamina(float stamina);
 };

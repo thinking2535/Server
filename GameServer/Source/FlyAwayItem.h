@@ -1,23 +1,14 @@
-#include <Rso/Physics/RectCollider2D.h>
-#include <Rso/Physics/Physics.h>
+#pragma once
+
 #include "EngineGlobal.h"
 
-using namespace rso;
-using namespace physics;
-
-class CFlyAwayItem abstract : public CRectCollider2D
+class CFlyAwayItem abstract : public CFlyAwayObject
 {
 public:
     CList<SFlyAwayItemObject>::iterator Iterator;
 
-    CFlyAwayItem(const STransform& Transform_, SRectCollider2D Collider_) :
-        CRectCollider2D(Transform_, CEngineGlobal::c_ItemNumber, Collider_)
-    {
-    }
-    void Proc(int64 Tick_, const shared_ptr<CFlyAwayBattlePlayer>& pPlayer_, CFlyAwayBattle* pBattle_) const
-    {
-        pPlayer_->SetItem(g_MetaData->GetFlyAwayItemMetas()[(size_t)GetItemType()]);
-    }
+    CFlyAwayItem(const STransform& Transform_, SRectCollider2D Collider_);
+    void Proc(const shared_ptr<CFlyAwayBattlePlayer>& pPlayer_, CFlyAwayBattle* pBattle_) const override;
     virtual EFlyAwayItemType GetItemType(void) const = 0;
 };
 class CFlyAwayCoin : public CFlyAwayItem

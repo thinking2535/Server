@@ -44,9 +44,9 @@ namespace bb
 	struct SRankingRefreshDBIn
 	{
 		SRankingConfigDB Config
-		TRankingRewards Rewards
-		TRankingRewards RewardsSingle
-		TRankingRewards RewardsIsland
+		TRankings Rankings
+		TRankings RankingsSingle
+		TRankings RankingsIsland
 	}
 
 	struct SRankingLoadDBIn

@@ -17,7 +17,7 @@ TFCM g_FCM;
 TTimers g_Timers(TimersCallback);
 CLog g_Log(ETarget::Target_Console | ETarget::Target_File, EPeriod::Day, L"Log/", L"Log", ELocale::Korean);
 CPeriod<seconds> g_FCMPeriod{ seconds(1) };
-CPeriod<seconds> g_CCSLogPeriod{ seconds(60) };
+CPeriod<seconds> g_CCSLogPeriod{ seconds(30) };
 
 void CloseS(TPeerCnt PeerNum_)
 {

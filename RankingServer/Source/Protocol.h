@@ -246,61 +246,61 @@ namespace bb
 	struct SRankingRefreshDBIn : public SProto
 	{
 		SRankingConfigDB Config{};
-		TRankingRewards Rewards{};
-		TRankingRewards RewardsSingle{};
-		TRankingRewards RewardsIsland{};
+		TRankings Rankings{};
+		TRankings RankingsSingle{};
+		TRankings RankingsIsland{};
 		SRankingRefreshDBIn()
 		{
 		}
-		SRankingRefreshDBIn(const SRankingConfigDB& Config_, const TRankingRewards& Rewards_, const TRankingRewards& RewardsSingle_, const TRankingRewards& RewardsIsland_) : Config(Config_), Rewards(Rewards_), RewardsSingle(RewardsSingle_), RewardsIsland(RewardsIsland_)
+		SRankingRefreshDBIn(const SRankingConfigDB& Config_, const TRankings& Rankings_, const TRankings& RankingsSingle_, const TRankings& RankingsIsland_) : Config(Config_), Rankings(Rankings_), RankingsSingle(RankingsSingle_), RankingsIsland(RankingsIsland_)
 		{
 		}
-		SRankingRefreshDBIn(SRankingConfigDB&& Config_, TRankingRewards&& Rewards_, TRankingRewards&& RewardsSingle_, TRankingRewards&& RewardsIsland_) : Config(std::move(Config_)), Rewards(std::move(Rewards_)), RewardsSingle(std::move(RewardsSingle_)), RewardsIsland(std::move(RewardsIsland_))
+		SRankingRefreshDBIn(SRankingConfigDB&& Config_, TRankings&& Rankings_, TRankings&& RankingsSingle_, TRankings&& RankingsIsland_) : Config(std::move(Config_)), Rankings(std::move(Rankings_)), RankingsSingle(std::move(RankingsSingle_)), RankingsIsland(std::move(RankingsIsland_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Config;
-			Stream_ >> Rewards;
-			Stream_ >> RewardsSingle;
-			Stream_ >> RewardsIsland;
+			Stream_ >> Rankings;
+			Stream_ >> RankingsSingle;
+			Stream_ >> RankingsIsland;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Config"] >> Config;
-			Value_["Rewards"] >> Rewards;
-			Value_["RewardsSingle"] >> RewardsSingle;
-			Value_["RewardsIsland"] >> RewardsIsland;
+			Value_["Rankings"] >> Rankings;
+			Value_["RankingsSingle"] >> RankingsSingle;
+			Value_["RankingsIsland"] >> RankingsIsland;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Config;
-			Stream_ << Rewards;
-			Stream_ << RewardsSingle;
-			Stream_ << RewardsIsland;
+			Stream_ << Rankings;
+			Stream_ << RankingsSingle;
+			Stream_ << RankingsIsland;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Config"] = Config;
-			Value_["Rewards"] = Rewards;
-			Value_["RewardsSingle"] = RewardsSingle;
-			Value_["RewardsIsland"] = RewardsIsland;
+			Value_["Rankings"] = Rankings;
+			Value_["RankingsSingle"] = RankingsSingle;
+			Value_["RankingsIsland"] = RankingsIsland;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(SRankingConfigDB()) + L"," + 
-				GetStdName(TRankingRewards()) + L"," + 
-				GetStdName(TRankingRewards()) + L"," + 
-				GetStdName(TRankingRewards());
+				GetStdName(TRankings()) + L"," + 
+				GetStdName(TRankings()) + L"," + 
+				GetStdName(TRankings());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(SRankingConfigDB(), L"Config") + L"," + 
-				GetMemberName(TRankingRewards(), L"Rewards") + L"," + 
-				GetMemberName(TRankingRewards(), L"RewardsSingle") + L"," + 
-				GetMemberName(TRankingRewards(), L"RewardsIsland");
+				GetMemberName(TRankings(), L"Rankings") + L"," + 
+				GetMemberName(TRankings(), L"RankingsSingle") + L"," + 
+				GetMemberName(TRankings(), L"RankingsIsland");
 		}
 	};
 	struct SRankingLoadDBIn : public SProto

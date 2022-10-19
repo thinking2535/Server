@@ -2,7 +2,6 @@
 
 CFlyAwayBattlePlayer::CFlyAwayBattlePlayer(
 	const SBattlePlayer Super_,
-	FRegen fRegen_,
 	const SPoint& InitialPos_,
 	const SCharacterMeta* const pMeta_,
 	const shared_ptr<SCharacter>& pCharacter_,
@@ -10,10 +9,10 @@ CFlyAwayBattlePlayer::CFlyAwayBattlePlayer(
 	CUser* Player_,
 	FGetItem fGetItem_,
 	FLand fLand_,
+	FDead fDead,
 	CFlyAwayBattle* pFlyAwayBattle_) :
 	CBattlePlayer(
 		Super_,
-		fRegen_,
 		0,
 		InitialPos_,
 		pMeta_,
@@ -24,20 +23,23 @@ CFlyAwayBattlePlayer::CFlyAwayBattlePlayer(
 		this),
 	_fGetItem(fGetItem_),
 	_fLand(fLand_),
+	_fDead(fDead),
 	pFlyAwayBattle(pFlyAwayBattle_)
 {
+	pPlayerObject->fTriggerEnter = std::bind(&CFlyAwayBattlePlayer::_TriggerEnter, this, _1);
 }
-void CFlyAwayBattlePlayer::BattleEnd(int64 Tick_)
+void CFlyAwayBattlePlayer::Link(void)
+{
+	pFlyAwayBattle->Link(0);
+}
+void CFlyAwayBattlePlayer::BattleEnd(int64 tick)
 {
 	QuestDone(EQuestType::PlayIsland, 1);
-
-	if (BattleInfo.PassedCount > 0)
-		QuestDone(EQuestType::IslandCount, BattleInfo.PassedCount);
 
 	if (BattleInfo.Point > 0)
 		QuestDone(EQuestType::IslandScoreGet, BattleInfo.Point);
 
-	switch (pPlayer->GetSelectedChar()->Grade)
+	switch (pPlayer->GetSelectedChar()->pCharacterTypeMeta->grade)
 	{
 	case EGrade::Normal:
 		QuestDone(EQuestType::PlayNormal, 1);
@@ -52,77 +54,80 @@ void CFlyAwayBattlePlayer::BattleEnd(int64 Tick_)
 		break;
 	}
 
-	pPlayer->FlyAwayBattleEnd(Tick_, BattleInfo, _DoneQuests);
+	pPlayer->FlyAwayBattleEnd(tick, BattleInfo, _DoneQuests);
 }
-void CFlyAwayBattlePlayer::_FixedUpdate(int64 Tick_)
+void CFlyAwayBattlePlayer::_FixedUpdate(int64 tick)
 {
-	_UpdatePhysics(Tick_);
+	_UpdatePhysics();
 }
-bool CFlyAwayBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CFlyAwayBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
 {
-	if (__super::_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
+	if (_LandEnter(Collision_))
 		return true;
 
-	if (pOtherCollider_->Number == CEngineGlobal::c_LandNumber &&
-		pCollider_->Number == CEngineGlobal::c_BodyNumber && Normal_.Y > 0.0f)
+	if (Collision_.pOtherCollider->Number == CEngineGlobal::c_LandNumber &&
+		Collision_.pCollider->Number == CEngineGlobal::c_BodyNumber && Collision_.Normal.Y > 0.0f)
 	{
-		_SetLandingVelocity(pOtherMovingObject_);
-		_AttachGround(pOtherCollider_);
+		_AttachGround(Collision_.pOtherCollider);
 
-		auto pLand = dynamic_pointer_cast<CFlyAwayLand>(pOtherCollider_);
-		if (pLand->StartShake(Tick_))
-			_fLand(Tick_, pLand);
+		auto pLand = dynamic_cast<CFlyAwayLand* const>(Collision_.pOtherCollider);
+		if (pLand->StartShake(tick))
+			_fLand(pLand);
 
-		return true;
+		return false;
 	}
-	else if (pOtherCollider_->Number == CEngineGlobal::c_ItemNumber)
+	else if (
+		Collision_.pOtherCollider->Number == CEngineGlobal::c_DeadZoneNumber ||
+		Collision_.pOtherCollider->Number == CEngineGlobal::c_OceanNumber)
 	{
-		_fGetItem(Tick_, dynamic_pointer_cast<CFlyAwayItem>(pOtherCollider_));
+		Collision_.pOtherCollider->SetEnabled(false);
+		Die(tick);
+		_fDead();
 		return true;
 	}
 	else
 	{
+		bounce(Collision_);
 		return false;
 	}
 }
-bool CFlyAwayBattlePlayer::_CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CFlyAwayBattlePlayer::_CollisionStay(int64 tick, const SCollision2D& Collision_)
 {
-	if (__super::_CheckCollisionStay(Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return true;
-
-	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_LandNumber) // ¸öÀÌ ¼¶¿¡ ¾È ´ê¾ÒÀ¸¸é
+	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber && Collision_.pOtherCollider->Number != CEngineGlobal::c_LandNumber))
 		return false;
 
-	if (Normal_.Y > 0.0f)
-	{
-		_SetLandingVelocity(pOtherMovingObject_);
-		_AttachGround(pOtherCollider_);
-	}
-	else
-	{
-		_DetachGround(pOtherCollider_);
-	}
+	_LandStay(Collision_);
 
-	return true;
+	return false;
 }
-bool CFlyAwayBattlePlayer::_CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CFlyAwayBattlePlayer::_CollisionExit(int64 tick, const SCollision2D& Collision_)
 {
-	if (__super::_CheckCollisionExit(pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return true;
-
-	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_LandNumber)
+	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber && Collision_.pOtherCollider->Number != CEngineGlobal::c_LandNumber))
 		return false;
 
-	_DetachGround(pOtherCollider_);
+	_DetachGround(Collision_.pOtherCollider);
 
-	return true;
+	return false;
+}
+bool CFlyAwayBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
+{
+	if (pCollider_->Number == CEngineGlobal::c_ItemNumber)
+	{
+		_fGetItem(dynamic_cast<const CFlyAwayItem*>(pCollider_));
+		return true;
+	}
+
+	return false;
 }
 void CFlyAwayBattlePlayer::SetItem(const SFlyAwayItemMeta& Meta_)
 {
-	BattleInfo.Point += Meta_.AddedPoint;
 	BattleInfo.Gold += Meta_.AddedGold;
+	addStamina(Meta_.AddedStamina);
+}
+void CFlyAwayBattlePlayer::addStamina(float stamina)
+{
+	pCharacter->StaminaInfo.Stamina += stamina;
 
-	pCharacter->StaminaInfo.Stamina += Meta_.AddedStamina;
-	if (pCharacter->StaminaInfo.Stamina > pMeta->StaminaMax)
-		pCharacter->StaminaInfo.Stamina = pMeta->StaminaMax;
+	if (pCharacter->StaminaInfo.Stamina > pMeta->pCharacterTypeMeta->StaminaMax)
+		pCharacter->StaminaInfo.Stamina = pMeta->pCharacterTypeMeta->StaminaMax;
 }

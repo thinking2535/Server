@@ -2,67 +2,48 @@
 
 struct SReward
 {
+	static unique_ptr<SReward> create(const wstring& type, int32 value);
+
 	TResources Resources{};
 	set<const CCharacter*> Chars;
+
+	list<int32> getCharacterCodes(void) const;
 };
+list<int32> getCharacterCodesWithRewards(const list<const SReward*>& rewards);
 struct SRankReward : public SRankRewardMeta
 {
-	const SReward* pReward = nullptr;
+	unique_ptr<SReward> pReward;
 
-	SRankReward(const SRankRewardMeta& Super_, const SReward* pReward_) :
-		SRankRewardMeta(Super_), pReward(pReward_)
+	SRankReward(const SRankRewardMeta& super) :
+		SRankRewardMeta(super),
+		pReward(SReward::create(super.rewardType, super.rewardValue))
 	{
 	}
 };
 using TMapIndexPoses = pair<int32, const TPoses*>;
 
-struct SQuest : public SQuestMeta
+struct Quest : public SQuestMeta
 {
-	const SReward* pReward = nullptr;
+	unique_ptr<SReward> pReward;
 
 public:
-	SQuest(const SQuestMeta& Super_, const SReward* pReward_) :
-		SQuestMeta(Super_),
-		pReward(pReward_)
+	Quest(const SQuestMeta& super) :
+		SQuestMeta(super),
+		pReward(SReward::create(super.rewardType, super.rewardValue))
 	{
 	}
 };
-struct SQuestDailyComplete : public SQuestDailyCompleteMeta
+struct QuestConfig : public QuestConfigMeta
 {
-	const SReward* pReward;
-	minutes RefreshDuration;
+	unique_ptr<SReward> pReward;
 
-	SQuestDailyComplete() :
-		pReward(nullptr),
-		RefreshDuration(minutes(0))
+	QuestConfig() :
+		pReward(nullptr)
 	{
 	}
-	SQuestDailyComplete(const SQuestDailyCompleteMeta& Super_, const SReward* pReward_) :
-		SQuestDailyCompleteMeta(Super_),
-		pReward(pReward_),
-		RefreshDuration(minutes(Super_.RefreshMinutes))
-	{
-	}
-};
-
-struct SShopItem
-{
-	TResources Cost;
-	const SReward* pReward = nullptr;
-
-	SShopItem(const TResources& Cost_, const SReward* pReward_) :
-		Cost(Cost_),
-		pReward(pReward_)
-	{
-	}
-};
-struct SShopPackage : public SShopPackageServerMeta
-{
-	const SReward* pReward = nullptr;
-
-	SShopPackage(const SShopPackageServerMeta& Meta_, const SReward* pReward_) :
-		SShopPackageServerMeta(Meta_),
-		pReward(pReward_)
+	QuestConfig(const QuestConfigMeta& Super_) :
+		QuestConfigMeta(Super_),
+		pReward(SReward::create(Super_.dailyRewardType, Super_.dailyRewardValue))
 	{
 	}
 };
@@ -73,24 +54,25 @@ struct SCoupon
 	int32 Code = 0;
 	TTime StartTime;
 	TTime EndTime;
-	const SReward* pReward = nullptr;
+	unique_ptr<SReward> pReward;
 
-	SCoupon(int32 Code_, const TTime& StartTime_, const TTime& EndTime_, const SReward* pReward_) :
-		Code(Code_), StartTime(StartTime_), EndTime(EndTime_), pReward(pReward_)
+	SCoupon(const SCouponMeta& meta) :
+		Code(meta.Code),
+		StartTime(CDateTime(SDateTime(meta.StartYear, meta.StartMonth, meta.StartDay, meta.StartHour, 0, 0), true).ToTimePoint()),
+		EndTime(CDateTime(SDateTime(meta.EndYear, meta.EndMonth, meta.EndDay, meta.EndHour, 0, 0), true).ToTimePoint()),
+		pReward(SReward::create(meta.rewardType, meta.rewardValue))
 	{
 	}
 };
 
-using TRewards = map<int32, SReward>;
-using TRewardsIt = TRewards::iterator;
-
-struct SMultiBattleMeta
+struct MultiBattleConfig : MultiBattleConfigMeta
 {
 	milliseconds DisconnectableMilliseconds;
 	minutes PunishMinutesForDisconnect;
 	CClosedRank<uint32, seconds> MatchDeniedSecondsSelector;
 
-	SMultiBattleMeta(milliseconds DisconnectableMilliseconds_, minutes PunishMinutesForDisconnect_) :
+	MultiBattleConfig(const MultiBattleConfigMeta& super, milliseconds DisconnectableMilliseconds_, minutes PunishMinutesForDisconnect_) :
+		MultiBattleConfigMeta(super),
 		DisconnectableMilliseconds(DisconnectableMilliseconds_),
 		PunishMinutesForDisconnect(PunishMinutesForDisconnect_)
 	{
@@ -99,31 +81,24 @@ struct SMultiBattleMeta
 
 class CMetaData
 {
-	using _TMapInfo = tuple<int32, const SMultiMap&>;
-
+	map<wstring, CharacterTypeMeta> _characterTypeMetas;
 	map<int32, CCharacter> _Characters;
-	float _MinVelXAir = (std::numeric_limits<float>::max)();
-	float _MinVelUp = (std::numeric_limits<float>::max)();
-	float _MinVelDown = (std::numeric_limits<float>::max)();
+	float _MinVelAir = (std::numeric_limits<float>::max)();
 public:
-	float GetMinVelXAir(void) const { return _MinVelXAir; }
-	float GetMinVelUp(void) const { return _MinVelUp; }
-	float GetMinVelDown(void) const { return _MinVelDown; }
+	float GetMinVelAir(void) const { return _MinVelAir; }
 private:
-	vector<SGachaMeta> _GachaMetas;
-	vector<unique_ptr<CGacha>> _Gachas;
 	CClosedRank<TExp, TLevel, greater<TExp>> _ExpToLevel;
 	vector<TExp> ExpMetas;
-	TRewards _Rewards;
-	map<SBattleType, SBattleTypeInfo> _BattleTypeInfos; // key : 팀수(게임모드)
 public:
 	CClosedRank<int32, SRankTierMeta> RankTiers;
 private:
 	vector<SRankReward> _RankRewards;
 public:
-	unique_ptr<SMultiBattleMeta> pMultiBattleMeta;
-	SArrowDodgeMeta ArrowDodgeMeta;
-	SFlyAwayMeta FlyAwayMeta;
+	unique_ptr<MultiBattleConfig> pMultiBattleConfig;
+	mt19937_64 _randomEngine;
+	CClosedRank<double, EResource> _multiBattleDiaRewardTypes;
+	ArrowDodgeConfigMeta arrowDodgeConfigMeta;
+	FlyAwayConfigMeta flyAwayConfigMeta;
 private:
 	vector<SArrowDodgeItemMeta> _ArrowDodgeItemMetas;
 public:
@@ -155,40 +130,35 @@ public:
 	}
 	SMapMeta MapMeta;
 private:
-	vector<vector<SQuest>> _QuestTypes;
-	map<int32, const SQuest*> _QuestsMap;
+	vector<vector<Quest>> _QuestTypes;
+	map<int32, const Quest*> _QuestsMap;
 	map<int32, SCoupon> _Coupons;
 	map<wstring, const SCoupon*> _CouponKeys;
 
 public:
-	SQuestDailyComplete QuestDailyComplete;
+	QuestConfig questConfig;
 	TForbiddenWords ForbiddenWords;
 	SServerConfigMeta ServerConfigMeta;
 	SConfigMeta ConfigMeta;
 	TResources MaxResources;
-	SShopConfigServerMeta ShopConfig;
-	map<int32, SShopItem> ShopItems;
-	map<int32, SShopPackage> ShopPackages;
+	map<int32, unique_ptr<const ShopItem>> shopItems;
 private:
 	map<EResource, ExchangeValue> _exchangeValues;
 public:
-	CRandomBox<double, SShopDailyRewardServerMeta> DailyReward;
 	vector<int32> DefaultChars;
 	TCoreCheckSum CheckSumMeta = 0;
 	SRankingConfigMeta RankingConfigMeta;
-	vector<CRank<int32, TRewardsIt>> RankingReward; // IndexOrder (Multi, Arrow, Island), second { first : Ranking, second : RewardCode }
+	vector<CRank<int32, shared_ptr<SReward>>> RankingReward; // IndexOrder (Multi, Arrow, Island), second { first : Ranking, second : RewardCode }
 
 	CMetaData();
 	TLevel ExpToLevel(TExp Exp_) const;
 	TExp LevelToExp(TLevel Level_) const;
 	TExp GetMaxExp(void) const;
 	int32 GetDefaultChar(void) const;
-	CGacha* GetGacha(int32 Index_) const;
-	inline const map<SBattleType, SBattleTypeInfo>& GetBattleTypeInfos(void) const { return _BattleTypeInfos; }
 	const SReward* GetRankReward(int32 PointBest_, int32 RewardIndex_) const;
 	const CCharacter* GetCharacter(int32 Code_) const;
 	const map<int32, CCharacter>& GetCharacters(void) const { return _Characters; }
-	_TMapInfo GetMultiMap(void) const;
+	const SMultiMap* GetMultiMap(void) const;
 	inline size_t GetMultiMapCount(void) const { return MapMeta.OneOnOneMaps.size(); }
 	const SArrowDodgeMap* GetArrowDodgeMap(void) const {
 		return &MapMeta.ArrowDodgeMapInfo.Maps.front();
@@ -196,9 +166,10 @@ public:
 	const SFlyAwayMap* GetFlyAwayMap(void) const {
 		return &MapMeta.FlyAwayMapInfo.Maps.front();
 	}
-	const vector<SQuest>& GetQuest(EQuestType QuestType_) const { return _QuestTypes[(size_t)QuestType_]; }
-	const SQuest* GetQuest(int32 Code_) const;
+	const vector<Quest>& GetQuest(EQuestType QuestType_) const { return _QuestTypes[(size_t)QuestType_]; }
+	const Quest* GetQuest(int32 Code_) const;
 	const SCoupon* GetCoupon(int32 Code_) const;
 	const SCoupon* GetCoupon(const wstring& Key_) const;
 	optional<ExchangeValue> getExchangeValue(EResource targetResource);
+	EResource getMultiBattleDiaRewardType(void);
 };

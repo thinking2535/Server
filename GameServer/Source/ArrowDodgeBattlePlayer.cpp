@@ -2,7 +2,6 @@
 
 CArrowDodgeBattlePlayer::CArrowDodgeBattlePlayer(
 	const SBattlePlayer Super_,
-	FRegen fRegen_,
 	const SPoint& InitialPos_,
 	const SCharacterMeta* const pMeta_,
 	const shared_ptr<SCharacter>& pCharacter_,
@@ -13,7 +12,6 @@ CArrowDodgeBattlePlayer::CArrowDodgeBattlePlayer(
 	CArrowDodgeBattle* pArrowDodgeBattle_) :
 	CBattlePlayer(
 		Super_,
-		fRegen_,
 		0,
 		InitialPos_,
 		pMeta_,
@@ -26,19 +24,20 @@ CArrowDodgeBattlePlayer::CArrowDodgeBattlePlayer(
 	_fGetItem(fGetItem_),
 	pArrowDodgeBattle(pArrowDodgeBattle_)
 {
+	pPlayerObject->fTriggerEnter = std::bind(&CArrowDodgeBattlePlayer::_TriggerEnter, this, _1);
 }
-void CArrowDodgeBattlePlayer::BattleEnd(int64 Tick_)
+void CArrowDodgeBattlePlayer::Link(void)
+{
+	pArrowDodgeBattle->Link(0);
+}
+void CArrowDodgeBattlePlayer::BattleEnd(int64 tick)
 {
 	QuestDone(EQuestType::PlaySingle, 1);
-
-	int32 PlaySeconds = (int32)(BattleInfo.Tick / 10000000);
-	if (PlaySeconds > 0)
-		QuestDone(EQuestType::SingleTime, PlaySeconds);
 
 	if (BattleInfo.Point > 0)
 		QuestDone(EQuestType::SinglePlayScoreGet, BattleInfo.Point);
 
-	switch (pPlayer->GetSelectedChar()->Grade)
+	switch (pPlayer->GetSelectedChar()->pCharacterTypeMeta->grade)
 	{
 	case EGrade::Normal:
 		QuestDone(EQuestType::PlayNormal, 1);
@@ -53,63 +52,71 @@ void CArrowDodgeBattlePlayer::BattleEnd(int64 Tick_)
 		break;
 	}
 
-	pPlayer->ArrowDodgeBattleEnd(Tick_, BattleInfo, _DoneQuests);
+	pPlayer->ArrowDodgeBattleEnd(tick, BattleInfo, _DoneQuests);
 }
 bool CArrowDodgeBattlePlayer::IsStaminaFree(void) const
 {
 	return Bufs.Stamina.Enabled;
 }
-void CArrowDodgeBattlePlayer::_FixedUpdate(int64 Tick_)
+void CArrowDodgeBattlePlayer::_FixedUpdate(int64 tick)
 {
-	CBattlePlayer::_FixedUpdate(Tick_);
+	CBattlePlayer::_FixedUpdate(tick);
 
-	if (Bufs.Shield.Enabled && Bufs.Shield.EndTick < Tick_)
+	if (Bufs.Shield.Enabled && Bufs.Shield.EndTick < tick)
 		Bufs.Shield.Enabled = false;
 
-	if (Bufs.Stamina.Enabled && Bufs.Stamina.EndTick < Tick_)
+	if (Bufs.Stamina.Enabled && Bufs.Stamina.EndTick < tick)
 		Bufs.Stamina.Enabled = false;
 }
-bool CArrowDodgeBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CArrowDodgeBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
 {
-	if (__super::_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return true;
+	if (_LandEnter(Collision_))
+		return false;
 
-	if (pOtherCollider_->Number == CEngineGlobal::c_ArrowNumber)
+	bool isHitArrow = false;
+
+	if (Collision_.pOtherCollider->Number == CEngineGlobal::c_ArrowNumber &&
+		Collision_.pOtherMovingObject != nullptr)
 	{
-		if (pOtherMovingObject_)
+		auto pArrow = dynamic_cast<const CArrow*>(Collision_.pOtherMovingObject);
+
+		if (Bufs.Shield.Enabled)
 		{
-			auto pArrow = dynamic_pointer_cast<CArrow>(pOtherMovingObject_);
+			_fHitArrow(pArrow, true);
+			return true;
+		}
 
-			if (Bufs.Shield.Enabled)
+		if (pArrow->Velocity.X > 0.0f && Collision_.Normal.X > 0.0f ||
+			pArrow->Velocity.X < 0.0f && Collision_.Normal.X < 0.0f ||
+			pArrow->Velocity.Y > 0.0f && Collision_.Normal.Y > 0.0f ||
+			pArrow->Velocity.Y < 0.0f && Collision_.Normal.Y < 0.0f)
+		{
+			isHitArrow = true;
+
+			if (Collision_.pCollider->Number == CEngineGlobal::c_BalloonNumber)
 			{
-				_fHitArrow(pArrow, true);
-				return true;
+				if (_beHitBalloon(Collision_.Normal))
+					_Die(tick);
+			}
+			else if (Collision_.pCollider->Number == CEngineGlobal::c_BodyNumber || Collision_.pCollider->Number == CEngineGlobal::c_ParachuteNumber)
+			{
+				Die(tick);
 			}
 
-			if (pArrow->Velocity.X > 0.0f && Normal_.X > 0.0f ||
-				pArrow->Velocity.X < 0.0f && Normal_.X < 0.0f ||
-				pArrow->Velocity.Y > 0.0f && Normal_.Y > 0.0f ||
-				pArrow->Velocity.Y < 0.0f && Normal_.Y < 0.0f)
-			{
-				if (pCollider_->Number == CEngineGlobal::c_BalloonNumber)
-				{
-					if (_HitBalloon(Tick_, Normal_))
-						_Die(Tick_);
-				}
-				else if (pCollider_->Number == CEngineGlobal::c_BodyNumber || pCollider_->Number == CEngineGlobal::c_ParachuteNumber)
-				{
-					Die(Tick_);
-				}
-
-				_fHitArrow(pArrow, false);
-
-				return true;
-			}
+			_fHitArrow(pArrow, false);
 		}
 	}
-	else if (pOtherCollider_->Number == CEngineGlobal::c_ItemNumber)
+
+	if (IsAlive())
+		bounce(Collision_);
+
+	return isHitArrow;
+}
+bool CArrowDodgeBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
+{
+	if (pCollider_->Number == CEngineGlobal::c_ItemNumber)
 	{
-		_fGetItem(Tick_, dynamic_pointer_cast<CArrowDodgeItem>(pOtherCollider_));
+		_fGetItem(dynamic_cast<const CArrowDodgeItem*>(pCollider_));
 		return true;
 	}
 
@@ -117,19 +124,18 @@ bool CArrowDodgeBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& No
 }
 void CArrowDodgeBattlePlayer::SetItem(const SArrowDodgeItemMeta& Meta_)
 {
-	BattleInfo.Point += Meta_.AddedPoint;
 	BattleInfo.Gold += Meta_.AddedGold;
 }
-void CArrowDodgeBattlePlayer::SetShieldItem(int64 Tick_, const CArrowDodgeShield* pShield_)
+void CArrowDodgeBattlePlayer::SetShieldItem(int64 tick, const CArrowDodgeShield* pShield_)
 {
-	int64 Duration = g_MetaData->ArrowDodgeMeta.ItemDurationTick;
+	int64 Duration = g_MetaData->arrowDodgeConfigMeta.ItemDurationTick;
 	Bufs.Shield.Enabled = true;
-	Bufs.Shield.EndTick = Tick_ + Duration;
+	Bufs.Shield.EndTick = tick + Duration;
 }
-void CArrowDodgeBattlePlayer::SetStaminaItem(int64 Tick_, const CArrowDodgeStamina* pStamina_)
+void CArrowDodgeBattlePlayer::SetStaminaItem(int64 tick, const CArrowDodgeStamina* pStamina_)
 {
-	int64 Duration = g_MetaData->ArrowDodgeMeta.ItemDurationTick;
-	pCharacter->StaminaInfo.Stamina = pMeta->StaminaMax;
+	int64 Duration = g_MetaData->arrowDodgeConfigMeta.ItemDurationTick;
+	pCharacter->StaminaInfo.Stamina = pMeta->pCharacterTypeMeta->StaminaMax;
 	Bufs.Stamina.Enabled = true;
-	Bufs.Stamina.EndTick = Tick_ + Duration;
+	Bufs.Stamina.EndTick = tick + Duration;
 }

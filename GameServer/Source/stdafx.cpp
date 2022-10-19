@@ -49,9 +49,9 @@ TBattles g_Battles;
 TBulkCopyConnect g_BulkCopyConnect;
 CIPInfo g_IPInfo{ L"ipv4.bin" };
 SOption g_Option;
-default_random_engine en;
 int32 g_MapIndex = -1;
 TCouponDB g_pCouponDB;
+EloController eloController;
 
 CUser* GetUser(const CKey& Key_)
 {
@@ -74,46 +74,41 @@ void SendMsg(const CKey& Key_, const wstring& Msg_)
 	DLOG(L"Msg Key[%d] [%s]", Key_.PeerNum, Msg_);
 	Send(Key_, SMsgNetSc(Msg_));
 }
-bool HaveCost(const TResources& Resources_, EResource CostType_, TResource Cost_)
+bool doesHaveCost(const TResources& resources, const SResourceTypeData& cost)
 {
-	return (Resources_[(int)CostType_] >= Cost_);
+	return doesHaveCost(resources, cost.Type, cost.Data);
 }
-bool HaveCost(const TResources& Resources_, const TResources& Cost_)
+bool doesHaveCost(const TResources& resources, EResource costType, TResource costValue)
 {
-	for (size_t i = 0; i < Resources_.size(); ++i)
+	return (resources[(int32)costType] >= costValue);
+}
+bool doesHaveCost(const TResources& resources, const TResources& cost)
+{
+	for (size_t i = 0; i < resources.size(); ++i)
 	{
-		if (Resources_[i] < Cost_[i])
+		if (resources[i] < cost[i])
 			return false;
 	}
 
 	return true;
 }
-TResources MakeResources(TResource Data_)
+TResources getFullResources(void)
 {
 	TResources Resources;
 
 	for (auto& i : Resources)
-		i = Data_;
+		i = MaxValue<TResource>();
 
 	return Resources;
 }
 
-TResource GetResourceFreeSpace(TResource CurrentResource_, EResource ResourceType_)
+TResource getResourceFreeSpace(TResource currentResource, EResource resourceType)
 {
-	return GetResourceFreeSpace(CurrentResource_, (size_t)ResourceType_);
+	return getResourceFreeSpace(currentResource, (size_t)resourceType);
 }
-TResource GetResourceFreeSpace(TResource CurrentResource_, size_t Index_)
+TResource getResourceFreeSpace(TResource currentResource, size_t index)
 {
-	return g_MetaData->MaxResources[Index_] - CurrentResource_;
-}
-TResources GetResourceFreeSpaces(const TResources& CurrentResources_, EResource ResourceType_)
-{
-	TResources ResourceFreeSpaces;
-
-	for (size_t i = 0; i < CurrentResources_.size(); ++i)
-		ResourceFreeSpaces[i] = GetResourceFreeSpace(CurrentResources_[i], i);
-
-	return ResourceFreeSpaces;
+	return g_MetaData->MaxResources[index] - currentResource;
 }
 
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_)
@@ -131,10 +126,24 @@ void AddResource(TResources& Resources_, const SResourceTypeData& ResourceTypeDa
 
 TResource AddResource(TResource Resource_, size_t Index_, TResource Data_)
 {
-	if (Resource_ + Data_ > g_MetaData->MaxResources[Index_] || Resource_ + Data_ < 0)
-		return g_MetaData->MaxResources[Index_];
+	if (Data_ > 0)
+	{
+		if (Resource_ + Data_ > g_MetaData->MaxResources[Index_] || Resource_ + Data_ < 0)
+			return g_MetaData->MaxResources[Index_];
+		else
+			return Resource_ + Data_;
+	}
+	else if (Data_ < 0)
+	{
+		if (Resource_ + Data_ < 0)
+			return 0;
+		else
+			return Resource_ + Data_;
+	}
 	else
-		return Resource_ + Data_;
+	{
+		return Resource_;
+	}
 }
 TResource AddResource(TResource Resource_, EResource ResourceType_, TResource Data_)
 {
@@ -145,44 +154,10 @@ TResource AddResource(TResource Resource_, const SResourceTypeData& ResourceType
 	return AddResource(Resource_, ResourceTypeData_.Type, ResourceTypeData_.Data);
 }
 
-void SubResource(TResources& Resources_, size_t Index_, TResource Data_)
-{
-	Resources_[Index_] = SubResource(Resources_[Index_], Index_, Data_);
-}
-void SubResource(TResources& Resources_, EResource ResourceType_, TResource Data_)
-{
-	SubResource(Resources_, (size_t)ResourceType_, Data_);
-}
-void SubResource(TResources& Resources_, const SResourceTypeData& ResourceTypeData_)
-{
-	SubResource(Resources_, ResourceTypeData_.Type, ResourceTypeData_.Data);
-}
-
-TResource SubResource(TResource Resource_, size_t Index_, TResource Data_)
-{
-	if (Resource_ - Data_ < 0)
-		return 0;
-	else
-		return Resource_ - Data_;
-}
-TResource SubResource(TResource Resource_, EResource ResourceType_, TResource Data_)
-{
-	return SubResource(Resource_, (size_t)ResourceType_, Data_);
-}
-TResource SubResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_)
-{
-	return SubResource(Resource_, ResourceTypeData_.Type, ResourceTypeData_.Data);
-}
-
 void AddResources(TResources& Resources_, const TResources& Added_)
 {
 	for (size_t i = 0; i < Resources_.size(); ++i)
 		AddResource(Resources_, i, Added_[i]);
-}
-void SubResources(TResources& Resources_, const TResources& Added_)
-{
-	for (size_t i = 0; i < Resources_.size(); ++i)
-		SubResource(Resources_, i, Added_[i]);
 }
 void SetResource(TResources& Resources_, size_t Index_, TResource Data_)
 {
@@ -202,27 +177,15 @@ void SetResources(TResources& Resources_, const TResources& Set_)
 	for (size_t i = 0; i < Resources_.size(); ++i)
 		SetResource(Resources_, i, Set_[i]);
 }
+void CheckResource(EResource resourceType, TResource resourceValue)
+{
+	ASSERTION((int32)resourceType >= 0 && resourceType < EResource::Max&& resourceValue >= 0);
+}
 void CheckResourceTypeValue(const SResourceTypeData& Resource_)
 {
-	ASSERTION((int32)Resource_.Type >= 0 && Resource_.Type < EResource::Max && Resource_.Data >= 0);
+	CheckResource(Resource_.Type, Resource_.Data);
 }
-TResources GetResources(EResource Type_, TResource Data_)
-{
-	TResources Resources{};
-	Resources[(size_t)Type_] = Data_;
-	return Resources;
-}
-TResources GetResources(const SResourceTypeData& Resource_)
-{
-	TResources Resources{};
-	Resources[(size_t)Resource_.Type] = Resource_.Data;
-	return Resources;
-}
-TResources CheckAndGetResources(const SResourceTypeData& Resource_)
-{
-	CheckResourceTypeValue(Resource_);
-	return GetResources(Resource_);
-}
+
 void TimersCallback(wstring& Data_)
 {
 	g_ConsoleCtrlHandler.SetExit();
@@ -264,48 +227,13 @@ float GetSOverMax(float Acc_, float Vel_, float MaxVel_, float Duration_)
 
 	return S;
 }
-float GetMaxVelDown(const SCharacter& Char_, const SCharacterMeta* pMeta_)
+bool canFlap(const SCharacter& character)
 {
-	if (Char_.BalloonCount > 0)
-		return -pMeta_->MaxVelDown;
-	else if (Char_.BalloonCount == 0)
-		return -c_MaxVelParachuteY;
-	else
-		return -c_MaxVelDeadY;
+	return character.BalloonCount > 0 && character.StaminaInfo.Stamina >= 1.0f;
 }
-void Center(SCharacter& Char_)
+bool canPump(const SCharacter& character)
 {
-	Char_.Dir = 0;
-	Char_.Acc.X = 0.0f;
-}
-void LeftRight(SCharacter& Char_, const SCharacterMeta* pMeta_, int8 Dir_)
-{
-	Char_.Dir = Dir_;
-
-	if (Char_.Face != Dir_)
-		Char_.Face = Dir_;
-
-	if (Char_.IsGround)
-	{
-		Char_.Acc.X = pMeta_->RunAcc * Char_.Dir;
-		Char_.PumpInfo.Count = 0;
-	}
-	else if (Char_.BalloonCount == 0)
-	{
-		Char_.Acc.X = c_ParachuteAccX * Char_.Dir;
-	}
-}
-void Fly(SCharacter& Char_)
-{
-	Char_.IsGround = false;
-
-	if (Char_.BalloonCount == 0)
-		Char_.Acc.X = c_ParachuteAccX * Char_.Dir;
-}
-void Land(SCharacter& Char_, const SCharacterMeta* pMeta_)
-{
-	Char_.IsGround = true;
-	Char_.Acc.X = pMeta_->RunAcc * Char_.Dir;
+	return character.BalloonCount == 0 && character.IsGround && character.Dir == 0;
 }
 bool IsValidRankingInfo(void)
 {

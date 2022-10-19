@@ -10,11 +10,14 @@ using FIcon = function<void(int32 PlayerIndex_, const SMultiBattleIconNetCs& Pro
 class CBattlePlayer : public SBattlePlayer
 {
 public:
-	using FRegen = function<void(int32 PlayerIndex_)>;
+	enum class PushType
+	{
+		flap,
+		pump,
+		max,
+		null
+	};
 
-private:
-	FRegen _fRegen;
-public:
 	const int32 PlayerIndex;
 	const SPoint InitialPos;
 	const SCharacterMeta* const pMeta;
@@ -29,7 +32,7 @@ public:
 	shared_ptr<CPlayerObject2D> pPlayerObject; // _PlayerCollider 아래에 위치하도록
 	inline SCharacterNet GetCharacterNet(void) { return SCharacterNet(*pCharacter, pPlayerObject->LocalPosition, pPlayerObject->Velocity); }
 private:
-	unordered_set<shared_ptr<CCollider2D>> _AttachedGrounds;
+	unordered_set<const CCollider2D*> _AttachedGrounds;
 	CEnginePumpControl _PumpControl;
 	CEngineParachuteControl _ParachuteControl;
 
@@ -37,33 +40,30 @@ private:
 	void _PumpDoneCallback(void);
 	void _ParachuteOnCallback(bool On_);
 protected:
-	void _AttachGround(const shared_ptr<CCollider2D>& pOtherCollider_);
-	void _DetachGround(const shared_ptr<CCollider2D>& pOtherCollider_);
+	void _AttachGround(const CCollider2D* pOtherCollider_);
+	void _DetachGround(const CCollider2D* pOtherCollider_);
 public:
-	void Bounce(const SPoint& Normal_);
-	void Die(int64 Tick_);
+	void bounce(const SCollision2D& collision);
+	void Die(int64 tick);
 protected:
-	void _Die(int64 Tick_);
-	bool _HitBalloon(int64 Tick_, const SPoint& Normal_);
-	void _SetLandingVelocity(const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-protected:
-	virtual bool _CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
+	void _Die(int64 tick);
+	bool _beHitBalloon(const SPoint& Normal_);
+	bool _LandEnter(const SCollision2D& Collision_);
+	virtual bool _CollisionEnter(int64 tick, const SCollision2D& Collision_);
+	virtual void _LandStay(const SCollision2D& Collision_);
+	virtual bool _CollisionStay(int64 tick, const SCollision2D& Collision_);
+	virtual bool _CollisionExit(int64 tick, const SCollision2D& Collision_);
+	virtual bool _TriggerEnter(const CCollider2D* pCollider_);
+	virtual void _FixedUpdate(int64 tick);
+	virtual void _UpdateStamina(int64 tick);
+	void _UpdateGroundPhysics(const CMovingObject2D* pOtherMovingObject_);
+	void _UpdatePhysics();
 private:
-	void _CollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-protected:
-	virtual bool _CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-private:
-	void _CollisionStay(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-protected:
-	virtual bool _CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-private:
-	void _CollisionExit(int64 Tick_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_);
-protected:
-	virtual void _FixedUpdate(int64 Tick_);
-	virtual void _UpdateStamina(int64 Tick_);
-	virtual void _UpdatePhysics(int64 Tick_);
+	void _updateXVelocityInAir();
+	void _updateYVelocityInAir();
+	void _approximateAirXVelocity(float value);
 public:
-	bool IsInvulerable(int64 Tick_);
+	bool IsInvulerable(int64 tick);
 	bool IsAlive(void) const;
 protected:
 	virtual bool IsStaminaFree(void) const
@@ -71,13 +71,15 @@ protected:
 		return false;
 	}
 public:
-	bool Touch(int8 Dir_);
-	bool Push(int64 Tick_);
-	void CheckRegen(int64 Tick_);
+	bool touch(int8 dir);
+	void direct(int8 dir);
+	PushType push(int64 tick);
+	void flap(int64 tick);
+	void pump();
+	void CheckRegen(int64 tick);
 
 	CBattlePlayer(
 		const SBattlePlayer Super_,
-		FRegen fRegen_,
 		const int32 PlayerIndex_,
 		const SPoint& InitialPos_,
 		const SCharacterMeta* const pMeta_,
@@ -86,11 +88,11 @@ public:
 		TBattlesIt itBattle_,
 		CUser* Player_,
 		CBattlePlayer* pVirtualBattlePlayer_);
+	virtual ~CBattlePlayer();
 	virtual void Link(void);
 	virtual void UnLink(void);
 	ERet Touch(const SBattleTouchNetCs& Proto_);
 	ERet Push(const SBattlePushNetCs& Proto_);
-	void BattleEndSession(void);
 	template<typename _TProto>
 	void Send(const _TProto& Proto_) { pPlayer->Send(Proto_); }
 	bool WillClose(void) { return pPlayer->WillClose(); }

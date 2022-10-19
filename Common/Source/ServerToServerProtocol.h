@@ -150,14 +150,14 @@ namespace bb
 	{
 		int64 Counter{};
 		TRankingPointArray UserPointMinArray{};
-		TRankingRewardsArray RewardsArray{};
+		TRankingsArray RewardsArray{};
 		SRankingRankingInfoNetRs()
 		{
 		}
-		SRankingRankingInfoNetRs(const int64& Counter_, const TRankingPointArray& UserPointMinArray_, const TRankingRewardsArray& RewardsArray_) : Counter(Counter_), UserPointMinArray(UserPointMinArray_), RewardsArray(RewardsArray_)
+		SRankingRankingInfoNetRs(const int64& Counter_, const TRankingPointArray& UserPointMinArray_, const TRankingsArray& RewardsArray_) : Counter(Counter_), UserPointMinArray(UserPointMinArray_), RewardsArray(RewardsArray_)
 		{
 		}
-		SRankingRankingInfoNetRs(int64&& Counter_, TRankingPointArray&& UserPointMinArray_, TRankingRewardsArray&& RewardsArray_) : Counter(std::move(Counter_)), UserPointMinArray(std::move(UserPointMinArray_)), RewardsArray(std::move(RewardsArray_))
+		SRankingRankingInfoNetRs(int64&& Counter_, TRankingPointArray&& UserPointMinArray_, TRankingsArray&& RewardsArray_) : Counter(std::move(Counter_)), UserPointMinArray(std::move(UserPointMinArray_)), RewardsArray(std::move(RewardsArray_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -189,14 +189,14 @@ namespace bb
 			return 
 				GetStdName(int64()) + L"," + 
 				GetStdName(TRankingPointArray()) + L"," + 
-				GetStdName(TRankingRewardsArray());
+				GetStdName(TRankingsArray());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(int64(), L"Counter") + L"," + 
 				GetMemberName(TRankingPointArray(), L"UserPointMinArray") + L"," + 
-				GetMemberName(TRankingRewardsArray(), L"RewardsArray");
+				GetMemberName(TRankingsArray(), L"RewardsArray");
 		}
 	};
 }

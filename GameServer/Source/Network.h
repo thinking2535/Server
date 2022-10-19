@@ -7,9 +7,7 @@ ERet FCMCanPushAtNightNetCs(CUser* User_, CStream& Stream_);
 ERet ChangeLanguageNetCs(CUser* User_, CStream& Stream_);
 ERet BuyNetCs(CUser* User_, CStream& Stream_);
 ERet BuyCharNetCs(CUser* User_, CStream& Stream_);
-ERet BuyPackageNetCs(CUser* User_, CStream& Stream_);
 ERet BuyResourceNetCs(CUser* User_, CStream& Stream_);
-ERet DailyRewardNetCs(CUser* User_, CStream& Stream_);
 
 ERet SelectCharNetCs(CUser* User_, CStream& Stream_);
 
@@ -26,8 +24,6 @@ ERet ArrowDodgeBattleEndNetCs(CUser* User_, CStream& Stream_);
 ERet FlyAwayBattleJoinNetCs(CUser* User_, CStream& Stream_);
 ERet FlyAwayBattleEndNetCs(CUser* User_, CStream& Stream_);
 
-ERet GachaNetCs(CUser* User_, CStream& Stream_);
-ERet GachaX10NetCs(CUser* User_, CStream& Stream_);
 ERet RankRewardNetCs(CUser* User_, CStream& Stream_);
 ERet QuestRewardNetCs(CUser* User_, CStream& Stream_);
 ERet QuestDailyCompleteRewardNetCs(CUser* User_, CStream& Stream_);

@@ -8,13 +8,14 @@ using namespace physics;
 class CArrowDodgeItem abstract : public CRectCollider2D
 {
 public:
-    CList<SItemObject>::iterator Iterator;
+    CList<SArrowDodgeItemObject>::iterator Iterator;
 
     CArrowDodgeItem(const SPoint& LocalPosition_, SRectCollider2D Collider_) :
         CRectCollider2D(GetDefaultTransform(LocalPosition_), CEngineGlobal::c_ItemNumber, Collider_)
     {
+        IsTrigger = true;
     }
-    virtual void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const
+    virtual void Proc(int64 tick, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const
     {
         pPlayer_->SetItem(g_MetaData->GetArrowDodgeItemMetas()[(size_t)GetItemType()]);
     }
@@ -51,10 +52,10 @@ public:
         CArrowDodgeItem(LocalPosition_, g_MetaData->MapMeta.ArrowDodgeMapInfo.Shield.Collider)
     {
     }
-    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
+    void Proc(int64 tick, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
-        __super::Proc(Tick_, pPlayer_, pBattle_);
-        pPlayer_->SetShieldItem(Tick_, this);
+        __super::Proc(tick, pPlayer_, pBattle_);
+        pPlayer_->SetShieldItem(tick, this);
     }
     EArrowDodgeItemType GetItemType(void) const override
     {
@@ -68,10 +69,10 @@ public:
         CArrowDodgeItem(LocalPosition_, g_MetaData->MapMeta.ArrowDodgeMapInfo.Stamina.Collider)
     {
     }
-    void Proc(int64 Tick_, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
+    void Proc(int64 tick, const shared_ptr<CArrowDodgeBattlePlayer>& pPlayer_, CArrowDodgeBattle* pBattle_) const override
     {
-        __super::Proc(Tick_, pPlayer_, pBattle_);
-        pPlayer_->SetStaminaItem(Tick_, this);
+        __super::Proc(tick, pPlayer_, pBattle_);
+        pPlayer_->SetStaminaItem(tick, this);
     }
     EArrowDodgeItemType GetItemType(void) const override
     {

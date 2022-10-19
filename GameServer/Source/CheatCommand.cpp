@@ -30,7 +30,7 @@ void CommandAddResources(wstringstream& Params_, CUser& User_)
 }
 void CommandSetResources(wstringstream& Params_, CUser& User_)
 {
-	TResources Resources = User_.GetResources();
+	auto Resources = User_.GetResources();
 
 	for (size_t i = 0; i < (size_t)EResource::Max; ++i)
 	{
@@ -57,7 +57,7 @@ void CommandSetPoint(wstringstream& Params_, CUser& User_)
 	if (Point < 0)
 		Point = 0;
 
-	User_.SetPoint(Point);
+	User_.setPoint(Point);
 }
 void CommandSetChar(wstringstream& Params_, CUser& User_)
 {

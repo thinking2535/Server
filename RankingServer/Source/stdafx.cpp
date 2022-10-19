@@ -17,7 +17,7 @@ TNetBalance g_NetBalance; // for Ranking Balance Group
 __int32 g_MaxList = 0;
 SRankingConfigDB g_RankingConfig;
 TRankingMapArray g_RankingMapArray;
-TRankingRewardsArray g_RewardsArray;
+TRankingsArray g_RankingsArray;
 TDB g_DB;
 TRecvCFuncs g_BinderRecvC;
 TRecvSFuncs g_BinderRecvS;

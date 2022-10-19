@@ -28,26 +28,31 @@ namespace bb
 	using TTeamCnt = int8;
 	using TQuestSlotIndex = uint8;
 	using TForbiddenWords = vector<wstring>;
-	const TVer c_Ver_Main = 42;
+	const TVer c_Ver_Main = 47;
 	const int32 c_FPS = 60;
 	const int64 c_NetworkTickSync = 500000;
 	const int64 c_NetworkTickBuffer = c_NetworkTickSync+500000;
 	const float c_ContactOffset = 0.0001f;
-	const float c_LandXDragPerFrame = 1.0f/c_FPS;
-	const float c_ScreenWidth = 3.448f;
-	const float c_ScreenHeight = 1.8f;
+	const float c_IgnoredGroundMaxDeltaVelocity = 0.01f;
+	const float c_GroundAccRatio = 4.0f;
+	const float c_AirAccRatio = 2.0f;
+	const float c_ScreenWidth = 3.55555f;
+	const float c_ScreenHeight = 2.0f;
 	const float c_ScreenWidth_2 = c_ScreenWidth*0.5f;
 	const float c_ScreenHeight_2 = c_ScreenHeight*0.5f;
+	const int64 c_StaminaRegenDelayTick = 8000000;
+	const float c_StaminaRegenSpeedInAir = 13.0f;
+	const float c_StaminaRegenSpeedOnGround = 13.0f;
+	const float c_FlapDeltaVelUp = 0.19f;
+	const float c_FlapDeltaVelX = 0.19f;
+	const float c_MaxVelDown = 0.56f;
 	const float c_MaxVelDeadY = 1.13784f;
 	const float c_Gravity = -0.6465f;
 	const float c_MaxVelParachuteX = 0.682704f;
 	const float c_MaxVelParachuteY = 0.28446f;
 	const float c_GravityParachuteRatio = 0.5f;
 	const float c_GravityDeadRatio = 2.0f;
-	const float c_ParachuteAccX = 0.6465f;
 	const float c_DieUpVel = 0.7f;
-	const float c_AirResistance = 1.0f;
-	const float c_GroundResistance = 0.1f;
 	const float c_PlayerWidth = 0.1258713f;
 	const float c_PlayerWidth_2 = c_PlayerWidth*0.5f;
 	const float c_PlayerHeight = 0.150337f;
@@ -60,10 +65,7 @@ namespace bb
 	const float c_ParachuteHeight = 0.25f;
 	const float c_ParachuteOffsetY = 0.37f;
 	const float c_ParachuteLocalScale = 0.5f;
-	const float c_OnePumpDuration = 0.4f;
 	const int32 c_MaxPlayer = 6;
-	const float c_GhostSpeed = 3.0f;
-	const float c_GameHeight = 3.5f;
 	const int8 c_BalloonCountForRegen = 2;
 	const int8 c_BalloonCountForPump = 1;
 	const int8 c_PumpCountForBalloon = 6;
@@ -73,6 +75,37 @@ namespace bb
 	const int32 c_QuestCnt_Max = 5;
 	const int32 minNicknameLength = 2;
 	const int32 maxNicknameLength = 18;
+	const float arrowDodgePositionPrecision = 1000.0f;
+	const float arrowDodgeItemScreenWidth = c_ScreenWidth*0.9f;
+	const float arrowDodgeItemScreenHeight = c_ScreenHeight*0.7f;
+	const float arrowDodgeHalfItemScreenWidth = arrowDodgeItemScreenWidth*0.5f;
+	const float arrowDodgeHalfItemScreenHeight = arrowDodgeItemScreenHeight*0.5f;
+	const float arrowDodgeMinDownVelocity = 0.7f;
+	const float arrowDodgeMinHorizontalVelocity = 0.3f;
+	const float arrowDodgeArrowCreateScreenGap = 0.1f;
+	const float arrowDodgeArrowCreateAreaHalfWidth = c_ScreenWidth*(0.5f+arrowDodgeArrowCreateScreenGap);
+	const float arrowDodgeArrowCreateAreaHalfHeight = c_ScreenHeight*(0.5f+arrowDodgeArrowCreateScreenGap);
+	const float arrowDodgeArrowActiveScreenGap = 0.2f;
+	const float arrowDodgeArrowActiveAreaHalfWidth = c_ScreenWidth*(0.5f+arrowDodgeArrowActiveScreenGap);
+	const float arrowDodgeArrowActiveTop = c_ScreenHeight*(1.0f+arrowDodgeArrowActiveScreenGap);
+	const float arrowDodgeArrowActiveBottom = -(c_ScreenHeight*arrowDodgeArrowActiveScreenGap);
+	const float arrowDodgeArrowActiveAreaHalfHeight = c_ScreenHeight*(0.5f+arrowDodgeArrowActiveScreenGap);
+	const int64 arrowDodgeFirstLeftArrowTick = 300000000;
+	const int64 arrowDodgeFirstRightArrowTick = 600000000;
+	const int64 arrowDodgeMaxArrowTick = 900000000;
+	const int64 arrowDodgeArrowBaseVelocityTick = 600000000;
+	const float arrowDodgeArrowBaseVelocity = 0.1f;
+	const float flyAwayMaxY = 1.7f;
+	const float flyAwayMinY = 0.4f;
+	const int32 flyAwayMainLevelCount = 5;
+	const int32 flyAwaySubLevelCount = 3;
+	const float flyAwayItemSlopeFactor = 0.7f;
+	const float flyAwayItemCoinXDistanceMultiplier = 3.0f;
+	const float flyAwayLandTopY = c_ScreenHeight_2*0.6f;
+	const float flyAwayLandBottomY = -c_ScreenHeight_2*0.9f;
+	const float flyAwayLandHeightRange = flyAwayLandTopY-flyAwayLandBottomY;
+	const int32 flyAwayLandDistanceBase = 30;
+	const float flyAwayMinLandDistance = 0.8f;
 	enum class EProtoNetCs
 	{
 		Chat,
@@ -82,9 +115,7 @@ namespace bb
 		ChangeLanguage,
 		Buy,
 		BuyChar,
-		BuyPackage,
 		BuyResource,
-		DailyReward,
 		SelectChar,
 		BattleTouch,
 		BattlePush,
@@ -95,8 +126,6 @@ namespace bb
 		ArrowDodgeBattleEnd,
 		FlyAwayBattleJoin,
 		FlyAwayBattleEnd,
-		Gacha,
-		GachaX10,
 		RankReward,
 		QuestReward,
 		QuestDailyCompleteReward,
@@ -122,13 +151,11 @@ namespace bb
 		UnsetChar,
 		Buy,
 		BuyChar,
-		BuyPackage,
 		BuyResource,
-		DailyReward,
-		DailyRewardFail,
 		BattleSync,
-		BattleTouch,
-		BattlePush,
+		BattleDirect,
+		BattleFlap,
+		BattlePump,
 		MultiBattleJoin,
 		MultiBattleOut,
 		MultiBattleBegin,
@@ -148,9 +175,6 @@ namespace bb
 		FlyAwayBattleBegin,
 		FlyAwayBattleStart,
 		FlyAwayBattleEnd,
-		Gacha,
-		GachaX10,
-		GachaFailed,
 		RankReward,
 		QuestGot,
 		QuestSet,
@@ -338,7 +362,7 @@ namespace bb
 				GetMemberName(TRankingUsers(), L"RankingUsers");
 		}
 	};
-	using TRankingRewards = map<TUID,int32>;
+	using TRankings = map<TUID,int32>;
 	enum class ERankingType
 	{
 		Multi,
@@ -349,8 +373,7 @@ namespace bb
 	};
 	using TRankingArray = array<int32,3>;
 	using TRankingPointArray = array<int32,3>;
-	using TRankingRewardArray = array<int32,3>;
-	using TRankingRewardsArray = array<TRankingRewards,3>;
+	using TRankingsArray = array<TRankings,3>;
 	using TRankingUsersArray = array<SRankingUsers,3>;
 	struct SUserLoginOption : public SProto
 	{
@@ -459,12 +482,9 @@ namespace bb
 		PlayRare,
 		PlayEpic,
 		PlaySingle,
-		SingleTime,
 		SinglePlayScoreGet,
 		PlayIsland,
-		IslandCount,
 		IslandScoreGet,
-		RankPointGet,
 		SoloPlay,
 		SoloVictory,
 		Max,
@@ -652,15 +672,13 @@ namespace bb
 		system_clock::time_point IslandRefreshTime{};
 		system_clock::time_point QuestDailyCompleteRefreshTime{};
 		int32 ChangeNickFreeCount{};
-		system_clock::time_point DailyRewardExpiredTime{};
-		int32 DailyRewardCountLeft{};
 		SUserCore()
 		{
 		}
-		SUserCore(const TResources& Resources_, const int8& Debug_, const int32& SelectedCharCode_, const int32& SinglePlayCount_, const system_clock::time_point& SingleRefreshTime_, const int32& IslandPlayCount_, const system_clock::time_point& IslandRefreshTime_, const system_clock::time_point& QuestDailyCompleteRefreshTime_, const int32& ChangeNickFreeCount_, const system_clock::time_point& DailyRewardExpiredTime_, const int32& DailyRewardCountLeft_) : Resources(Resources_), Debug(Debug_), SelectedCharCode(SelectedCharCode_), SinglePlayCount(SinglePlayCount_), SingleRefreshTime(SingleRefreshTime_), IslandPlayCount(IslandPlayCount_), IslandRefreshTime(IslandRefreshTime_), QuestDailyCompleteRefreshTime(QuestDailyCompleteRefreshTime_), ChangeNickFreeCount(ChangeNickFreeCount_), DailyRewardExpiredTime(DailyRewardExpiredTime_), DailyRewardCountLeft(DailyRewardCountLeft_)
+		SUserCore(const TResources& Resources_, const int8& Debug_, const int32& SelectedCharCode_, const int32& SinglePlayCount_, const system_clock::time_point& SingleRefreshTime_, const int32& IslandPlayCount_, const system_clock::time_point& IslandRefreshTime_, const system_clock::time_point& QuestDailyCompleteRefreshTime_, const int32& ChangeNickFreeCount_) : Resources(Resources_), Debug(Debug_), SelectedCharCode(SelectedCharCode_), SinglePlayCount(SinglePlayCount_), SingleRefreshTime(SingleRefreshTime_), IslandPlayCount(IslandPlayCount_), IslandRefreshTime(IslandRefreshTime_), QuestDailyCompleteRefreshTime(QuestDailyCompleteRefreshTime_), ChangeNickFreeCount(ChangeNickFreeCount_)
 		{
 		}
-		SUserCore(TResources&& Resources_, int8&& Debug_, int32&& SelectedCharCode_, int32&& SinglePlayCount_, system_clock::time_point&& SingleRefreshTime_, int32&& IslandPlayCount_, system_clock::time_point&& IslandRefreshTime_, system_clock::time_point&& QuestDailyCompleteRefreshTime_, int32&& ChangeNickFreeCount_, system_clock::time_point&& DailyRewardExpiredTime_, int32&& DailyRewardCountLeft_) : Resources(std::move(Resources_)), Debug(std::move(Debug_)), SelectedCharCode(std::move(SelectedCharCode_)), SinglePlayCount(std::move(SinglePlayCount_)), SingleRefreshTime(std::move(SingleRefreshTime_)), IslandPlayCount(std::move(IslandPlayCount_)), IslandRefreshTime(std::move(IslandRefreshTime_)), QuestDailyCompleteRefreshTime(std::move(QuestDailyCompleteRefreshTime_)), ChangeNickFreeCount(std::move(ChangeNickFreeCount_)), DailyRewardExpiredTime(std::move(DailyRewardExpiredTime_)), DailyRewardCountLeft(std::move(DailyRewardCountLeft_))
+		SUserCore(TResources&& Resources_, int8&& Debug_, int32&& SelectedCharCode_, int32&& SinglePlayCount_, system_clock::time_point&& SingleRefreshTime_, int32&& IslandPlayCount_, system_clock::time_point&& IslandRefreshTime_, system_clock::time_point&& QuestDailyCompleteRefreshTime_, int32&& ChangeNickFreeCount_) : Resources(std::move(Resources_)), Debug(std::move(Debug_)), SelectedCharCode(std::move(SelectedCharCode_)), SinglePlayCount(std::move(SinglePlayCount_)), SingleRefreshTime(std::move(SingleRefreshTime_)), IslandPlayCount(std::move(IslandPlayCount_)), IslandRefreshTime(std::move(IslandRefreshTime_)), QuestDailyCompleteRefreshTime(std::move(QuestDailyCompleteRefreshTime_)), ChangeNickFreeCount(std::move(ChangeNickFreeCount_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -674,8 +692,6 @@ namespace bb
 			Stream_ >> IslandRefreshTime;
 			Stream_ >> QuestDailyCompleteRefreshTime;
 			Stream_ >> ChangeNickFreeCount;
-			Stream_ >> DailyRewardExpiredTime;
-			Stream_ >> DailyRewardCountLeft;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -688,8 +704,6 @@ namespace bb
 			Value_["IslandRefreshTime"] >> IslandRefreshTime;
 			Value_["QuestDailyCompleteRefreshTime"] >> QuestDailyCompleteRefreshTime;
 			Value_["ChangeNickFreeCount"] >> ChangeNickFreeCount;
-			Value_["DailyRewardExpiredTime"] >> DailyRewardExpiredTime;
-			Value_["DailyRewardCountLeft"] >> DailyRewardCountLeft;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -702,8 +716,6 @@ namespace bb
 			Stream_ << IslandRefreshTime;
 			Stream_ << QuestDailyCompleteRefreshTime;
 			Stream_ << ChangeNickFreeCount;
-			Stream_ << DailyRewardExpiredTime;
-			Stream_ << DailyRewardCountLeft;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -716,8 +728,6 @@ namespace bb
 			Value_["IslandRefreshTime"] = IslandRefreshTime;
 			Value_["QuestDailyCompleteRefreshTime"] = QuestDailyCompleteRefreshTime;
 			Value_["ChangeNickFreeCount"] = ChangeNickFreeCount;
-			Value_["DailyRewardExpiredTime"] = DailyRewardExpiredTime;
-			Value_["DailyRewardCountLeft"] = DailyRewardCountLeft;
 		}
 		static wstring StdName(void)
 		{
@@ -729,8 +739,6 @@ namespace bb
 				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
-				GetStdName(system_clock::time_point()) + L"," + 
-				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(int32());
 		}
@@ -745,9 +753,7 @@ namespace bb
 				GetMemberName(int32(), L"IslandPlayCount") + L"," + 
 				GetMemberName(system_clock::time_point(), L"IslandRefreshTime") + L"," + 
 				GetMemberName(system_clock::time_point(), L"QuestDailyCompleteRefreshTime") + L"," + 
-				GetMemberName(int32(), L"ChangeNickFreeCount") + L"," + 
-				GetMemberName(system_clock::time_point(), L"DailyRewardExpiredTime") + L"," + 
-				GetMemberName(int32(), L"DailyRewardCountLeft");
+				GetMemberName(int32(), L"ChangeNickFreeCount");
 		}
 	};
 	struct SInvalidDisconnectInfo : public SProto
@@ -807,9 +813,10 @@ namespace bb
 	{
 		TExp Exp{};
 		bool CanPushAtNight{};
+		double eloPoint{};
 		int32 Point{};
 		int32 PointBest{};
-		int32 LastGotRewardRankIndex{};
+		int32 NextRewardRankIndex{};
 		int32 WinCountSolo{};
 		int32 LoseCountSolo{};
 		int32 WinCountMulti{};
@@ -817,8 +824,7 @@ namespace bb
 		int32 BattlePointBest{};
 		int32 SinglePointBest{};
 		int32 IslandPointBest{};
-		int64 SingleBestTick{};
-		int32 IslandPassedCountBest{};
+		int32 IslandComboBest{};
 		int32 KillTotal{};
 		int32 ChainKillTotal{};
 		int32 BlowBalloonTotal{};
@@ -830,10 +836,10 @@ namespace bb
 		SUserBase()
 		{
 		}
-		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const int32& Point_, const int32& PointBest_, const int32& LastGotRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int64& SingleBestTick_, const int32& IslandPassedCountBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const int64& RankingRewardedCounter_, const TNick& NewNick_, const SInvalidDisconnectInfo& InvalidDisconnectInfo_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), Point(Point_), PointBest(PointBest_), LastGotRewardRankIndex(LastGotRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), SingleBestTick(SingleBestTick_), IslandPassedCountBest(IslandPassedCountBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_), InvalidDisconnectInfo(InvalidDisconnectInfo_)
+		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const double& eloPoint_, const int32& Point_, const int32& PointBest_, const int32& NextRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int32& IslandComboBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const int64& RankingRewardedCounter_, const TNick& NewNick_, const SInvalidDisconnectInfo& InvalidDisconnectInfo_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), eloPoint(eloPoint_), Point(Point_), PointBest(PointBest_), NextRewardRankIndex(NextRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), IslandComboBest(IslandComboBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_), InvalidDisconnectInfo(InvalidDisconnectInfo_)
 		{
 		}
-		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, int32&& Point_, int32&& PointBest_, int32&& LastGotRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int64&& SingleBestTick_, int32&& IslandPassedCountBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, int64&& RankingRewardedCounter_, TNick&& NewNick_, SInvalidDisconnectInfo&& InvalidDisconnectInfo_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), LastGotRewardRankIndex(std::move(LastGotRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), SingleBestTick(std::move(SingleBestTick_)), IslandPassedCountBest(std::move(IslandPassedCountBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_)), InvalidDisconnectInfo(std::move(InvalidDisconnectInfo_))
+		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, double&& eloPoint_, int32&& Point_, int32&& PointBest_, int32&& NextRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int32&& IslandComboBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, int64&& RankingRewardedCounter_, TNick&& NewNick_, SInvalidDisconnectInfo&& InvalidDisconnectInfo_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), eloPoint(std::move(eloPoint_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), NextRewardRankIndex(std::move(NextRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), IslandComboBest(std::move(IslandComboBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_)), InvalidDisconnectInfo(std::move(InvalidDisconnectInfo_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -841,9 +847,10 @@ namespace bb
 			SUserCore::operator << (Stream_);
 			Stream_ >> Exp;
 			Stream_ >> CanPushAtNight;
+			Stream_ >> eloPoint;
 			Stream_ >> Point;
 			Stream_ >> PointBest;
-			Stream_ >> LastGotRewardRankIndex;
+			Stream_ >> NextRewardRankIndex;
 			Stream_ >> WinCountSolo;
 			Stream_ >> LoseCountSolo;
 			Stream_ >> WinCountMulti;
@@ -851,8 +858,7 @@ namespace bb
 			Stream_ >> BattlePointBest;
 			Stream_ >> SinglePointBest;
 			Stream_ >> IslandPointBest;
-			Stream_ >> SingleBestTick;
-			Stream_ >> IslandPassedCountBest;
+			Stream_ >> IslandComboBest;
 			Stream_ >> KillTotal;
 			Stream_ >> ChainKillTotal;
 			Stream_ >> BlowBalloonTotal;
@@ -867,9 +873,10 @@ namespace bb
 			SUserCore::operator << (Value_);
 			Value_["Exp"] >> Exp;
 			Value_["CanPushAtNight"] >> CanPushAtNight;
+			Value_["eloPoint"] >> eloPoint;
 			Value_["Point"] >> Point;
 			Value_["PointBest"] >> PointBest;
-			Value_["LastGotRewardRankIndex"] >> LastGotRewardRankIndex;
+			Value_["NextRewardRankIndex"] >> NextRewardRankIndex;
 			Value_["WinCountSolo"] >> WinCountSolo;
 			Value_["LoseCountSolo"] >> LoseCountSolo;
 			Value_["WinCountMulti"] >> WinCountMulti;
@@ -877,8 +884,7 @@ namespace bb
 			Value_["BattlePointBest"] >> BattlePointBest;
 			Value_["SinglePointBest"] >> SinglePointBest;
 			Value_["IslandPointBest"] >> IslandPointBest;
-			Value_["SingleBestTick"] >> SingleBestTick;
-			Value_["IslandPassedCountBest"] >> IslandPassedCountBest;
+			Value_["IslandComboBest"] >> IslandComboBest;
 			Value_["KillTotal"] >> KillTotal;
 			Value_["ChainKillTotal"] >> ChainKillTotal;
 			Value_["BlowBalloonTotal"] >> BlowBalloonTotal;
@@ -893,9 +899,10 @@ namespace bb
 			SUserCore::operator >> (Stream_);
 			Stream_ << Exp;
 			Stream_ << CanPushAtNight;
+			Stream_ << eloPoint;
 			Stream_ << Point;
 			Stream_ << PointBest;
-			Stream_ << LastGotRewardRankIndex;
+			Stream_ << NextRewardRankIndex;
 			Stream_ << WinCountSolo;
 			Stream_ << LoseCountSolo;
 			Stream_ << WinCountMulti;
@@ -903,8 +910,7 @@ namespace bb
 			Stream_ << BattlePointBest;
 			Stream_ << SinglePointBest;
 			Stream_ << IslandPointBest;
-			Stream_ << SingleBestTick;
-			Stream_ << IslandPassedCountBest;
+			Stream_ << IslandComboBest;
 			Stream_ << KillTotal;
 			Stream_ << ChainKillTotal;
 			Stream_ << BlowBalloonTotal;
@@ -919,9 +925,10 @@ namespace bb
 			SUserCore::operator >> (Value_);
 			Value_["Exp"] = Exp;
 			Value_["CanPushAtNight"] = CanPushAtNight;
+			Value_["eloPoint"] = eloPoint;
 			Value_["Point"] = Point;
 			Value_["PointBest"] = PointBest;
-			Value_["LastGotRewardRankIndex"] = LastGotRewardRankIndex;
+			Value_["NextRewardRankIndex"] = NextRewardRankIndex;
 			Value_["WinCountSolo"] = WinCountSolo;
 			Value_["LoseCountSolo"] = LoseCountSolo;
 			Value_["WinCountMulti"] = WinCountMulti;
@@ -929,8 +936,7 @@ namespace bb
 			Value_["BattlePointBest"] = BattlePointBest;
 			Value_["SinglePointBest"] = SinglePointBest;
 			Value_["IslandPointBest"] = IslandPointBest;
-			Value_["SingleBestTick"] = SingleBestTick;
-			Value_["IslandPassedCountBest"] = IslandPassedCountBest;
+			Value_["IslandComboBest"] = IslandComboBest;
 			Value_["KillTotal"] = KillTotal;
 			Value_["ChainKillTotal"] = ChainKillTotal;
 			Value_["BlowBalloonTotal"] = BlowBalloonTotal;
@@ -946,6 +952,7 @@ namespace bb
 				GetStdName(SUserCore()) + L"," + 
 				GetStdName(TExp()) + L"," + 
 				GetStdName(bool()) + L"," + 
+				GetStdName(double()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
@@ -956,7 +963,6 @@ namespace bb
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int64()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
@@ -973,9 +979,10 @@ namespace bb
 				GetMemberName(SUserCore(), L"") + L"," + 
 				GetMemberName(TExp(), L"Exp") + L"," + 
 				GetMemberName(bool(), L"CanPushAtNight") + L"," + 
+				GetMemberName(double(), L"eloPoint") + L"," + 
 				GetMemberName(int32(), L"Point") + L"," + 
 				GetMemberName(int32(), L"PointBest") + L"," + 
-				GetMemberName(int32(), L"LastGotRewardRankIndex") + L"," + 
+				GetMemberName(int32(), L"NextRewardRankIndex") + L"," + 
 				GetMemberName(int32(), L"WinCountSolo") + L"," + 
 				GetMemberName(int32(), L"LoseCountSolo") + L"," + 
 				GetMemberName(int32(), L"WinCountMulti") + L"," + 
@@ -983,8 +990,7 @@ namespace bb
 				GetMemberName(int32(), L"BattlePointBest") + L"," + 
 				GetMemberName(int32(), L"SinglePointBest") + L"," + 
 				GetMemberName(int32(), L"IslandPointBest") + L"," + 
-				GetMemberName(int64(), L"SingleBestTick") + L"," + 
-				GetMemberName(int32(), L"IslandPassedCountBest") + L"," + 
+				GetMemberName(int32(), L"IslandComboBest") + L"," + 
 				GetMemberName(int32(), L"KillTotal") + L"," + 
 				GetMemberName(int32(), L"ChainKillTotal") + L"," + 
 				GetMemberName(int32(), L"BlowBalloonTotal") + L"," + 
@@ -1095,21 +1101,19 @@ namespace bb
 		}
 	};
 	using TQuestDBs = map<TQuestSlotIndex,SQuestBase>;
-	using TPackages = set<int32>;
 	struct SLoginNetSc : public SProto
 	{
 		SUserNet User{};
 		TChars Chars{};
 		system_clock::time_point ServerTime{};
 		TQuestDBs Quests{};
-		TPackages Packages{};
 		SLoginNetSc()
 		{
 		}
-		SLoginNetSc(const SUserNet& User_, const TChars& Chars_, const system_clock::time_point& ServerTime_, const TQuestDBs& Quests_, const TPackages& Packages_) : User(User_), Chars(Chars_), ServerTime(ServerTime_), Quests(Quests_), Packages(Packages_)
+		SLoginNetSc(const SUserNet& User_, const TChars& Chars_, const system_clock::time_point& ServerTime_, const TQuestDBs& Quests_) : User(User_), Chars(Chars_), ServerTime(ServerTime_), Quests(Quests_)
 		{
 		}
-		SLoginNetSc(SUserNet&& User_, TChars&& Chars_, system_clock::time_point&& ServerTime_, TQuestDBs&& Quests_, TPackages&& Packages_) : User(std::move(User_)), Chars(std::move(Chars_)), ServerTime(std::move(ServerTime_)), Quests(std::move(Quests_)), Packages(std::move(Packages_))
+		SLoginNetSc(SUserNet&& User_, TChars&& Chars_, system_clock::time_point&& ServerTime_, TQuestDBs&& Quests_) : User(std::move(User_)), Chars(std::move(Chars_)), ServerTime(std::move(ServerTime_)), Quests(std::move(Quests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1118,7 +1122,6 @@ namespace bb
 			Stream_ >> Chars;
 			Stream_ >> ServerTime;
 			Stream_ >> Quests;
-			Stream_ >> Packages;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -1126,7 +1129,6 @@ namespace bb
 			Value_["Chars"] >> Chars;
 			Value_["ServerTime"] >> ServerTime;
 			Value_["Quests"] >> Quests;
-			Value_["Packages"] >> Packages;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -1134,7 +1136,6 @@ namespace bb
 			Stream_ << Chars;
 			Stream_ << ServerTime;
 			Stream_ << Quests;
-			Stream_ << Packages;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -1142,7 +1143,6 @@ namespace bb
 			Value_["Chars"] = Chars;
 			Value_["ServerTime"] = ServerTime;
 			Value_["Quests"] = Quests;
-			Value_["Packages"] = Packages;
 		}
 		static wstring StdName(void)
 		{
@@ -1150,8 +1150,7 @@ namespace bb
 				GetStdName(SUserNet()) + L"," + 
 				GetStdName(TChars()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
-				GetStdName(TQuestDBs()) + L"," + 
-				GetStdName(TPackages());
+				GetStdName(TQuestDBs());
 		}
 		static wstring MemberName(void)
 		{
@@ -1159,8 +1158,7 @@ namespace bb
 				GetMemberName(SUserNet(), L"User") + L"," + 
 				GetMemberName(TChars(), L"Chars") + L"," + 
 				GetMemberName(system_clock::time_point(), L"ServerTime") + L"," + 
-				GetMemberName(TQuestDBs(), L"Quests") + L"," + 
-				GetMemberName(TPackages(), L"Packages");
+				GetMemberName(TQuestDBs(), L"Quests");
 		}
 	};
 	struct SLobbyNetSc : public SProto
@@ -1638,43 +1636,43 @@ namespace bb
 				GetMemberName(int32(), L"Code");
 		}
 	};
-	struct SRewardDB : public SProto
+	struct SRewardInfo : public SProto
 	{
 		TUID UID{};
 		TResources ResourcesLeft{};
-		list<int32> CharsAdded{};
-		SRewardDB()
+		list<int32> Chars{};
+		SRewardInfo()
 		{
 		}
-		SRewardDB(const TUID& UID_, const TResources& ResourcesLeft_, const list<int32>& CharsAdded_) : UID(UID_), ResourcesLeft(ResourcesLeft_), CharsAdded(CharsAdded_)
+		SRewardInfo(const TUID& UID_, const TResources& ResourcesLeft_, const list<int32>& Chars_) : UID(UID_), ResourcesLeft(ResourcesLeft_), Chars(Chars_)
 		{
 		}
-		SRewardDB(TUID&& UID_, TResources&& ResourcesLeft_, list<int32>&& CharsAdded_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), CharsAdded(std::move(CharsAdded_))
+		SRewardInfo(TUID&& UID_, TResources&& ResourcesLeft_, list<int32>&& Chars_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), Chars(std::move(Chars_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> UID;
 			Stream_ >> ResourcesLeft;
-			Stream_ >> CharsAdded;
+			Stream_ >> Chars;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["UID"] >> UID;
 			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["CharsAdded"] >> CharsAdded;
+			Value_["Chars"] >> Chars;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << UID;
 			Stream_ << ResourcesLeft;
-			Stream_ << CharsAdded;
+			Stream_ << Chars;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["UID"] = UID;
 			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["CharsAdded"] = CharsAdded;
+			Value_["Chars"] = Chars;
 		}
 		static wstring StdName(void)
 		{
@@ -1688,52 +1686,53 @@ namespace bb
 			return 
 				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(list<int32>(), L"CharsAdded");
+				GetMemberName(list<int32>(), L"Chars");
 		}
 	};
-	struct SBuyNetSc : public SRewardDB
+	struct SBuyNetSc : public SProto
 	{
-		int32 Code{};
+		TUID UID{};
+		TResources ResourcesLeft{};
 		SBuyNetSc()
 		{
 		}
-		SBuyNetSc(const SRewardDB& Super_, const int32& Code_) : SRewardDB(Super_), Code(Code_)
+		SBuyNetSc(const TUID& UID_, const TResources& ResourcesLeft_) : UID(UID_), ResourcesLeft(ResourcesLeft_)
 		{
 		}
-		SBuyNetSc(SRewardDB&& Super_, int32&& Code_) : SRewardDB(std::move(Super_)), Code(std::move(Code_))
+		SBuyNetSc(TUID&& UID_, TResources&& ResourcesLeft_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
-			Stream_ >> Code;
+			Stream_ >> UID;
+			Stream_ >> ResourcesLeft;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
-			Value_["Code"] >> Code;
+			Value_["UID"] >> UID;
+			Value_["ResourcesLeft"] >> ResourcesLeft;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
-			Stream_ << Code;
+			Stream_ << UID;
+			Stream_ << ResourcesLeft;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
-			Value_["Code"] = Code;
+			Value_["UID"] = UID;
+			Value_["ResourcesLeft"] = ResourcesLeft;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
-				GetStdName(int32());
+				GetStdName(TUID()) + L"," + 
+				GetStdName(TResources());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
-				GetMemberName(int32(), L"Code");
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(TResources(), L"ResourcesLeft");
 		}
 	};
 	struct SBuyCharNetCs : public SProto
@@ -1814,90 +1813,6 @@ namespace bb
 				GetMemberName(int32(), L"Code");
 		}
 	};
-	struct SBuyPackageNetCs : public SProto
-	{
-		int32 Code{};
-		SBuyPackageNetCs()
-		{
-		}
-		SBuyPackageNetCs(const int32& Code_) : Code(Code_)
-		{
-		}
-		SBuyPackageNetCs(int32&& Code_) : Code(std::move(Code_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Code;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Code"] >> Code;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Code;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Code"] = Code;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(int32(), L"Code");
-		}
-	};
-	struct SBuyPackageNetSc : public SRewardDB
-	{
-		int32 Code{};
-		SBuyPackageNetSc()
-		{
-		}
-		SBuyPackageNetSc(const SRewardDB& Super_, const int32& Code_) : SRewardDB(Super_), Code(Code_)
-		{
-		}
-		SBuyPackageNetSc(SRewardDB&& Super_, int32&& Code_) : SRewardDB(std::move(Super_)), Code(std::move(Code_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SRewardDB::operator << (Stream_);
-			Stream_ >> Code;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SRewardDB::operator << (Value_);
-			Value_["Code"] >> Code;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SRewardDB::operator >> (Stream_);
-			Stream_ << Code;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SRewardDB::operator >> (Value_);
-			Value_["Code"] = Code;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SRewardDB()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
-				GetMemberName(int32(), L"Code");
-		}
-	};
 	struct SBuyResourceNetCs : public SProto
 	{
 		SResourceTypeData resourceTypeData{};
@@ -1974,121 +1889,6 @@ namespace bb
 		{
 			return 
 				GetMemberName(TResources(), L"ResourcesLeft");
-		}
-	};
-	struct SDailyRewardNetCs : public SProto
-	{
-		bool IsWatchedAd{};
-		SDailyRewardNetCs()
-		{
-		}
-		SDailyRewardNetCs(const bool& IsWatchedAd_) : IsWatchedAd(IsWatchedAd_)
-		{
-		}
-		SDailyRewardNetCs(bool&& IsWatchedAd_) : IsWatchedAd(std::move(IsWatchedAd_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> IsWatchedAd;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["IsWatchedAd"] >> IsWatchedAd;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << IsWatchedAd;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["IsWatchedAd"] = IsWatchedAd;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(bool());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(bool(), L"IsWatchedAd");
-		}
-	};
-	struct SDailyRewardNetSc : public SProto
-	{
-		SResourceTypeData Reward{};
-		system_clock::time_point ExpiredTime{};
-		int32 CountLeft{};
-		SDailyRewardNetSc()
-		{
-		}
-		SDailyRewardNetSc(const SResourceTypeData& Reward_, const system_clock::time_point& ExpiredTime_, const int32& CountLeft_) : Reward(Reward_), ExpiredTime(ExpiredTime_), CountLeft(CountLeft_)
-		{
-		}
-		SDailyRewardNetSc(SResourceTypeData&& Reward_, system_clock::time_point&& ExpiredTime_, int32&& CountLeft_) : Reward(std::move(Reward_)), ExpiredTime(std::move(ExpiredTime_)), CountLeft(std::move(CountLeft_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Reward;
-			Stream_ >> ExpiredTime;
-			Stream_ >> CountLeft;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Reward"] >> Reward;
-			Value_["ExpiredTime"] >> ExpiredTime;
-			Value_["CountLeft"] >> CountLeft;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Reward;
-			Stream_ << ExpiredTime;
-			Stream_ << CountLeft;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Reward"] = Reward;
-			Value_["ExpiredTime"] = ExpiredTime;
-			Value_["CountLeft"] = CountLeft;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SResourceTypeData()) + L"," + 
-				GetStdName(system_clock::time_point()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SResourceTypeData(), L"Reward") + L"," + 
-				GetMemberName(system_clock::time_point(), L"ExpiredTime") + L"," + 
-				GetMemberName(int32(), L"CountLeft");
-		}
-	};
-	struct SDailyRewardFailNetSc : public SProto
-	{
-		void operator << (CStream&) override
-		{
-		}
-		void operator << (const Value&) override
-		{
-		}
-		void operator >> (CStream&) const override
-		{
-		}
-		void operator >> (Value&) const override
-		{
-		}
-		static wstring StdName(void)
-		{
-			return L"";
-		}
-		static wstring MemberName(void)
-		{
-			return L"";
 		}
 	};
 	struct SSelectCharNetCs : public SProto
@@ -2254,18 +2054,18 @@ namespace bb
 				GetMemberName(int8(), L"Dir");
 		}
 	};
-	struct SBattleTouchNetSc : public SProto
+	struct SBattleDirectNetSc : public SProto
 	{
 		int64 Tick{};
 		int32 PlayerIndex{};
 		int8 Dir{};
-		SBattleTouchNetSc()
+		SBattleDirectNetSc()
 		{
 		}
-		SBattleTouchNetSc(const int64& Tick_, const int32& PlayerIndex_, const int8& Dir_) : Tick(Tick_), PlayerIndex(PlayerIndex_), Dir(Dir_)
+		SBattleDirectNetSc(const int64& Tick_, const int32& PlayerIndex_, const int8& Dir_) : Tick(Tick_), PlayerIndex(PlayerIndex_), Dir(Dir_)
 		{
 		}
-		SBattleTouchNetSc(int64&& Tick_, int32&& PlayerIndex_, int8&& Dir_) : Tick(std::move(Tick_)), PlayerIndex(std::move(PlayerIndex_)), Dir(std::move(Dir_))
+		SBattleDirectNetSc(int64&& Tick_, int32&& PlayerIndex_, int8&& Dir_) : Tick(std::move(Tick_)), PlayerIndex(std::move(PlayerIndex_)), Dir(std::move(Dir_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -2330,17 +2130,63 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SBattlePushNetSc : public SProto
+	struct SBattleFlapNetSc : public SProto
 	{
 		int64 Tick{};
 		int32 PlayerIndex{};
-		SBattlePushNetSc()
+		SBattleFlapNetSc()
 		{
 		}
-		SBattlePushNetSc(const int64& Tick_, const int32& PlayerIndex_) : Tick(Tick_), PlayerIndex(PlayerIndex_)
+		SBattleFlapNetSc(const int64& Tick_, const int32& PlayerIndex_) : Tick(Tick_), PlayerIndex(PlayerIndex_)
 		{
 		}
-		SBattlePushNetSc(int64&& Tick_, int32&& PlayerIndex_) : Tick(std::move(Tick_)), PlayerIndex(std::move(PlayerIndex_))
+		SBattleFlapNetSc(int64&& Tick_, int32&& PlayerIndex_) : Tick(std::move(Tick_)), PlayerIndex(std::move(PlayerIndex_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> Tick;
+			Stream_ >> PlayerIndex;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["Tick"] >> Tick;
+			Value_["PlayerIndex"] >> PlayerIndex;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << Tick;
+			Stream_ << PlayerIndex;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["Tick"] = Tick;
+			Value_["PlayerIndex"] = PlayerIndex;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int64(), L"Tick") + L"," + 
+				GetMemberName(int32(), L"PlayerIndex");
+		}
+	};
+	struct SBattlePumpNetSc : public SProto
+	{
+		int64 Tick{};
+		int32 PlayerIndex{};
+		SBattlePumpNetSc()
+		{
+		}
+		SBattlePumpNetSc(const int64& Tick_, const int32& PlayerIndex_) : Tick(Tick_), PlayerIndex(PlayerIndex_)
+		{
+		}
+		SBattlePumpNetSc(int64&& Tick_, int32&& PlayerIndex_) : Tick(std::move(Tick_)), PlayerIndex(std::move(PlayerIndex_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -2705,7 +2551,6 @@ namespace bb
 		SParachuteInfo ParachuteInfo{};
 		SStaminaInfo StaminaInfo{};
 		int8 Face{};
-		SPoint Acc{};
 		int64 InvulnerableEndTick{};
 		int32 ChainKillCount{};
 		int64 LastKillTick{};
@@ -2713,10 +2558,10 @@ namespace bb
 		SCharacter()
 		{
 		}
-		SCharacter(const bool& IsGround_, const int8& Dir_, const int8& BalloonCount_, const SPumpInfo& PumpInfo_, const SParachuteInfo& ParachuteInfo_, const SStaminaInfo& StaminaInfo_, const int8& Face_, const SPoint& Acc_, const int64& InvulnerableEndTick_, const int32& ChainKillCount_, const int64& LastKillTick_, const int64& RegenTick_) : IsGround(IsGround_), Dir(Dir_), BalloonCount(BalloonCount_), PumpInfo(PumpInfo_), ParachuteInfo(ParachuteInfo_), StaminaInfo(StaminaInfo_), Face(Face_), Acc(Acc_), InvulnerableEndTick(InvulnerableEndTick_), ChainKillCount(ChainKillCount_), LastKillTick(LastKillTick_), RegenTick(RegenTick_)
+		SCharacter(const bool& IsGround_, const int8& Dir_, const int8& BalloonCount_, const SPumpInfo& PumpInfo_, const SParachuteInfo& ParachuteInfo_, const SStaminaInfo& StaminaInfo_, const int8& Face_, const int64& InvulnerableEndTick_, const int32& ChainKillCount_, const int64& LastKillTick_, const int64& RegenTick_) : IsGround(IsGround_), Dir(Dir_), BalloonCount(BalloonCount_), PumpInfo(PumpInfo_), ParachuteInfo(ParachuteInfo_), StaminaInfo(StaminaInfo_), Face(Face_), InvulnerableEndTick(InvulnerableEndTick_), ChainKillCount(ChainKillCount_), LastKillTick(LastKillTick_), RegenTick(RegenTick_)
 		{
 		}
-		SCharacter(bool&& IsGround_, int8&& Dir_, int8&& BalloonCount_, SPumpInfo&& PumpInfo_, SParachuteInfo&& ParachuteInfo_, SStaminaInfo&& StaminaInfo_, int8&& Face_, SPoint&& Acc_, int64&& InvulnerableEndTick_, int32&& ChainKillCount_, int64&& LastKillTick_, int64&& RegenTick_) : IsGround(std::move(IsGround_)), Dir(std::move(Dir_)), BalloonCount(std::move(BalloonCount_)), PumpInfo(std::move(PumpInfo_)), ParachuteInfo(std::move(ParachuteInfo_)), StaminaInfo(std::move(StaminaInfo_)), Face(std::move(Face_)), Acc(std::move(Acc_)), InvulnerableEndTick(std::move(InvulnerableEndTick_)), ChainKillCount(std::move(ChainKillCount_)), LastKillTick(std::move(LastKillTick_)), RegenTick(std::move(RegenTick_))
+		SCharacter(bool&& IsGround_, int8&& Dir_, int8&& BalloonCount_, SPumpInfo&& PumpInfo_, SParachuteInfo&& ParachuteInfo_, SStaminaInfo&& StaminaInfo_, int8&& Face_, int64&& InvulnerableEndTick_, int32&& ChainKillCount_, int64&& LastKillTick_, int64&& RegenTick_) : IsGround(std::move(IsGround_)), Dir(std::move(Dir_)), BalloonCount(std::move(BalloonCount_)), PumpInfo(std::move(PumpInfo_)), ParachuteInfo(std::move(ParachuteInfo_)), StaminaInfo(std::move(StaminaInfo_)), Face(std::move(Face_)), InvulnerableEndTick(std::move(InvulnerableEndTick_)), ChainKillCount(std::move(ChainKillCount_)), LastKillTick(std::move(LastKillTick_)), RegenTick(std::move(RegenTick_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -2728,7 +2573,6 @@ namespace bb
 			Stream_ >> ParachuteInfo;
 			Stream_ >> StaminaInfo;
 			Stream_ >> Face;
-			Stream_ >> Acc;
 			Stream_ >> InvulnerableEndTick;
 			Stream_ >> ChainKillCount;
 			Stream_ >> LastKillTick;
@@ -2743,7 +2587,6 @@ namespace bb
 			Value_["ParachuteInfo"] >> ParachuteInfo;
 			Value_["StaminaInfo"] >> StaminaInfo;
 			Value_["Face"] >> Face;
-			Value_["Acc"] >> Acc;
 			Value_["InvulnerableEndTick"] >> InvulnerableEndTick;
 			Value_["ChainKillCount"] >> ChainKillCount;
 			Value_["LastKillTick"] >> LastKillTick;
@@ -2758,7 +2601,6 @@ namespace bb
 			Stream_ << ParachuteInfo;
 			Stream_ << StaminaInfo;
 			Stream_ << Face;
-			Stream_ << Acc;
 			Stream_ << InvulnerableEndTick;
 			Stream_ << ChainKillCount;
 			Stream_ << LastKillTick;
@@ -2773,7 +2615,6 @@ namespace bb
 			Value_["ParachuteInfo"] = ParachuteInfo;
 			Value_["StaminaInfo"] = StaminaInfo;
 			Value_["Face"] = Face;
-			Value_["Acc"] = Acc;
 			Value_["InvulnerableEndTick"] = InvulnerableEndTick;
 			Value_["ChainKillCount"] = ChainKillCount;
 			Value_["LastKillTick"] = LastKillTick;
@@ -2789,7 +2630,6 @@ namespace bb
 				GetStdName(SParachuteInfo()) + L"," + 
 				GetStdName(SStaminaInfo()) + L"," + 
 				GetStdName(int8()) + L"," + 
-				GetStdName(SPoint()) + L"," + 
 				GetStdName(int64()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int64()) + L"," + 
@@ -2805,7 +2645,6 @@ namespace bb
 				GetMemberName(SParachuteInfo(), L"ParachuteInfo") + L"," + 
 				GetMemberName(SStaminaInfo(), L"StaminaInfo") + L"," + 
 				GetMemberName(int8(), L"Face") + L"," + 
-				GetMemberName(SPoint(), L"Acc") + L"," + 
 				GetMemberName(int64(), L"InvulnerableEndTick") + L"," + 
 				GetMemberName(int32(), L"ChainKillCount") + L"," + 
 				GetMemberName(int64(), L"LastKillTick") + L"," + 
@@ -2956,16 +2795,16 @@ namespace bb
 				GetMemberName(int32(), L"TotalBalloonHitCount");
 		}
 	};
-	struct SMultiBattleInfo : public SProto
+	struct BattleInfo : public SProto
 	{
 		int32 Point{};
-		SMultiBattleInfo()
+		BattleInfo()
 		{
 		}
-		SMultiBattleInfo(const int32& Point_) : Point(Point_)
+		BattleInfo(const int32& Point_) : Point(Point_)
 		{
 		}
-		SMultiBattleInfo(int32&& Point_) : Point(std::move(Point_))
+		BattleInfo(int32&& Point_) : Point(std::move(Point_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -2993,6 +2832,44 @@ namespace bb
 		{
 			return 
 				GetMemberName(int32(), L"Point");
+		}
+	};
+	struct SMultiBattleInfo : public BattleInfo
+	{
+		SMultiBattleInfo()
+		{
+		}
+		SMultiBattleInfo(const BattleInfo& Super_) : BattleInfo(Super_)
+		{
+		}
+		SMultiBattleInfo(BattleInfo&& Super_) : BattleInfo(std::move(Super_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			BattleInfo::operator << (Stream_);
+		}
+		void operator << (const Value& Value_) override
+		{
+			BattleInfo::operator << (Value_);
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			BattleInfo::operator >> (Stream_);
+		}
+		void operator >> (Value& Value_) const override
+		{
+			BattleInfo::operator >> (Value_);
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(BattleInfo());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(BattleInfo(), L"");
 		}
 	};
 	struct SMultiBattleBeginNetSc : public SBattle
@@ -3128,149 +3005,110 @@ namespace bb
 				GetMemberName(int64(), L"EndTick");
 		}
 	};
-	struct SBattleEndPlayer : public SProto
+	struct BattleEndInfo : public SProto
 	{
-		int32 AddedPoint{};
-		int32 AddedGold{};
-		int32 BattlePoint{};
-		SBattleEndPlayer()
+		double addedEloPoint{};
+		int32 battlePoint{};
+		TResources addedResources{};
+		BattleEndInfo()
 		{
 		}
-		SBattleEndPlayer(const int32& AddedPoint_, const int32& AddedGold_, const int32& BattlePoint_) : AddedPoint(AddedPoint_), AddedGold(AddedGold_), BattlePoint(BattlePoint_)
+		BattleEndInfo(const double& addedEloPoint_, const int32& battlePoint_, const TResources& addedResources_) : addedEloPoint(addedEloPoint_), battlePoint(battlePoint_), addedResources(addedResources_)
 		{
 		}
-		SBattleEndPlayer(int32&& AddedPoint_, int32&& AddedGold_, int32&& BattlePoint_) : AddedPoint(std::move(AddedPoint_)), AddedGold(std::move(AddedGold_)), BattlePoint(std::move(BattlePoint_))
+		BattleEndInfo(double&& addedEloPoint_, int32&& battlePoint_, TResources&& addedResources_) : addedEloPoint(std::move(addedEloPoint_)), battlePoint(std::move(battlePoint_)), addedResources(std::move(addedResources_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> AddedPoint;
-			Stream_ >> AddedGold;
-			Stream_ >> BattlePoint;
+			Stream_ >> addedEloPoint;
+			Stream_ >> battlePoint;
+			Stream_ >> addedResources;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["AddedPoint"] >> AddedPoint;
-			Value_["AddedGold"] >> AddedGold;
-			Value_["BattlePoint"] >> BattlePoint;
+			Value_["addedEloPoint"] >> addedEloPoint;
+			Value_["battlePoint"] >> battlePoint;
+			Value_["addedResources"] >> addedResources;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << AddedPoint;
-			Stream_ << AddedGold;
-			Stream_ << BattlePoint;
+			Stream_ << addedEloPoint;
+			Stream_ << battlePoint;
+			Stream_ << addedResources;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["AddedPoint"] = AddedPoint;
-			Value_["AddedGold"] = AddedGold;
-			Value_["BattlePoint"] = BattlePoint;
+			Value_["addedEloPoint"] = addedEloPoint;
+			Value_["battlePoint"] = battlePoint;
+			Value_["addedResources"] = addedResources;
 		}
 		static wstring StdName(void)
 		{
 			return 
+				GetStdName(double()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
+				GetStdName(TResources());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int32(), L"AddedPoint") + L"," + 
-				GetMemberName(int32(), L"AddedGold") + L"," + 
-				GetMemberName(int32(), L"BattlePoint");
+				GetMemberName(double(), L"addedEloPoint") + L"," + 
+				GetMemberName(int32(), L"battlePoint") + L"," + 
+				GetMemberName(TResources(), L"addedResources");
 		}
 	};
 	struct STeamBattleInfo : public SProto
 	{
 		int32 Ranking{};
 		int32 Point{};
+		list<int32> playerIndices{};
 		STeamBattleInfo()
 		{
 		}
-		STeamBattleInfo(const int32& Ranking_, const int32& Point_) : Ranking(Ranking_), Point(Point_)
+		STeamBattleInfo(const int32& Ranking_, const int32& Point_, const list<int32>& playerIndices_) : Ranking(Ranking_), Point(Point_), playerIndices(playerIndices_)
 		{
 		}
-		STeamBattleInfo(int32&& Ranking_, int32&& Point_) : Ranking(std::move(Ranking_)), Point(std::move(Point_))
+		STeamBattleInfo(int32&& Ranking_, int32&& Point_, list<int32>&& playerIndices_) : Ranking(std::move(Ranking_)), Point(std::move(Point_)), playerIndices(std::move(playerIndices_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Ranking;
 			Stream_ >> Point;
+			Stream_ >> playerIndices;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Ranking"] >> Ranking;
 			Value_["Point"] >> Point;
+			Value_["playerIndices"] >> playerIndices;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Ranking;
 			Stream_ << Point;
+			Stream_ << playerIndices;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Ranking"] = Ranking;
 			Value_["Point"] = Point;
+			Value_["playerIndices"] = playerIndices;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
+				GetStdName(int32()) + L"," + 
+				GetStdName(list<int32>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(int32(), L"Ranking") + L"," + 
-				GetMemberName(int32(), L"Point");
-		}
-	};
-	using TTeamIndexGroup = list<TTeamCnt>;
-	struct STeamRanking : public STeamBattleInfo
-	{
-		TTeamIndexGroup TeamIndexGroup{};
-		STeamRanking()
-		{
-		}
-		STeamRanking(const STeamBattleInfo& Super_, const TTeamIndexGroup& TeamIndexGroup_) : STeamBattleInfo(Super_), TeamIndexGroup(TeamIndexGroup_)
-		{
-		}
-		STeamRanking(STeamBattleInfo&& Super_, TTeamIndexGroup&& TeamIndexGroup_) : STeamBattleInfo(std::move(Super_)), TeamIndexGroup(std::move(TeamIndexGroup_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			STeamBattleInfo::operator << (Stream_);
-			Stream_ >> TeamIndexGroup;
-		}
-		void operator << (const Value& Value_) override
-		{
-			STeamBattleInfo::operator << (Value_);
-			Value_["TeamIndexGroup"] >> TeamIndexGroup;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			STeamBattleInfo::operator >> (Stream_);
-			Stream_ << TeamIndexGroup;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			STeamBattleInfo::operator >> (Value_);
-			Value_["TeamIndexGroup"] = TeamIndexGroup;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(STeamBattleInfo()) + L"," + 
-				GetStdName(TTeamIndexGroup());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(STeamBattleInfo(), L"") + L"," + 
-				GetMemberName(TTeamIndexGroup(), L"TeamIndexGroup");
+				GetMemberName(int32(), L"Point") + L"," + 
+				GetMemberName(list<int32>(), L"playerIndices");
 		}
 	};
 	struct SMultiBattleEndNet : public SProto
@@ -3314,67 +3152,81 @@ namespace bb
 	};
 	struct SMultiBattleEndNetSc : public SMultiBattleEndNet
 	{
+		int32 myTeamRanking{};
 		TResources ResourcesLeft{};
-		vector<SBattleEndPlayer> BattleEndPlayers{};
-		vector<STeamRanking> OrderedTeamRankings{};
+		double eloPoint{};
+		int32 point{};
+		int32 battlePoint{};
 		TDoneQuests DoneQuests{};
 		SMultiBattleEndNetSc()
 		{
 		}
-		SMultiBattleEndNetSc(const SMultiBattleEndNet& Super_, const TResources& ResourcesLeft_, const vector<SBattleEndPlayer>& BattleEndPlayers_, const vector<STeamRanking>& OrderedTeamRankings_, const TDoneQuests& DoneQuests_) : SMultiBattleEndNet(Super_), ResourcesLeft(ResourcesLeft_), BattleEndPlayers(BattleEndPlayers_), OrderedTeamRankings(OrderedTeamRankings_), DoneQuests(DoneQuests_)
+		SMultiBattleEndNetSc(const SMultiBattleEndNet& Super_, const int32& myTeamRanking_, const TResources& ResourcesLeft_, const double& eloPoint_, const int32& point_, const int32& battlePoint_, const TDoneQuests& DoneQuests_) : SMultiBattleEndNet(Super_), myTeamRanking(myTeamRanking_), ResourcesLeft(ResourcesLeft_), eloPoint(eloPoint_), point(point_), battlePoint(battlePoint_), DoneQuests(DoneQuests_)
 		{
 		}
-		SMultiBattleEndNetSc(SMultiBattleEndNet&& Super_, TResources&& ResourcesLeft_, vector<SBattleEndPlayer>&& BattleEndPlayers_, vector<STeamRanking>&& OrderedTeamRankings_, TDoneQuests&& DoneQuests_) : SMultiBattleEndNet(std::move(Super_)), ResourcesLeft(std::move(ResourcesLeft_)), BattleEndPlayers(std::move(BattleEndPlayers_)), OrderedTeamRankings(std::move(OrderedTeamRankings_)), DoneQuests(std::move(DoneQuests_))
+		SMultiBattleEndNetSc(SMultiBattleEndNet&& Super_, int32&& myTeamRanking_, TResources&& ResourcesLeft_, double&& eloPoint_, int32&& point_, int32&& battlePoint_, TDoneQuests&& DoneQuests_) : SMultiBattleEndNet(std::move(Super_)), myTeamRanking(std::move(myTeamRanking_)), ResourcesLeft(std::move(ResourcesLeft_)), eloPoint(std::move(eloPoint_)), point(std::move(point_)), battlePoint(std::move(battlePoint_)), DoneQuests(std::move(DoneQuests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			SMultiBattleEndNet::operator << (Stream_);
+			Stream_ >> myTeamRanking;
 			Stream_ >> ResourcesLeft;
-			Stream_ >> BattleEndPlayers;
-			Stream_ >> OrderedTeamRankings;
+			Stream_ >> eloPoint;
+			Stream_ >> point;
+			Stream_ >> battlePoint;
 			Stream_ >> DoneQuests;
 		}
 		void operator << (const Value& Value_) override
 		{
 			SMultiBattleEndNet::operator << (Value_);
+			Value_["myTeamRanking"] >> myTeamRanking;
 			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["BattleEndPlayers"] >> BattleEndPlayers;
-			Value_["OrderedTeamRankings"] >> OrderedTeamRankings;
+			Value_["eloPoint"] >> eloPoint;
+			Value_["point"] >> point;
+			Value_["battlePoint"] >> battlePoint;
 			Value_["DoneQuests"] >> DoneQuests;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			SMultiBattleEndNet::operator >> (Stream_);
+			Stream_ << myTeamRanking;
 			Stream_ << ResourcesLeft;
-			Stream_ << BattleEndPlayers;
-			Stream_ << OrderedTeamRankings;
+			Stream_ << eloPoint;
+			Stream_ << point;
+			Stream_ << battlePoint;
 			Stream_ << DoneQuests;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			SMultiBattleEndNet::operator >> (Value_);
+			Value_["myTeamRanking"] = myTeamRanking;
 			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["BattleEndPlayers"] = BattleEndPlayers;
-			Value_["OrderedTeamRankings"] = OrderedTeamRankings;
+			Value_["eloPoint"] = eloPoint;
+			Value_["point"] = point;
+			Value_["battlePoint"] = battlePoint;
 			Value_["DoneQuests"] = DoneQuests;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(SMultiBattleEndNet()) + L"," + 
+				GetStdName(int32()) + L"," + 
 				GetStdName(TResources()) + L"," + 
-				GetStdName(vector<SBattleEndPlayer>()) + L"," + 
-				GetStdName(vector<STeamRanking>()) + L"," + 
+				GetStdName(double()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
 				GetStdName(TDoneQuests());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(SMultiBattleEndNet(), L"") + L"," + 
+				GetMemberName(int32(), L"myTeamRanking") + L"," + 
 				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(vector<SBattleEndPlayer>(), L"BattleEndPlayers") + L"," + 
-				GetMemberName(vector<STeamRanking>(), L"OrderedTeamRankings") + L"," + 
+				GetMemberName(double(), L"eloPoint") + L"," + 
+				GetMemberName(int32(), L"point") + L"," + 
+				GetMemberName(int32(), L"battlePoint") + L"," + 
 				GetMemberName(TDoneQuests(), L"DoneQuests");
 		}
 	};
@@ -3690,6 +3542,82 @@ namespace bb
 				GetMemberName(SInvalidDisconnectInfo(), L"");
 		}
 	};
+	struct SingleBattleStartNetSc : public SProto
+	{
+		void operator << (CStream&) override
+		{
+		}
+		void operator << (const Value&) override
+		{
+		}
+		void operator >> (CStream&) const override
+		{
+		}
+		void operator >> (Value&) const override
+		{
+		}
+		static wstring StdName(void)
+		{
+			return L"";
+		}
+		static wstring MemberName(void)
+		{
+			return L"";
+		}
+	};
+	struct SingleBattleEndNetSc : public SProto
+	{
+		int64 Tick{};
+		TResources ResourcesLeft{};
+		TDoneQuests DoneQuests{};
+		SingleBattleEndNetSc()
+		{
+		}
+		SingleBattleEndNetSc(const int64& Tick_, const TResources& ResourcesLeft_, const TDoneQuests& DoneQuests_) : Tick(Tick_), ResourcesLeft(ResourcesLeft_), DoneQuests(DoneQuests_)
+		{
+		}
+		SingleBattleEndNetSc(int64&& Tick_, TResources&& ResourcesLeft_, TDoneQuests&& DoneQuests_) : Tick(std::move(Tick_)), ResourcesLeft(std::move(ResourcesLeft_)), DoneQuests(std::move(DoneQuests_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> Tick;
+			Stream_ >> ResourcesLeft;
+			Stream_ >> DoneQuests;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["Tick"] >> Tick;
+			Value_["ResourcesLeft"] >> ResourcesLeft;
+			Value_["DoneQuests"] >> DoneQuests;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << Tick;
+			Stream_ << ResourcesLeft;
+			Stream_ << DoneQuests;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["Tick"] = Tick;
+			Value_["ResourcesLeft"] = ResourcesLeft;
+			Value_["DoneQuests"] = DoneQuests;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int64()) + L"," + 
+				GetStdName(TResources()) + L"," + 
+				GetStdName(TDoneQuests());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int64(), L"Tick") + L"," + 
+				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
+				GetMemberName(TDoneQuests(), L"DoneQuests");
+		}
+	};
 	struct SArrowDodgeBattleJoinNetCs : public SProto
 	{
 		void operator << (CStream&) override
@@ -3874,57 +3802,87 @@ namespace bb
 				GetMemberName(EArrowDodgeItemType(), L"ItemType");
 		}
 	};
-	struct SArrowDodgeBattleInfo : public SProto
+	struct SingleBattleInfo : public BattleInfo
 	{
-		int32 Point{};
-		int64 Tick{};
 		TResource Gold{};
-		SArrowDodgeBattleInfo()
+		SingleBattleInfo()
 		{
 		}
-		SArrowDodgeBattleInfo(const int32& Point_, const int64& Tick_, const TResource& Gold_) : Point(Point_), Tick(Tick_), Gold(Gold_)
+		SingleBattleInfo(const BattleInfo& Super_, const TResource& Gold_) : BattleInfo(Super_), Gold(Gold_)
 		{
 		}
-		SArrowDodgeBattleInfo(int32&& Point_, int64&& Tick_, TResource&& Gold_) : Point(std::move(Point_)), Tick(std::move(Tick_)), Gold(std::move(Gold_))
+		SingleBattleInfo(BattleInfo&& Super_, TResource&& Gold_) : BattleInfo(std::move(Super_)), Gold(std::move(Gold_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Point;
-			Stream_ >> Tick;
+			BattleInfo::operator << (Stream_);
 			Stream_ >> Gold;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Point"] >> Point;
-			Value_["Tick"] >> Tick;
+			BattleInfo::operator << (Value_);
 			Value_["Gold"] >> Gold;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Point;
-			Stream_ << Tick;
+			BattleInfo::operator >> (Stream_);
 			Stream_ << Gold;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Point"] = Point;
-			Value_["Tick"] = Tick;
+			BattleInfo::operator >> (Value_);
 			Value_["Gold"] = Gold;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int64()) + L"," + 
+				GetStdName(BattleInfo()) + L"," + 
 				GetStdName(TResource());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int32(), L"Point") + L"," + 
-				GetMemberName(int64(), L"Tick") + L"," + 
+				GetMemberName(BattleInfo(), L"") + L"," + 
 				GetMemberName(TResource(), L"Gold");
+		}
+	};
+	struct SArrowDodgeBattleInfo : public SingleBattleInfo
+	{
+		SArrowDodgeBattleInfo()
+		{
+		}
+		SArrowDodgeBattleInfo(const SingleBattleInfo& Super_) : SingleBattleInfo(Super_)
+		{
+		}
+		SArrowDodgeBattleInfo(SingleBattleInfo&& Super_) : SingleBattleInfo(std::move(Super_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			SingleBattleInfo::operator << (Stream_);
+		}
+		void operator << (const Value& Value_) override
+		{
+			SingleBattleInfo::operator << (Value_);
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			SingleBattleInfo::operator >> (Stream_);
+		}
+		void operator >> (Value& Value_) const override
+		{
+			SingleBattleInfo::operator >> (Value_);
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(SingleBattleInfo());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(SingleBattleInfo(), L"");
 		}
 	};
 	struct SArrowDodgeBattleBuf : public SProto
@@ -4019,130 +3977,168 @@ namespace bb
 				GetMemberName(SArrowDodgeBattleBuf(), L"Stamina");
 		}
 	};
-	struct SArrowDodgeBattleBeginNetSc : public SProto
+	struct SingleBattleBeginNetSc : public SProto
 	{
 		SBattlePlayer Player{};
-		SArrowDodgeBattleInfo BattleInfo{};
-		SArrowDodgeBattleBufs Bufs{};
 		SCharacterNet Character{};
 		int64 Tick{};
 		uint32 RandomSeed{};
-		int64 NextDownArrowTick{};
-		int64 NextLeftArrowTick{};
-		int64 NextRightArrowTick{};
-		int64 NextItemTick{};
-		vector<SArrow> Arrows{};
-		vector<SArrowDodgeItem> Items{};
 		bool Started{};
-		SArrowDodgeBattleBeginNetSc()
+		SingleBattleBeginNetSc()
 		{
 		}
-		SArrowDodgeBattleBeginNetSc(const SBattlePlayer& Player_, const SArrowDodgeBattleInfo& BattleInfo_, const SArrowDodgeBattleBufs& Bufs_, const SCharacterNet& Character_, const int64& Tick_, const uint32& RandomSeed_, const int64& NextDownArrowTick_, const int64& NextLeftArrowTick_, const int64& NextRightArrowTick_, const int64& NextItemTick_, const vector<SArrow>& Arrows_, const vector<SArrowDodgeItem>& Items_, const bool& Started_) : Player(Player_), BattleInfo(BattleInfo_), Bufs(Bufs_), Character(Character_), Tick(Tick_), RandomSeed(RandomSeed_), NextDownArrowTick(NextDownArrowTick_), NextLeftArrowTick(NextLeftArrowTick_), NextRightArrowTick(NextRightArrowTick_), NextItemTick(NextItemTick_), Arrows(Arrows_), Items(Items_), Started(Started_)
+		SingleBattleBeginNetSc(const SBattlePlayer& Player_, const SCharacterNet& Character_, const int64& Tick_, const uint32& RandomSeed_, const bool& Started_) : Player(Player_), Character(Character_), Tick(Tick_), RandomSeed(RandomSeed_), Started(Started_)
 		{
 		}
-		SArrowDodgeBattleBeginNetSc(SBattlePlayer&& Player_, SArrowDodgeBattleInfo&& BattleInfo_, SArrowDodgeBattleBufs&& Bufs_, SCharacterNet&& Character_, int64&& Tick_, uint32&& RandomSeed_, int64&& NextDownArrowTick_, int64&& NextLeftArrowTick_, int64&& NextRightArrowTick_, int64&& NextItemTick_, vector<SArrow>&& Arrows_, vector<SArrowDodgeItem>&& Items_, bool&& Started_) : Player(std::move(Player_)), BattleInfo(std::move(BattleInfo_)), Bufs(std::move(Bufs_)), Character(std::move(Character_)), Tick(std::move(Tick_)), RandomSeed(std::move(RandomSeed_)), NextDownArrowTick(std::move(NextDownArrowTick_)), NextLeftArrowTick(std::move(NextLeftArrowTick_)), NextRightArrowTick(std::move(NextRightArrowTick_)), NextItemTick(std::move(NextItemTick_)), Arrows(std::move(Arrows_)), Items(std::move(Items_)), Started(std::move(Started_))
+		SingleBattleBeginNetSc(SBattlePlayer&& Player_, SCharacterNet&& Character_, int64&& Tick_, uint32&& RandomSeed_, bool&& Started_) : Player(std::move(Player_)), Character(std::move(Character_)), Tick(std::move(Tick_)), RandomSeed(std::move(RandomSeed_)), Started(std::move(Started_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Player;
-			Stream_ >> BattleInfo;
-			Stream_ >> Bufs;
 			Stream_ >> Character;
 			Stream_ >> Tick;
 			Stream_ >> RandomSeed;
-			Stream_ >> NextDownArrowTick;
-			Stream_ >> NextLeftArrowTick;
-			Stream_ >> NextRightArrowTick;
-			Stream_ >> NextItemTick;
-			Stream_ >> Arrows;
-			Stream_ >> Items;
 			Stream_ >> Started;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Player"] >> Player;
-			Value_["BattleInfo"] >> BattleInfo;
-			Value_["Bufs"] >> Bufs;
 			Value_["Character"] >> Character;
 			Value_["Tick"] >> Tick;
 			Value_["RandomSeed"] >> RandomSeed;
-			Value_["NextDownArrowTick"] >> NextDownArrowTick;
-			Value_["NextLeftArrowTick"] >> NextLeftArrowTick;
-			Value_["NextRightArrowTick"] >> NextRightArrowTick;
-			Value_["NextItemTick"] >> NextItemTick;
-			Value_["Arrows"] >> Arrows;
-			Value_["Items"] >> Items;
 			Value_["Started"] >> Started;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Player;
-			Stream_ << BattleInfo;
-			Stream_ << Bufs;
 			Stream_ << Character;
 			Stream_ << Tick;
 			Stream_ << RandomSeed;
-			Stream_ << NextDownArrowTick;
-			Stream_ << NextLeftArrowTick;
-			Stream_ << NextRightArrowTick;
-			Stream_ << NextItemTick;
-			Stream_ << Arrows;
-			Stream_ << Items;
 			Stream_ << Started;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Player"] = Player;
-			Value_["BattleInfo"] = BattleInfo;
-			Value_["Bufs"] = Bufs;
 			Value_["Character"] = Character;
 			Value_["Tick"] = Tick;
 			Value_["RandomSeed"] = RandomSeed;
-			Value_["NextDownArrowTick"] = NextDownArrowTick;
-			Value_["NextLeftArrowTick"] = NextLeftArrowTick;
-			Value_["NextRightArrowTick"] = NextRightArrowTick;
-			Value_["NextItemTick"] = NextItemTick;
-			Value_["Arrows"] = Arrows;
-			Value_["Items"] = Items;
 			Value_["Started"] = Started;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(SBattlePlayer()) + L"," + 
-				GetStdName(SArrowDodgeBattleInfo()) + L"," + 
-				GetStdName(SArrowDodgeBattleBufs()) + L"," + 
 				GetStdName(SCharacterNet()) + L"," + 
 				GetStdName(int64()) + L"," + 
 				GetStdName(uint32()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(vector<SArrow>()) + L"," + 
-				GetStdName(vector<SArrowDodgeItem>()) + L"," + 
 				GetStdName(bool());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(SBattlePlayer(), L"Player") + L"," + 
-				GetMemberName(SArrowDodgeBattleInfo(), L"BattleInfo") + L"," + 
-				GetMemberName(SArrowDodgeBattleBufs(), L"Bufs") + L"," + 
 				GetMemberName(SCharacterNet(), L"Character") + L"," + 
 				GetMemberName(int64(), L"Tick") + L"," + 
 				GetMemberName(uint32(), L"RandomSeed") + L"," + 
+				GetMemberName(bool(), L"Started");
+		}
+	};
+	struct SArrowDodgeBattleBeginNetSc : public SingleBattleBeginNetSc
+	{
+		SArrowDodgeBattleInfo BattleInfo{};
+		SArrowDodgeBattleBufs Bufs{};
+		int64 NextDownArrowTick{};
+		int64 NextLeftArrowTick{};
+		int64 NextRightArrowTick{};
+		int64 NextItemTick{};
+		vector<SArrow> Arrows{};
+		vector<SArrowDodgeItem> Items{};
+		SArrowDodgeBattleBeginNetSc()
+		{
+		}
+		SArrowDodgeBattleBeginNetSc(const SingleBattleBeginNetSc& Super_, const SArrowDodgeBattleInfo& BattleInfo_, const SArrowDodgeBattleBufs& Bufs_, const int64& NextDownArrowTick_, const int64& NextLeftArrowTick_, const int64& NextRightArrowTick_, const int64& NextItemTick_, const vector<SArrow>& Arrows_, const vector<SArrowDodgeItem>& Items_) : SingleBattleBeginNetSc(Super_), BattleInfo(BattleInfo_), Bufs(Bufs_), NextDownArrowTick(NextDownArrowTick_), NextLeftArrowTick(NextLeftArrowTick_), NextRightArrowTick(NextRightArrowTick_), NextItemTick(NextItemTick_), Arrows(Arrows_), Items(Items_)
+		{
+		}
+		SArrowDodgeBattleBeginNetSc(SingleBattleBeginNetSc&& Super_, SArrowDodgeBattleInfo&& BattleInfo_, SArrowDodgeBattleBufs&& Bufs_, int64&& NextDownArrowTick_, int64&& NextLeftArrowTick_, int64&& NextRightArrowTick_, int64&& NextItemTick_, vector<SArrow>&& Arrows_, vector<SArrowDodgeItem>&& Items_) : SingleBattleBeginNetSc(std::move(Super_)), BattleInfo(std::move(BattleInfo_)), Bufs(std::move(Bufs_)), NextDownArrowTick(std::move(NextDownArrowTick_)), NextLeftArrowTick(std::move(NextLeftArrowTick_)), NextRightArrowTick(std::move(NextRightArrowTick_)), NextItemTick(std::move(NextItemTick_)), Arrows(std::move(Arrows_)), Items(std::move(Items_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			SingleBattleBeginNetSc::operator << (Stream_);
+			Stream_ >> BattleInfo;
+			Stream_ >> Bufs;
+			Stream_ >> NextDownArrowTick;
+			Stream_ >> NextLeftArrowTick;
+			Stream_ >> NextRightArrowTick;
+			Stream_ >> NextItemTick;
+			Stream_ >> Arrows;
+			Stream_ >> Items;
+		}
+		void operator << (const Value& Value_) override
+		{
+			SingleBattleBeginNetSc::operator << (Value_);
+			Value_["BattleInfo"] >> BattleInfo;
+			Value_["Bufs"] >> Bufs;
+			Value_["NextDownArrowTick"] >> NextDownArrowTick;
+			Value_["NextLeftArrowTick"] >> NextLeftArrowTick;
+			Value_["NextRightArrowTick"] >> NextRightArrowTick;
+			Value_["NextItemTick"] >> NextItemTick;
+			Value_["Arrows"] >> Arrows;
+			Value_["Items"] >> Items;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			SingleBattleBeginNetSc::operator >> (Stream_);
+			Stream_ << BattleInfo;
+			Stream_ << Bufs;
+			Stream_ << NextDownArrowTick;
+			Stream_ << NextLeftArrowTick;
+			Stream_ << NextRightArrowTick;
+			Stream_ << NextItemTick;
+			Stream_ << Arrows;
+			Stream_ << Items;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			SingleBattleBeginNetSc::operator >> (Value_);
+			Value_["BattleInfo"] = BattleInfo;
+			Value_["Bufs"] = Bufs;
+			Value_["NextDownArrowTick"] = NextDownArrowTick;
+			Value_["NextLeftArrowTick"] = NextLeftArrowTick;
+			Value_["NextRightArrowTick"] = NextRightArrowTick;
+			Value_["NextItemTick"] = NextItemTick;
+			Value_["Arrows"] = Arrows;
+			Value_["Items"] = Items;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(SingleBattleBeginNetSc()) + L"," + 
+				GetStdName(SArrowDodgeBattleInfo()) + L"," + 
+				GetStdName(SArrowDodgeBattleBufs()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(int64()) + L"," + 
+				GetStdName(vector<SArrow>()) + L"," + 
+				GetStdName(vector<SArrowDodgeItem>());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(SingleBattleBeginNetSc(), L"") + L"," + 
+				GetMemberName(SArrowDodgeBattleInfo(), L"BattleInfo") + L"," + 
+				GetMemberName(SArrowDodgeBattleBufs(), L"Bufs") + L"," + 
 				GetMemberName(int64(), L"NextDownArrowTick") + L"," + 
 				GetMemberName(int64(), L"NextLeftArrowTick") + L"," + 
 				GetMemberName(int64(), L"NextRightArrowTick") + L"," + 
 				GetMemberName(int64(), L"NextItemTick") + L"," + 
 				GetMemberName(vector<SArrow>(), L"Arrows") + L"," + 
-				GetMemberName(vector<SArrowDodgeItem>(), L"Items") + L"," + 
-				GetMemberName(bool(), L"Started");
+				GetMemberName(vector<SArrowDodgeItem>(), L"Items");
 		}
 	};
-	struct SArrowDodgeBattleStartNetSc : public SProto
+	struct SArrowDodgeBattleStartNetSc : public SingleBattleStartNetSc
 	{
 		void operator << (CStream&) override
 		{
@@ -4188,57 +4184,109 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SArrowDodgeBattleEndNetSc : public SProto
+	struct SArrowDodgeBattleEndNetSc : public SingleBattleEndNetSc
 	{
-		int64 Tick{};
-		TResources ResourcesLeft{};
-		TDoneQuests DoneQuests{};
 		SArrowDodgeBattleEndNetSc()
 		{
 		}
-		SArrowDodgeBattleEndNetSc(const int64& Tick_, const TResources& ResourcesLeft_, const TDoneQuests& DoneQuests_) : Tick(Tick_), ResourcesLeft(ResourcesLeft_), DoneQuests(DoneQuests_)
+		SArrowDodgeBattleEndNetSc(const SingleBattleEndNetSc& Super_) : SingleBattleEndNetSc(Super_)
 		{
 		}
-		SArrowDodgeBattleEndNetSc(int64&& Tick_, TResources&& ResourcesLeft_, TDoneQuests&& DoneQuests_) : Tick(std::move(Tick_)), ResourcesLeft(std::move(ResourcesLeft_)), DoneQuests(std::move(DoneQuests_))
+		SArrowDodgeBattleEndNetSc(SingleBattleEndNetSc&& Super_) : SingleBattleEndNetSc(std::move(Super_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Tick;
-			Stream_ >> ResourcesLeft;
-			Stream_ >> DoneQuests;
+			SingleBattleEndNetSc::operator << (Stream_);
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Tick"] >> Tick;
-			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["DoneQuests"] >> DoneQuests;
+			SingleBattleEndNetSc::operator << (Value_);
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Tick;
-			Stream_ << ResourcesLeft;
-			Stream_ << DoneQuests;
+			SingleBattleEndNetSc::operator >> (Stream_);
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Tick"] = Tick;
-			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["DoneQuests"] = DoneQuests;
+			SingleBattleEndNetSc::operator >> (Value_);
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int64()) + L"," + 
-				GetStdName(TResources()) + L"," + 
-				GetStdName(TDoneQuests());
+				GetStdName(SingleBattleEndNetSc());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int64(), L"Tick") + L"," + 
-				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(TDoneQuests(), L"DoneQuests");
+				GetMemberName(SingleBattleEndNetSc(), L"");
+		}
+	};
+	struct FlyAwayPathMakerState : public SProto
+	{
+		int32 currentLevel{};
+		int32 levelDirection{};
+		int32 destMainLevel{};
+		int32 currentCount{};
+		int32 destCount{};
+		FlyAwayPathMakerState()
+		{
+		}
+		FlyAwayPathMakerState(const int32& currentLevel_, const int32& levelDirection_, const int32& destMainLevel_, const int32& currentCount_, const int32& destCount_) : currentLevel(currentLevel_), levelDirection(levelDirection_), destMainLevel(destMainLevel_), currentCount(currentCount_), destCount(destCount_)
+		{
+		}
+		FlyAwayPathMakerState(int32&& currentLevel_, int32&& levelDirection_, int32&& destMainLevel_, int32&& currentCount_, int32&& destCount_) : currentLevel(std::move(currentLevel_)), levelDirection(std::move(levelDirection_)), destMainLevel(std::move(destMainLevel_)), currentCount(std::move(currentCount_)), destCount(std::move(destCount_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> currentLevel;
+			Stream_ >> levelDirection;
+			Stream_ >> destMainLevel;
+			Stream_ >> currentCount;
+			Stream_ >> destCount;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["currentLevel"] >> currentLevel;
+			Value_["levelDirection"] >> levelDirection;
+			Value_["destMainLevel"] >> destMainLevel;
+			Value_["currentCount"] >> currentCount;
+			Value_["destCount"] >> destCount;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << currentLevel;
+			Stream_ << levelDirection;
+			Stream_ << destMainLevel;
+			Stream_ << currentCount;
+			Stream_ << destCount;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["currentLevel"] = currentLevel;
+			Value_["levelDirection"] = levelDirection;
+			Value_["destMainLevel"] = destMainLevel;
+			Value_["currentCount"] = currentCount;
+			Value_["destCount"] = destCount;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"currentLevel") + L"," + 
+				GetMemberName(int32(), L"levelDirection") + L"," + 
+				GetMemberName(int32(), L"destMainLevel") + L"," + 
+				GetMemberName(int32(), L"currentCount") + L"," + 
+				GetMemberName(int32(), L"destCount");
 		}
 	};
 	struct SFlyAwayBattleJoinNetCs : public SProto
@@ -4453,169 +4501,132 @@ namespace bb
 				GetMemberName(EFlyAwayItemType(), L"ItemType");
 		}
 	};
-	struct SFlyAwayBattleInfo : public SProto
+	struct SFlyAwayBattleInfo : public SingleBattleInfo
 	{
-		int32 Point{};
-		int32 PassedCount{};
 		int32 PerfectCombo{};
-		TResource Gold{};
 		SFlyAwayBattleInfo()
 		{
 		}
-		SFlyAwayBattleInfo(const int32& Point_, const int32& PassedCount_, const int32& PerfectCombo_, const TResource& Gold_) : Point(Point_), PassedCount(PassedCount_), PerfectCombo(PerfectCombo_), Gold(Gold_)
+		SFlyAwayBattleInfo(const SingleBattleInfo& Super_, const int32& PerfectCombo_) : SingleBattleInfo(Super_), PerfectCombo(PerfectCombo_)
 		{
 		}
-		SFlyAwayBattleInfo(int32&& Point_, int32&& PassedCount_, int32&& PerfectCombo_, TResource&& Gold_) : Point(std::move(Point_)), PassedCount(std::move(PassedCount_)), PerfectCombo(std::move(PerfectCombo_)), Gold(std::move(Gold_))
+		SFlyAwayBattleInfo(SingleBattleInfo&& Super_, int32&& PerfectCombo_) : SingleBattleInfo(std::move(Super_)), PerfectCombo(std::move(PerfectCombo_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Point;
-			Stream_ >> PassedCount;
+			SingleBattleInfo::operator << (Stream_);
 			Stream_ >> PerfectCombo;
-			Stream_ >> Gold;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Point"] >> Point;
-			Value_["PassedCount"] >> PassedCount;
+			SingleBattleInfo::operator << (Value_);
 			Value_["PerfectCombo"] >> PerfectCombo;
-			Value_["Gold"] >> Gold;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Point;
-			Stream_ << PassedCount;
+			SingleBattleInfo::operator >> (Stream_);
 			Stream_ << PerfectCombo;
-			Stream_ << Gold;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Point"] = Point;
-			Value_["PassedCount"] = PassedCount;
+			SingleBattleInfo::operator >> (Value_);
 			Value_["PerfectCombo"] = PerfectCombo;
-			Value_["Gold"] = Gold;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(TResource());
+				GetStdName(SingleBattleInfo()) + L"," + 
+				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int32(), L"Point") + L"," + 
-				GetMemberName(int32(), L"PassedCount") + L"," + 
-				GetMemberName(int32(), L"PerfectCombo") + L"," + 
-				GetMemberName(TResource(), L"Gold");
+				GetMemberName(SingleBattleInfo(), L"") + L"," + 
+				GetMemberName(int32(), L"PerfectCombo");
 		}
 	};
-	struct SFlyAwayBattleBeginNetSc : public SProto
+	struct SFlyAwayBattleBeginNetSc : public SingleBattleBeginNetSc
 	{
-		SBattlePlayer Player{};
+		FlyAwayPathMakerState pathMakerState{};
 		SFlyAwayBattleInfo BattleInfo{};
-		SCharacterNet Character{};
-		int64 Tick{};
-		uint32 RandomSeed{};
 		int32 LandCounter{};
 		SPoint LastLandPosition{};
 		vector<SFlyAwayLand> Lands{};
 		vector<SFlyAwayItem> Items{};
-		bool Started{};
 		SFlyAwayBattleBeginNetSc()
 		{
 		}
-		SFlyAwayBattleBeginNetSc(const SBattlePlayer& Player_, const SFlyAwayBattleInfo& BattleInfo_, const SCharacterNet& Character_, const int64& Tick_, const uint32& RandomSeed_, const int32& LandCounter_, const SPoint& LastLandPosition_, const vector<SFlyAwayLand>& Lands_, const vector<SFlyAwayItem>& Items_, const bool& Started_) : Player(Player_), BattleInfo(BattleInfo_), Character(Character_), Tick(Tick_), RandomSeed(RandomSeed_), LandCounter(LandCounter_), LastLandPosition(LastLandPosition_), Lands(Lands_), Items(Items_), Started(Started_)
+		SFlyAwayBattleBeginNetSc(const SingleBattleBeginNetSc& Super_, const FlyAwayPathMakerState& pathMakerState_, const SFlyAwayBattleInfo& BattleInfo_, const int32& LandCounter_, const SPoint& LastLandPosition_, const vector<SFlyAwayLand>& Lands_, const vector<SFlyAwayItem>& Items_) : SingleBattleBeginNetSc(Super_), pathMakerState(pathMakerState_), BattleInfo(BattleInfo_), LandCounter(LandCounter_), LastLandPosition(LastLandPosition_), Lands(Lands_), Items(Items_)
 		{
 		}
-		SFlyAwayBattleBeginNetSc(SBattlePlayer&& Player_, SFlyAwayBattleInfo&& BattleInfo_, SCharacterNet&& Character_, int64&& Tick_, uint32&& RandomSeed_, int32&& LandCounter_, SPoint&& LastLandPosition_, vector<SFlyAwayLand>&& Lands_, vector<SFlyAwayItem>&& Items_, bool&& Started_) : Player(std::move(Player_)), BattleInfo(std::move(BattleInfo_)), Character(std::move(Character_)), Tick(std::move(Tick_)), RandomSeed(std::move(RandomSeed_)), LandCounter(std::move(LandCounter_)), LastLandPosition(std::move(LastLandPosition_)), Lands(std::move(Lands_)), Items(std::move(Items_)), Started(std::move(Started_))
+		SFlyAwayBattleBeginNetSc(SingleBattleBeginNetSc&& Super_, FlyAwayPathMakerState&& pathMakerState_, SFlyAwayBattleInfo&& BattleInfo_, int32&& LandCounter_, SPoint&& LastLandPosition_, vector<SFlyAwayLand>&& Lands_, vector<SFlyAwayItem>&& Items_) : SingleBattleBeginNetSc(std::move(Super_)), pathMakerState(std::move(pathMakerState_)), BattleInfo(std::move(BattleInfo_)), LandCounter(std::move(LandCounter_)), LastLandPosition(std::move(LastLandPosition_)), Lands(std::move(Lands_)), Items(std::move(Items_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Player;
+			SingleBattleBeginNetSc::operator << (Stream_);
+			Stream_ >> pathMakerState;
 			Stream_ >> BattleInfo;
-			Stream_ >> Character;
-			Stream_ >> Tick;
-			Stream_ >> RandomSeed;
 			Stream_ >> LandCounter;
 			Stream_ >> LastLandPosition;
 			Stream_ >> Lands;
 			Stream_ >> Items;
-			Stream_ >> Started;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Player"] >> Player;
+			SingleBattleBeginNetSc::operator << (Value_);
+			Value_["pathMakerState"] >> pathMakerState;
 			Value_["BattleInfo"] >> BattleInfo;
-			Value_["Character"] >> Character;
-			Value_["Tick"] >> Tick;
-			Value_["RandomSeed"] >> RandomSeed;
 			Value_["LandCounter"] >> LandCounter;
 			Value_["LastLandPosition"] >> LastLandPosition;
 			Value_["Lands"] >> Lands;
 			Value_["Items"] >> Items;
-			Value_["Started"] >> Started;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Player;
+			SingleBattleBeginNetSc::operator >> (Stream_);
+			Stream_ << pathMakerState;
 			Stream_ << BattleInfo;
-			Stream_ << Character;
-			Stream_ << Tick;
-			Stream_ << RandomSeed;
 			Stream_ << LandCounter;
 			Stream_ << LastLandPosition;
 			Stream_ << Lands;
 			Stream_ << Items;
-			Stream_ << Started;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Player"] = Player;
+			SingleBattleBeginNetSc::operator >> (Value_);
+			Value_["pathMakerState"] = pathMakerState;
 			Value_["BattleInfo"] = BattleInfo;
-			Value_["Character"] = Character;
-			Value_["Tick"] = Tick;
-			Value_["RandomSeed"] = RandomSeed;
 			Value_["LandCounter"] = LandCounter;
 			Value_["LastLandPosition"] = LastLandPosition;
 			Value_["Lands"] = Lands;
 			Value_["Items"] = Items;
-			Value_["Started"] = Started;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SBattlePlayer()) + L"," + 
+				GetStdName(SingleBattleBeginNetSc()) + L"," + 
+				GetStdName(FlyAwayPathMakerState()) + L"," + 
 				GetStdName(SFlyAwayBattleInfo()) + L"," + 
-				GetStdName(SCharacterNet()) + L"," + 
-				GetStdName(int64()) + L"," + 
-				GetStdName(uint32()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(SPoint()) + L"," + 
 				GetStdName(vector<SFlyAwayLand>()) + L"," + 
-				GetStdName(vector<SFlyAwayItem>()) + L"," + 
-				GetStdName(bool());
+				GetStdName(vector<SFlyAwayItem>());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SBattlePlayer(), L"Player") + L"," + 
+				GetMemberName(SingleBattleBeginNetSc(), L"") + L"," + 
+				GetMemberName(FlyAwayPathMakerState(), L"pathMakerState") + L"," + 
 				GetMemberName(SFlyAwayBattleInfo(), L"BattleInfo") + L"," + 
-				GetMemberName(SCharacterNet(), L"Character") + L"," + 
-				GetMemberName(int64(), L"Tick") + L"," + 
-				GetMemberName(uint32(), L"RandomSeed") + L"," + 
 				GetMemberName(int32(), L"LandCounter") + L"," + 
 				GetMemberName(SPoint(), L"LastLandPosition") + L"," + 
 				GetMemberName(vector<SFlyAwayLand>(), L"Lands") + L"," + 
-				GetMemberName(vector<SFlyAwayItem>(), L"Items") + L"," + 
-				GetMemberName(bool(), L"Started");
+				GetMemberName(vector<SFlyAwayItem>(), L"Items");
 		}
 	};
-	struct SFlyAwayBattleStartNetSc : public SProto
+	struct SFlyAwayBattleStartNetSc : public SingleBattleStartNetSc
 	{
 		void operator << (CStream&) override
 		{
@@ -4661,57 +4672,42 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SFlyAwayBattleEndNetSc : public SProto
+	struct SFlyAwayBattleEndNetSc : public SingleBattleEndNetSc
 	{
-		int64 Tick{};
-		TResources ResourcesLeft{};
-		TDoneQuests DoneQuests{};
 		SFlyAwayBattleEndNetSc()
 		{
 		}
-		SFlyAwayBattleEndNetSc(const int64& Tick_, const TResources& ResourcesLeft_, const TDoneQuests& DoneQuests_) : Tick(Tick_), ResourcesLeft(ResourcesLeft_), DoneQuests(DoneQuests_)
+		SFlyAwayBattleEndNetSc(const SingleBattleEndNetSc& Super_) : SingleBattleEndNetSc(Super_)
 		{
 		}
-		SFlyAwayBattleEndNetSc(int64&& Tick_, TResources&& ResourcesLeft_, TDoneQuests&& DoneQuests_) : Tick(std::move(Tick_)), ResourcesLeft(std::move(ResourcesLeft_)), DoneQuests(std::move(DoneQuests_))
+		SFlyAwayBattleEndNetSc(SingleBattleEndNetSc&& Super_) : SingleBattleEndNetSc(std::move(Super_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Tick;
-			Stream_ >> ResourcesLeft;
-			Stream_ >> DoneQuests;
+			SingleBattleEndNetSc::operator << (Stream_);
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Tick"] >> Tick;
-			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["DoneQuests"] >> DoneQuests;
+			SingleBattleEndNetSc::operator << (Value_);
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Tick;
-			Stream_ << ResourcesLeft;
-			Stream_ << DoneQuests;
+			SingleBattleEndNetSc::operator >> (Stream_);
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Tick"] = Tick;
-			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["DoneQuests"] = DoneQuests;
+			SingleBattleEndNetSc::operator >> (Value_);
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int64()) + L"," + 
-				GetStdName(TResources()) + L"," + 
-				GetStdName(TDoneQuests());
+				GetStdName(SingleBattleEndNetSc());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int64(), L"Tick") + L"," + 
-				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(TDoneQuests(), L"DoneQuests");
+				GetMemberName(SingleBattleEndNetSc(), L"");
 		}
 	};
 	struct SRanking : public SProto
@@ -4763,242 +4759,6 @@ namespace bb
 		RequestRanking,
 		Max,
 	};
-	struct SGachaNetCs : public SProto
-	{
-		int32 GachaIndex{};
-		SGachaNetCs()
-		{
-		}
-		SGachaNetCs(const int32& GachaIndex_) : GachaIndex(GachaIndex_)
-		{
-		}
-		SGachaNetCs(int32&& GachaIndex_) : GachaIndex(std::move(GachaIndex_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> GachaIndex;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["GachaIndex"] >> GachaIndex;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << GachaIndex;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["GachaIndex"] = GachaIndex;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(int32(), L"GachaIndex");
-		}
-	};
-	struct SGachaX10NetCs : public SProto
-	{
-		int32 GachaIndex{};
-		SGachaX10NetCs()
-		{
-		}
-		SGachaX10NetCs(const int32& GachaIndex_) : GachaIndex(GachaIndex_)
-		{
-		}
-		SGachaX10NetCs(int32&& GachaIndex_) : GachaIndex(std::move(GachaIndex_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> GachaIndex;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["GachaIndex"] >> GachaIndex;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << GachaIndex;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["GachaIndex"] = GachaIndex;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(int32(), L"GachaIndex");
-		}
-	};
-	struct SGachaNetSc : public SProto
-	{
-		TResources Cost{};
-		int32 Index{};
-		int32 CharCode{};
-		SGachaNetSc()
-		{
-		}
-		SGachaNetSc(const TResources& Cost_, const int32& Index_, const int32& CharCode_) : Cost(Cost_), Index(Index_), CharCode(CharCode_)
-		{
-		}
-		SGachaNetSc(TResources&& Cost_, int32&& Index_, int32&& CharCode_) : Cost(std::move(Cost_)), Index(std::move(Index_)), CharCode(std::move(CharCode_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Cost;
-			Stream_ >> Index;
-			Stream_ >> CharCode;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Cost"] >> Cost;
-			Value_["Index"] >> Index;
-			Value_["CharCode"] >> CharCode;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Cost;
-			Stream_ << Index;
-			Stream_ << CharCode;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Cost"] = Cost;
-			Value_["Index"] = Index;
-			Value_["CharCode"] = CharCode;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TResources()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(int32());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TResources(), L"Cost") + L"," + 
-				GetMemberName(int32(), L"Index") + L"," + 
-				GetMemberName(int32(), L"CharCode");
-		}
-	};
-	struct SGachaX10NetSc : public SProto
-	{
-		TResources Cost{};
-		int32 Index{};
-		list<int32> CharCodeList{};
-		TResources Refund{};
-		SGachaX10NetSc()
-		{
-		}
-		SGachaX10NetSc(const TResources& Cost_, const int32& Index_, const list<int32>& CharCodeList_, const TResources& Refund_) : Cost(Cost_), Index(Index_), CharCodeList(CharCodeList_), Refund(Refund_)
-		{
-		}
-		SGachaX10NetSc(TResources&& Cost_, int32&& Index_, list<int32>&& CharCodeList_, TResources&& Refund_) : Cost(std::move(Cost_)), Index(std::move(Index_)), CharCodeList(std::move(CharCodeList_)), Refund(std::move(Refund_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			Stream_ >> Cost;
-			Stream_ >> Index;
-			Stream_ >> CharCodeList;
-			Stream_ >> Refund;
-		}
-		void operator << (const Value& Value_) override
-		{
-			Value_["Cost"] >> Cost;
-			Value_["Index"] >> Index;
-			Value_["CharCodeList"] >> CharCodeList;
-			Value_["Refund"] >> Refund;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			Stream_ << Cost;
-			Stream_ << Index;
-			Stream_ << CharCodeList;
-			Stream_ << Refund;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			Value_["Cost"] = Cost;
-			Value_["Index"] = Index;
-			Value_["CharCodeList"] = CharCodeList;
-			Value_["Refund"] = Refund;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(TResources()) + L"," + 
-				GetStdName(int32()) + L"," + 
-				GetStdName(list<int32>()) + L"," + 
-				GetStdName(TResources());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(TResources(), L"Cost") + L"," + 
-				GetMemberName(int32(), L"Index") + L"," + 
-				GetMemberName(list<int32>(), L"CharCodeList") + L"," + 
-				GetMemberName(TResources(), L"Refund");
-		}
-	};
-	struct SGachaFailedNetSc : public SGachaNetSc
-	{
-		TResources Refund{};
-		SGachaFailedNetSc()
-		{
-		}
-		SGachaFailedNetSc(const SGachaNetSc& Super_, const TResources& Refund_) : SGachaNetSc(Super_), Refund(Refund_)
-		{
-		}
-		SGachaFailedNetSc(SGachaNetSc&& Super_, TResources&& Refund_) : SGachaNetSc(std::move(Super_)), Refund(std::move(Refund_))
-		{
-		}
-		void operator << (CStream& Stream_) override
-		{
-			SGachaNetSc::operator << (Stream_);
-			Stream_ >> Refund;
-		}
-		void operator << (const Value& Value_) override
-		{
-			SGachaNetSc::operator << (Value_);
-			Value_["Refund"] >> Refund;
-		}
-		void operator >> (CStream& Stream_) const override
-		{
-			SGachaNetSc::operator >> (Stream_);
-			Stream_ << Refund;
-		}
-		void operator >> (Value& Value_) const override
-		{
-			SGachaNetSc::operator >> (Value_);
-			Value_["Refund"] = Refund;
-		}
-		static wstring StdName(void)
-		{
-			return 
-				GetStdName(SGachaNetSc()) + L"," + 
-				GetStdName(TResources());
-		}
-		static wstring MemberName(void)
-		{
-			return 
-				GetMemberName(SGachaNetSc(), L"") + L"," + 
-				GetMemberName(TResources(), L"Refund");
-		}
-	};
 	struct SRankRewardNetCs : public SProto
 	{
 		void operator << (CStream&) override
@@ -5022,49 +4782,49 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SRankRewardNetSc : public SRewardDB
+	struct SRankRewardNetSc : public SRewardInfo
 	{
-		int32 LastGotRewardRankIndex{};
+		int32 NextRewardRankIndex{};
 		SRankRewardNetSc()
 		{
 		}
-		SRankRewardNetSc(const SRewardDB& Super_, const int32& LastGotRewardRankIndex_) : SRewardDB(Super_), LastGotRewardRankIndex(LastGotRewardRankIndex_)
+		SRankRewardNetSc(const SRewardInfo& Super_, const int32& NextRewardRankIndex_) : SRewardInfo(Super_), NextRewardRankIndex(NextRewardRankIndex_)
 		{
 		}
-		SRankRewardNetSc(SRewardDB&& Super_, int32&& LastGotRewardRankIndex_) : SRewardDB(std::move(Super_)), LastGotRewardRankIndex(std::move(LastGotRewardRankIndex_))
+		SRankRewardNetSc(SRewardInfo&& Super_, int32&& NextRewardRankIndex_) : SRewardInfo(std::move(Super_)), NextRewardRankIndex(std::move(NextRewardRankIndex_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
-			Stream_ >> LastGotRewardRankIndex;
+			SRewardInfo::operator << (Stream_);
+			Stream_ >> NextRewardRankIndex;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
-			Value_["LastGotRewardRankIndex"] >> LastGotRewardRankIndex;
+			SRewardInfo::operator << (Value_);
+			Value_["NextRewardRankIndex"] >> NextRewardRankIndex;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
-			Stream_ << LastGotRewardRankIndex;
+			SRewardInfo::operator >> (Stream_);
+			Stream_ << NextRewardRankIndex;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
-			Value_["LastGotRewardRankIndex"] = LastGotRewardRankIndex;
+			SRewardInfo::operator >> (Value_);
+			Value_["NextRewardRankIndex"] = NextRewardRankIndex;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
+				GetStdName(SRewardInfo()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
-				GetMemberName(int32(), L"LastGotRewardRankIndex");
+				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(int32(), L"NextRewardRankIndex");
 		}
 	};
 	struct SQuestSlotIndexCode : public SProto
@@ -5284,7 +5044,7 @@ namespace bb
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex");
 		}
 	};
-	struct SQuestRewardNetSc : public SRewardDB
+	struct SQuestRewardNetSc : public SRewardInfo
 	{
 		TQuestSlotIndex SlotIndex{};
 		int32 newCode{};
@@ -5294,15 +5054,15 @@ namespace bb
 		SQuestRewardNetSc()
 		{
 		}
-		SQuestRewardNetSc(const SRewardDB& Super_, const TQuestSlotIndex& SlotIndex_, const int32& newCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardDB(Super_), SlotIndex(SlotIndex_), newCode(newCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
+		SQuestRewardNetSc(const SRewardInfo& Super_, const TQuestSlotIndex& SlotIndex_, const int32& newCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardInfo(Super_), SlotIndex(SlotIndex_), newCode(newCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
 		{
 		}
-		SQuestRewardNetSc(SRewardDB&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& newCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardDB(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), newCode(std::move(newCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
+		SQuestRewardNetSc(SRewardInfo&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& newCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardInfo(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), newCode(std::move(newCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
+			SRewardInfo::operator << (Stream_);
 			Stream_ >> SlotIndex;
 			Stream_ >> newCode;
 			Stream_ >> CoolEndTime;
@@ -5311,7 +5071,7 @@ namespace bb
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
+			SRewardInfo::operator << (Value_);
 			Value_["SlotIndex"] >> SlotIndex;
 			Value_["newCode"] >> newCode;
 			Value_["CoolEndTime"] >> CoolEndTime;
@@ -5320,7 +5080,7 @@ namespace bb
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
+			SRewardInfo::operator >> (Stream_);
 			Stream_ << SlotIndex;
 			Stream_ << newCode;
 			Stream_ << CoolEndTime;
@@ -5329,7 +5089,7 @@ namespace bb
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
+			SRewardInfo::operator >> (Value_);
 			Value_["SlotIndex"] = SlotIndex;
 			Value_["newCode"] = newCode;
 			Value_["CoolEndTime"] = CoolEndTime;
@@ -5339,7 +5099,7 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
+				GetStdName(SRewardInfo()) + L"," + 
 				GetStdName(TQuestSlotIndex()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
@@ -5349,7 +5109,7 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
+				GetMemberName(SRewardInfo(), L"") + L"," + 
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
 				GetMemberName(int32(), L"newCode") + L"," + 
 				GetMemberName(system_clock::time_point(), L"CoolEndTime") + L"," + 
@@ -5380,48 +5140,48 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SQuestDailyCompleteRewardNetSc : public SRewardDB
+	struct SQuestDailyCompleteRewardNetSc : public SRewardInfo
 	{
 		system_clock::time_point RefreshTime{};
 		SQuestDailyCompleteRewardNetSc()
 		{
 		}
-		SQuestDailyCompleteRewardNetSc(const SRewardDB& Super_, const system_clock::time_point& RefreshTime_) : SRewardDB(Super_), RefreshTime(RefreshTime_)
+		SQuestDailyCompleteRewardNetSc(const SRewardInfo& Super_, const system_clock::time_point& RefreshTime_) : SRewardInfo(Super_), RefreshTime(RefreshTime_)
 		{
 		}
-		SQuestDailyCompleteRewardNetSc(SRewardDB&& Super_, system_clock::time_point&& RefreshTime_) : SRewardDB(std::move(Super_)), RefreshTime(std::move(RefreshTime_))
+		SQuestDailyCompleteRewardNetSc(SRewardInfo&& Super_, system_clock::time_point&& RefreshTime_) : SRewardInfo(std::move(Super_)), RefreshTime(std::move(RefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
+			SRewardInfo::operator << (Stream_);
 			Stream_ >> RefreshTime;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
+			SRewardInfo::operator << (Value_);
 			Value_["RefreshTime"] >> RefreshTime;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
+			SRewardInfo::operator >> (Stream_);
 			Stream_ << RefreshTime;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
+			SRewardInfo::operator >> (Value_);
 			Value_["RefreshTime"] = RefreshTime;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
+				GetStdName(SRewardInfo()) + L"," + 
 				GetStdName(system_clock::time_point());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
+				GetMemberName(SRewardInfo(), L"") + L"," + 
 				GetMemberName(system_clock::time_point(), L"RefreshTime");
 		}
 	};
@@ -5666,48 +5426,48 @@ namespace bb
 				GetMemberName(wstring(), L"Key");
 		}
 	};
-	struct SCouponUseNetSc : public SRewardDB
+	struct SCouponUseNetSc : public SRewardInfo
 	{
 		TResources ResourcesAdded{};
 		SCouponUseNetSc()
 		{
 		}
-		SCouponUseNetSc(const SRewardDB& Super_, const TResources& ResourcesAdded_) : SRewardDB(Super_), ResourcesAdded(ResourcesAdded_)
+		SCouponUseNetSc(const SRewardInfo& Super_, const TResources& ResourcesAdded_) : SRewardInfo(Super_), ResourcesAdded(ResourcesAdded_)
 		{
 		}
-		SCouponUseNetSc(SRewardDB&& Super_, TResources&& ResourcesAdded_) : SRewardDB(std::move(Super_)), ResourcesAdded(std::move(ResourcesAdded_))
+		SCouponUseNetSc(SRewardInfo&& Super_, TResources&& ResourcesAdded_) : SRewardInfo(std::move(Super_)), ResourcesAdded(std::move(ResourcesAdded_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
+			SRewardInfo::operator << (Stream_);
 			Stream_ >> ResourcesAdded;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
+			SRewardInfo::operator << (Value_);
 			Value_["ResourcesAdded"] >> ResourcesAdded;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
+			SRewardInfo::operator >> (Stream_);
 			Stream_ << ResourcesAdded;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
+			SRewardInfo::operator >> (Value_);
 			Value_["ResourcesAdded"] = ResourcesAdded;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
+				GetStdName(SRewardInfo()) + L"," + 
 				GetStdName(TResources());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
+				GetMemberName(SRewardInfo(), L"") + L"," + 
 				GetMemberName(TResources(), L"ResourcesAdded");
 		}
 	};
@@ -5865,56 +5625,56 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SRankingRewardNetSc : public SRewardDB
+	struct SRankingRewardNetSc : public SRewardInfo
 	{
 		int64 Counter{};
-		TRankingRewardArray RankingRewardArray{};
+		TRankingArray myRankingArray{};
 		SRankingRewardNetSc()
 		{
 		}
-		SRankingRewardNetSc(const SRewardDB& Super_, const int64& Counter_, const TRankingRewardArray& RankingRewardArray_) : SRewardDB(Super_), Counter(Counter_), RankingRewardArray(RankingRewardArray_)
+		SRankingRewardNetSc(const SRewardInfo& Super_, const int64& Counter_, const TRankingArray& myRankingArray_) : SRewardInfo(Super_), Counter(Counter_), myRankingArray(myRankingArray_)
 		{
 		}
-		SRankingRewardNetSc(SRewardDB&& Super_, int64&& Counter_, TRankingRewardArray&& RankingRewardArray_) : SRewardDB(std::move(Super_)), Counter(std::move(Counter_)), RankingRewardArray(std::move(RankingRewardArray_))
+		SRankingRewardNetSc(SRewardInfo&& Super_, int64&& Counter_, TRankingArray&& myRankingArray_) : SRewardInfo(std::move(Super_)), Counter(std::move(Counter_)), myRankingArray(std::move(myRankingArray_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardDB::operator << (Stream_);
+			SRewardInfo::operator << (Stream_);
 			Stream_ >> Counter;
-			Stream_ >> RankingRewardArray;
+			Stream_ >> myRankingArray;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardDB::operator << (Value_);
+			SRewardInfo::operator << (Value_);
 			Value_["Counter"] >> Counter;
-			Value_["RankingRewardArray"] >> RankingRewardArray;
+			Value_["myRankingArray"] >> myRankingArray;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardDB::operator >> (Stream_);
+			SRewardInfo::operator >> (Stream_);
 			Stream_ << Counter;
-			Stream_ << RankingRewardArray;
+			Stream_ << myRankingArray;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardDB::operator >> (Value_);
+			SRewardInfo::operator >> (Value_);
 			Value_["Counter"] = Counter;
-			Value_["RankingRewardArray"] = RankingRewardArray;
+			Value_["myRankingArray"] = myRankingArray;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardDB()) + L"," + 
+				GetStdName(SRewardInfo()) + L"," + 
 				GetStdName(int64()) + L"," + 
-				GetStdName(TRankingRewardArray());
+				GetStdName(TRankingArray());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardDB(), L"") + L"," + 
+				GetMemberName(SRewardInfo(), L"") + L"," + 
 				GetMemberName(int64(), L"Counter") + L"," + 
-				GetMemberName(TRankingRewardArray(), L"RankingRewardArray");
+				GetMemberName(TRankingArray(), L"myRankingArray");
 		}
 	};
 	struct SRankingRewardFailNetSc : public SProto

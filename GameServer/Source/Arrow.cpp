@@ -1,15 +1,15 @@
 #include "stdafx.h"
 
-CArrow::CArrow(const SPoint& LocalPosition_, const SPoint& Velocity_) :
-    CMovingObject2D(GetDefaultTransform(LocalPosition_), Velocity_)
+CArrow::CArrow(const SPoint& LocalPosition_, const list<shared_ptr<CCollider2D>>& Colliders_, const SPoint& Velocity_) :
+    CMovingObject2D(GetDefaultTransform(LocalPosition_), Colliders_, Velocity_)
 {
 }
 bool CArrow::FixedUpdate() // true : 화면 내에서 보여져야 하는 화살
 {
     LocalPosition += (Velocity * CEngine::GetDeltaTime());
 
-    return (LocalPosition.X > CArrowDodgeArrowMaker::ArrowDeleteScreenLeft &&
-        LocalPosition.X < CArrowDodgeArrowMaker::ArrowDeleteScreenRight&&
-        LocalPosition.Y > CArrowDodgeArrowMaker::ArrowDeleteScreenBottom &&
-        LocalPosition.Y < CArrowDodgeArrowMaker::ArrowDeleteScreenTop);
+    return (LocalPosition.X > -arrowDodgeArrowActiveAreaHalfWidth &&
+        LocalPosition.X < arrowDodgeArrowActiveAreaHalfWidth &&
+        LocalPosition.Y > arrowDodgeArrowActiveBottom &&
+        LocalPosition.Y < arrowDodgeArrowActiveTop);
 }

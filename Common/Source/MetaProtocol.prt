@@ -49,8 +49,6 @@ namespace bb
 		int32 BalloonHitPoint
 		int32 ParachuteHitPoint
 		int32 FirstBalloonHitPoint
-		int32 QuestCoolMinutes
-		TResource QuestNextCostGold
 		int32 ChangeNickFreeCount
 		EResource ChangeNickCostType
 		TResource ChangeNickCostValue
@@ -64,32 +62,6 @@ namespace bb
 	{
 		wstring Word
 	}
-	struct SShopConfigServerMeta
-	{
-		int32 DailyRewardDurationMinute
-		int32 DailyRewardFreeCount
-		int32 DailyRewardAdCount
-	}
-	struct SShopMeta
-	{
-		int32 Code
-		EResource CostType
-		TResource CostValue
-		int32 RewardCode
-	}
-	struct SShopPackageServerMeta
-	{
-		int32 Code
-		EResource CostType
-		TResource CostValue
-		int32 RewardCode
-	}
-	struct SShopDailyRewardServerMeta
-	{
-		double Probability
-		EResource RewardType
-		TResource RewardValue
-	}
 	struct ExchangeValue
 	{
 		EResource costResourceType
@@ -101,40 +73,38 @@ namespace bb
 		ExchangeValue exchangeValue
 	}
 
-	struct SCharacterMeta
+	struct CharacterTypeMeta
 	{
-		int32 Code
-		EGrade Grade
-		EResource CostType
+		EGrade grade
+		int32 subGrade
+		wstring howToGet
 		TResource CostValue
 		EResource RefundType
 		TResource RefundValue
-		float MaxVelUp
-		float MaxVelDown
+		float MaxVelAir
 		float MaxVelXGround
-		float MaxVelXAir
-		float FlapDeltaVelX
-		float FlapDeltaVelUp
-		float RunAcc
 		float StaminaMax
-		float StaminaPerTick
-		int32 StaminaRegenDelay
 		float PumpSpeed
+		float Weight
 	}
-	struct SCharacterServerMeta : SCharacterMeta
+	struct CharacterTypeKeyValueMeta
 	{
-		bool Default
+		wstring type
+		CharacterTypeMeta value
 	}
-	struct SCharacterGradeMeta
+	struct CharacterMeta
 	{
-		EGrade Grade
+		int32 Code
+		wstring type
+		bool isDefault
 	}
 	typedef vector<SPoint> TPoses
-	struct SMultiMap
+
+	struct SMultiMap : SPoint
 	{
+		int32 index
 		wstring PrefabName
 		TPoses Poses
-		SPoint PropPosition
 		list<SBoxCollider2D> Structures
 		list<SStructureMove> StructureMoves
 	}
@@ -144,10 +114,9 @@ namespace bb
 		SRectCollider2D Collider
 	}
 
-	struct SArrowDodgeMap
+	struct SArrowDodgeMap : SPoint
 	{
 		wstring PrefabName
-		SPoint PropPosition
 		list<SBoxCollider2D> Structures
 	}
 	struct SArrowDodgeMapInfo
@@ -160,11 +129,12 @@ namespace bb
 		SPrefabNameCollider Stamina
 	}
 
-	struct SFlyAwayMap
+	struct SFlyAwayMap : SPoint
 	{
 		wstring PrefabName
-		SPoint PropPosition
 		list<SBoxCollider2D> Structures
+		list<SBoxCollider2D> deadZones
+		SBoxCollider2D ocean
 	}
 	struct SFlyAwayMapInfo
 	{
@@ -176,47 +146,13 @@ namespace bb
 		SPrefabNameCollider Meat
 		SPrefabNameCollider Chicken
 	}
-
 	struct SMapMeta
 	{
 		vector<SMultiMap> OneOnOneMaps
 		SArrowDodgeMapInfo ArrowDodgeMapInfo
 		SFlyAwayMapInfo FlyAwayMapInfo
 	}
-	struct SGachaMeta
-	{
-		EResource CostResource
-		int32 CostValue
-		EResource TenCostResource
-		int32 TenCostValue
-		int32 RewardCode
-	}
-	struct SGachaGradeMeta
-	{
-		EGrade Grade
-		double Probability
-	}
-	struct SGachaRewardMeta
-	{
-		int32 Code
-		double Probability
-		int32 CharCode
-	}
-	struct SRewardItemMeta
-	{
-		wstring Type
-		int32 Data
-	}
-	struct SCodeRewardItemMeta
-	{
-		int32 Code
-		SRewardItemMeta RewardItem
-	}
 
-	struct SRankMeta
-	{
-		ERank Rank
-	}
 	struct SRankTierMeta
 	{
 		ERank Rank
@@ -225,8 +161,9 @@ namespace bb
 	}
 	struct SRankRewardMeta
 	{
-		int32 Point
-		int32 RewardCode
+		int32 point
+		wstring rewardType
+		int32 rewardValue
 	}
 	struct SQuestMeta
 	{
@@ -234,66 +171,69 @@ namespace bb
 		int32 Code
 		int32 unitCompleteCount
 		int32 completeCount
-		int32 RewardCode
+		wstring rewardType
+		int32 rewardValue
 	}
-	struct SQuestDailyCompleteMeta
+	struct QuestConfigMeta
 	{
-		int32 RequirementCount
-		int32 RewardCode
-		int32 RefreshMinutes
+		minutes coolMinutes
+		int32 dailyRequirementCount
+		wstring dailyRewardType
+		int32 dailyRewardValue
+		minutes dailyRefreshMinutes
 	}
 
-	struct SBattleRewardMeta
-	{
-		SBattleType BattleType
-		int32 AddGold
-		int32 Unranked
-		int32 Bronze
-		int32 Silver
-		int32 Gold
-		int32 Diamond
-		int32 Champion
-	}
-
-	struct SMultiMeta
+	struct MultiBattleConfigMeta
 	{
 		int32 DisconnectableSeconds
 		int32 PunishMinutesForDisconnect
+		TResource rewardDiaValue
+		int32 eloDiffPoint
+		double eloDiffWinRatio
+		double eloKWeight
+	}
+	struct MultiBattleDiaRewardMeta
+	{
+		EResource diaType
+		double ratio
 	}
 	struct SMultiMatchDeniedDurationMeta
 	{
 		int32 DisconnectedCount
 		int32 DeniedSeconds
 	}
-	struct SArrowDodgeMeta
+	struct ArrowDodgeConfigMeta
 	{
 		int32 ArrowDodgePoint
 		int32 ArrowGetPoint
 		int64 ItemDurationTick
 		int64 ItemRegenPeriodTick
+		int32 maxItemCount
 		int32 PlayCountMax
 		TResource ChargeCostGold
 		int32 RefreshDurationMinute
+		int32 scorePerGold
 	}
 	struct SArrowDodgeItemMeta
 	{
 		EArrowDodgeItemType ItemType
 		uint32 CreateWeight
-		int32 AddedPoint
 		TResource AddedGold
 	}
 
-	struct SFlyAwayMeta
+	struct FlyAwayConfigMeta
 	{
+		int32 maxComboMultiplier
+		float landingAddedStamina
 		int32 PlayCountMax
 		TResource ChargeCostGold
 		int32 RefreshDurationMinute
+		int32 scorePerGold
 	}
 	struct SFlyAwayItemMeta
 	{
 		EFlyAwayItemType ItemType
 		uint32 StaminaCreateWeight
-		int32 AddedPoint
 		TResource AddedGold
 		float AddedStamina
 	}
@@ -309,7 +249,8 @@ namespace bb
 		int32 EndMonth
 		int32 EndDay
 		int32 EndHour
-		int32 RewardCode
+		wstring rewardType
+		int32 rewardValue
 	}
 	struct SCouponKeyMeta
 	{
@@ -326,6 +267,7 @@ namespace bb
 	{
 		wstring Mode
 		int32 End
-		int32 RewardCode
+		wstring rewardType
+		int32 rewardValue
 	}
 }

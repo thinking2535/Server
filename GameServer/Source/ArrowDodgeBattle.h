@@ -5,27 +5,41 @@
 
 struct SArrowObject
 {
-    shared_ptr<CArrow> pArrow;
+    CArrow* pArrow;
     CList<shared_ptr<CMovingObject2D>>::iterator ArrowIterator;
 
-    SArrowObject(const shared_ptr<CArrow>& pArrow_, const CList<shared_ptr<CMovingObject2D>>::iterator& ArrowIterator_);
+    SArrowObject(CArrow* pArrow_, const CList<shared_ptr<CMovingObject2D>>::iterator& ArrowIterator_);
     SArrow GetSArrow(void) const;
 };
 
-struct SItemObject
+struct SArrowDodgeItemObject
 {
-    shared_ptr<CArrowDodgeItem> pItem;
+    CArrowDodgeItem* pItem;
     CList<shared_ptr<CCollider2D>>::iterator ItemIterator;
 
-    SItemObject(const shared_ptr<CArrowDodgeItem>& pItem_, const CList<shared_ptr<CCollider2D>>::iterator& ItemIterator_);
+    SArrowDodgeItemObject(CArrowDodgeItem* pItem_);
     SArrowDodgeItem GetSArrowDodgeItem(void) const;
 };
 
 class CArrowDodgeBattle : public CBattle
 {
-    const int32 _MaxItemCount = 10;
+    static const uint32 _intItemScreenWidth;
+    static const uint32 _intItemScreenHeight;
 
-    shared_ptr<CObject2D> _pRootObject;
+    static float _getRandomItemPointX(CFixedRandom32& fixedRandom);
+    static float _getRandomItemPointY(CFixedRandom32& fixedRandom);
+public:
+    inline float getRandomItemPointX()
+    {
+        return _getRandomItemPointX(_FixedRandom);
+    }
+    inline float getRandomItemPointY()
+    {
+        return _getRandomItemPointY(_FixedRandom);
+    }
+    SPoint getRandomItemPoint();
+private:
+    const SArrowDodgeMap* _pArrowDodgeMap;
     shared_ptr<CArrowDodgeBattlePlayer> _pArrowDodgeBattlePlayer;
 
     CFixedRandom32 _FixedRandom{ (uint32)(system_clock::now().time_since_epoch().count() % 0xffffffff) };
@@ -33,15 +47,14 @@ class CArrowDodgeBattle : public CBattle
     CArrowDodgeArrowMaker _ArrowMaker{ _FixedRandom };
     CArrowDodgeItemMaker _ItemMaker{ _FixedRandom };
     CList<SArrowObject> _ArrowIts;
-    CList<SItemObject> _ItemIts;
+    CList<SArrowDodgeItemObject> _ItemIts;
     TTime _EndTime = (std::chrono::time_point<std::chrono::system_clock>::max)();
 
 protected:
     void _AddBattlePlayer(const shared_ptr<CArrowDodgeBattlePlayer>& pBattlePlayer_);
 private:
-    void _RegenCallback(int32 PlayerIndex_);
-    void _HitArrowCallback(const shared_ptr<CArrow>& pArrow_, bool IsDefended_);
-    void _GetItemCallback(int64 Tick_, const shared_ptr<CArrowDodgeItem>& pItem_);
+    void _HitArrowCallback(const CArrow* pArrow_, bool IsDefended_);
+    void _GetItemCallback(const CArrowDodgeItem* pItem_);
 public:
     CArrowDodgeBattle(CUser* pUser_, TBattlesIt itBattle_);
     virtual ~CArrowDodgeBattle();
@@ -49,10 +62,10 @@ public:
     bool Update(void) override;
     void Link(int32 PlayerIndex_) override;
 private:
-    void _FixedUpdate(int64 Tick_);
     void _UpdateScore(int32 AddedPoint_);
     void _AddArrow(const shared_ptr<CArrow>& pArrow_);
     void _RemoveArrow(CList<SArrowObject>::iterator ArrowObjectIt_);
     void _AddItem(const shared_ptr<CArrowDodgeItem>& pItem_);
-    void _RemoveItem(CList<SItemObject>::iterator ItemObjectIt_);
+protected:
+    void _fixedUpdate() override;
 };

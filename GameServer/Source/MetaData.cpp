@@ -3,9 +3,40 @@
 #include <Rso/Core/SafeInt64.h>
 #include <random>
 
+unique_ptr<SReward> SReward::create(const wstring& type, int32 value)
+{
+	auto pReward = make_unique<SReward>();
+
+	if (type == L"Gold")
+	{
+		pReward->Resources[(size_t)EResource::Gold] += value;
+	}
+	else
+	{
+		THROWEX();
+	}
+
+	return pReward;
+}
+list<int32> SReward::getCharacterCodes(void) const
+{
+	list<int32> characterCodes;
+	std::transform(Chars.cbegin(), Chars.cend(), back_inserter(characterCodes), [](const CCharacter* pCharacter) { return pCharacter->Code; });
+	return characterCodes;
+}
+list<int32> getCharacterCodesWithRewards(const list<const SReward*>& rewards)
+{
+	list<int32> characterCodes;
+
+	for (auto& i : rewards)
+		std::transform(i->Chars.cbegin(), i->Chars.cend(), back_inserter(characterCodes), [](const CCharacter* pCharacter) { return pCharacter->Code; });
+
+	return characterCodes;
+}
+
 CMetaData::CMetaData() :
 	_QuestTypes((size_t)EQuestType::Max),
-	MaxResources(MakeResources(MaxValue<TResource>())),
+	MaxResources(getFullResources()),
 	RankingConfigMeta(GetSRankingConfigMeta())
 {
 	try
@@ -31,146 +62,69 @@ CMetaData::CMetaData() :
 
 
 		// Character ////////////////////
-		vector<SCharacterServerMeta> CharacterMetas;
-		Stream.LoadFile(L"../../MetaData/Character.bin");
-		Stream >> CharacterMetas;
-		ASSERTIONA(!CharacterMetas.empty(), L"CharacterMetas is empty");
-
-		for (auto& i : CharacterMetas)
 		{
-			if (i.MaxVelXAir < _MinVelXAir)
-				_MinVelXAir = i.MaxVelXAir;
+			// CharacterType
+			Stream.LoadFile(L"../../MetaData/CharacterType.bin");
+			Stream >> _characterTypeMetas;
+			ASSERTIONA(!_characterTypeMetas.empty(), L"_characterTypeMetas is empty");
 
-			if (i.MaxVelUp < _MinVelUp)
-				_MinVelUp = i.MaxVelUp;
-
-			if (i.MaxVelDown < _MinVelDown)
-				_MinVelDown = i.MaxVelDown;
-
-			_Characters.emplace(i.Code, CCharacter(i));
-
-			if (i.Default)
-				DefaultChars.emplace_back(i.Code);
-		}
-
-		ASSERTIONA(!DefaultChars.empty(), L"Default Char Not Found");
-
-		// Rewards
-		list<SCodeRewardItemMeta> RewardItemMetas;
-		Stream.LoadFile(L"../../MetaData/RewardItem.bin");
-		Stream >> RewardItemMetas;
-
-		for (auto& i : RewardItemMetas)
-		{
-			auto itReward = _Rewards.emplace(i.Code, SReward{});
-
-			if (i.RewardItem.Type == L"Resource_Ticket")
+			for (auto& i : _characterTypeMetas)
 			{
-				itReward.first->second.Resources[(size_t)EResource::Ticket] += i.RewardItem.Data;
+				if (i.second.MaxVelAir < _MinVelAir)
+					_MinVelAir = i.second.MaxVelAir;
 			}
-			else if (i.RewardItem.Type == L"Resource_Gold")
+
+
+			// Character
+			vector<CharacterMeta> characterMetas;
+			Stream.LoadFile(L"../../MetaData/Character.bin");
+			Stream >> characterMetas;
+			ASSERTIONA(!characterMetas.empty(), L"characterMetas is empty");
+
+			for (auto& i : characterMetas)
 			{
-				itReward.first->second.Resources[(size_t)EResource::Gold] += i.RewardItem.Data;
-			}
-			else if (i.RewardItem.Type == L"Character")
-			{
-				auto itCharacter = _Characters.find(i.RewardItem.Data);
-				if (itCharacter == _Characters.end())
+				auto itCharacterTypeMeta = _characterTypeMetas.find(i.type);
+				if (itCharacterTypeMeta == _characterTypeMetas.end())
 					THROWEX();
 
-				if (!itReward.first->second.Chars.emplace(&itCharacter->second).second)
-					THROWEXA(L"RewardItem.bin Dup CharCode[%d]", i.RewardItem.Data);
+				_Characters.emplace(i.Code, CCharacter(SCharacterMeta(i, &itCharacterTypeMeta->second)));
 			}
-			else
+		}
+
+		{
+			// Shop ///////////////////////////////
 			{
-				THROWEX();
+			}
+
+
+			// Check Characters ///////////////////////////
+			{
+				for (auto& i : _Characters)
+				{
+					if (i.second.isNFTCharacter())
+					{
+					}
+					else if (i.second.isShopCharacter())
+					{
+//						ASSERTION(shopCharacterCodesForCheck.find(i.first) != shopCharacterCodesForCheck.end());
+					}
+					else if (i.second.isRewardCharacter())
+					{
+						// rso todo character reward 체크할것.
+						continue;
+					}
+					else
+					{
+						THROWEXA(L"Invalid howToGet [%s]", i.second.pCharacterTypeMeta->howToGet);
+					}
+
+					if (i.second.isDefault)
+						DefaultChars.emplace_back(i.first);
+				}
+
+				ASSERTIONA(!DefaultChars.empty(), L"Default Char Not Found");
 			}
 		}
-
-		ASSERTION(!_Rewards.empty());
-
-
-		// Gacha Grade //////////////////////////////////////
-		Stream.LoadFile(L"../../MetaData/GachaGrade.bin");
-		map<EGrade, double> GradeProbabilityMetas;
-		Stream >> GradeProbabilityMetas;
-
-
-		// GachaReward ///////////////////////////////
-		Stream.LoadFile(L"../../MetaData/GachaReward.bin");
-		list<SGachaRewardMeta> GachaRewardMetas;
-		Stream >> GachaRewardMetas;
-		ASSERTIONA(!GachaRewardMetas.empty(), L"GachaRewardMetas is empty");
-
-		map<int32, TProbabilityGrades> Gacha;
-
-		for (auto& i : GachaRewardMetas)
-		{
-			auto itChar = _Characters.find(i.CharCode);
-			ASSERTIONA(itChar != _Characters.end(), L"Invalid Gacha Reward CharCode [%d]", i.CharCode);
-
-			auto itProbabilityGrades = Gacha.find(i.Code);
-			if (itProbabilityGrades == Gacha.end())
-				itProbabilityGrades = Gacha.emplace(i.Code, TProbabilityGrades()).first;
-
-			// Grade 의 확률 찾기
-			auto itGradeProbability = GradeProbabilityMetas.find(itChar->second.Grade);
-			ASSERTIONA(itGradeProbability != GradeProbabilityMetas.end(), L"Not Found Grade [%d] For GachaGrade", (int32)itChar->second.Grade);
-
-			auto itProbabilityGrade = itProbabilityGrades->second.find(itChar->second.Grade);
-			if (itProbabilityGrade == itProbabilityGrades->second.end())
-				itProbabilityGrade = itProbabilityGrades->second.emplace(itChar->second.Grade, TProbabilityGrade(itGradeProbability->second, TProbabilityCharacters())).first;
-
-			itProbabilityGrade->second.second.emplace_back(TProbabilityCharacter(i.Probability, &itChar->second));
-		}
-
-
-		// Shop ///////////////////////////////
-		Stream.LoadFile(L"../../MetaData/Shop.bin");
-		list<SShopMeta> ShopMetas;
-		Stream >> ShopMetas;
-
-		for (auto& i : ShopMetas)
-		{
-			auto Reward = _Rewards.find(i.RewardCode);
-			if (Reward == _Rewards.end())
-				THROWEX();
-
-			auto Cost = CheckAndGetResources(SResourceTypeData(i.CostType, i.CostValue));
-			ShopItems.emplace(i.Code, SShopItem(Cost, &Reward->second));
-		}
-
-
-		// ShopConfig //////////////////////////
-		Stream.LoadFile(L"../../MetaData/ShopConfig.bin");
-		list<SShopConfigServerMeta> ShopConfigs;
-		Stream >> ShopConfigs;
-		ASSERTION(ShopConfigs.size() == 1);
-		ShopConfig = ShopConfigs.front();
-
-
-		// ShopPackage //////////////////////////
-		Stream.LoadFile(L"../../MetaData/ShopPackage.bin");
-		list<SShopPackageServerMeta> ShopPackageMetas;
-		Stream >> ShopPackageMetas;
-
-		for (auto& i : ShopPackageMetas)
-		{
-			auto Reward = _Rewards.find(i.RewardCode);
-			if (Reward == _Rewards.end())
-				THROWEX();
-
-			ShopPackages.emplace(i.Code, SShopPackage(i, &Reward->second));
-		}
-
-		// ShopDailyReward //////////////////////////
-		Stream.LoadFile(L"../../MetaData/ShopDailyReward.bin");
-		list<SShopDailyRewardServerMeta> ShopDailyRewards;
-		Stream >> ShopDailyRewards;
-
-		for (auto& i : ShopDailyRewards)
-			DailyReward.Insert(i.Probability, i);
-
 
 		// Shop Exchange //////////////////////////
 		{
@@ -186,28 +140,6 @@ CMetaData::CMetaData() :
 				ASSERTION(ib.second);
 			}
 		}
-
-
-		// Gacha ///////////////////////////////
-		Stream.LoadFile(L"../../MetaData/Gacha.bin");
-		Stream >> _GachaMetas;
-		ASSERTIONA(!_GachaMetas.empty(), L"_GachaMetas is empty");
-
-		for (int i = 0; i < _GachaMetas.size(); ++i)
-		{
-			auto& Meta = _GachaMetas[i];
-
-			auto itRewardMeta = Gacha.find(Meta.RewardCode);
-			ASSERTIONA(itRewardMeta != Gacha.end(), L"Invalid RewardCode [%d]", Meta.RewardCode);
-
-			_Gachas.emplace_back(new CGacha(Meta, i, itRewardMeta->second));
-		}
-
-		list<SRankMeta> RankMetas;
-		Stream.LoadFile(L"../../MetaData/Rank.bin");
-		Stream >> RankMetas;
-
-		ASSERTIONA(ERank(RankMetas.size()) == ERank::Max, L"Invalid Rank Size");
 
 
 		list<SRankTierMeta> RankTierMetas;
@@ -231,29 +163,23 @@ CMetaData::CMetaData() :
 		// Check that RewardCode Exist
 		for (auto& i : RankRewardMetas)
 		{
-			auto Reward = _Rewards.find(i.RewardCode);
-			if (Reward == _Rewards.end())
-				THROWEX();
-
-			_RankRewards.emplace_back(SRankReward(i, &Reward->second));
+			_RankRewards.emplace_back(SRankReward(i));
 		}
 
-		vector<SQuestMeta> Quests;
+		vector<SQuestMeta> QuestMetas;
 		Stream.LoadFile(L"../../MetaData/Quest.bin");
-		Stream >> Quests;
+		Stream >> QuestMetas;
 
-		for (int i = 0; i < Quests.size(); ++i)
+		for (int i = 0; i < QuestMetas.size(); ++i)
 		{
-			auto& Quest = Quests[i];
-			auto itReward = _Rewards.find(Quest.RewardCode);
+			auto& quest = QuestMetas[i];
 
 			ASSERTIONA(
-				Quest.unitCompleteCount >= 0 &&
-				Quest.completeCount >= 0 &&
-				itReward != _Rewards.end()
-				, L"Invalid QuestType [%d][%d]", i, (int)Quest.QuestType);
+				quest.unitCompleteCount >= 0 &&
+				quest.completeCount >= 0
+				, L"Invalid QuestType [%d][%d]", i, (int)quest.QuestType);
 
-			_QuestTypes[(size_t)Quests[i].QuestType].emplace_back(SQuest(Quest, &itReward->second));
+			_QuestTypes[(size_t)QuestMetas[i].QuestType].emplace_back(Quest(quest));
 		}
 
 		// 포인터를 얻어와야 하므로 vecter가 모두 추가된 후에 처리
@@ -281,40 +207,33 @@ CMetaData::CMetaData() :
 		ASSERTIONA((size_t)EQuestType::Max > c_QuestCnt_Max && _QuestTypes.size() == (size_t)EQuestType::Max, L"Invalid _QuestTypes.size()");
 
 
-		list<SQuestDailyCompleteMeta> QuestDailyCompletes;
-		Stream.LoadFile(L"../../MetaData/QuestDailyComplete.bin");
-		Stream >> QuestDailyCompletes;
+		list<QuestConfigMeta> QuestConfigMetas;
+		Stream.LoadFile(L"../../MetaData/QuestConfig.bin");
+		Stream >> QuestConfigMetas;
 
-		ASSERTIONA(!QuestDailyCompletes.empty(), L"QuestDailyComplete empty");
+		ASSERTIONA(!QuestConfigMetas.empty(), L"QuestDailyComplete empty");
+		ASSERTIONA(QuestConfigMetas.front().dailyRequirementCount > 0, L"Invalid QuestConfigMeta.dailyRequirementCount");
+		questConfig = QuestConfig(QuestConfigMetas.front());
 
-		auto itQuestDailyCompleteReward = _Rewards.find(QuestDailyCompletes.front().RewardCode);
-		if (itQuestDailyCompleteReward == _Rewards.end())
-			THROWEX();
-
-		ASSERTIONA(QuestDailyCompletes.front().RequirementCount > 0, L"Invalid QuestDailyCompleteMeta.RequirementCount");
-		QuestDailyComplete = SQuestDailyComplete(QuestDailyCompletes.front(), &itQuestDailyCompleteReward->second);
-
-
-		// BattleReward ///////////////////////////////////////
-		list<SBattleRewardMeta> BattleRewards;
-		Stream.LoadFile(L"../../MetaData/BattleReward.bin");
-		Stream >> BattleRewards;
-
-		for (auto& i : BattleRewards)
-		{
-			auto ib = _BattleTypeInfos.emplace(i.BattleType, SBattleTypeInfo());
-			ib.first->second.BattleReward.emplace_back(SBattleReward(i.AddGold, TPoints{ i.Unranked, i.Bronze, i.Silver, i.Gold, i.Diamond, i.Champion }));
-			ASSERTION(ib.first->second.BattleReward.back().Points.size() == (size_t)ERank::Max);
-		}
 
 		{
-			// Multi ///////////////////////////////////////
-			list<SMultiMeta> Multis;
-			Stream.LoadFile(L"../../MetaData/Multi.bin");
-			Stream >> Multis;
+			// MultiBattleConfig ///////////////////////////////////////
+			list<MultiBattleConfigMeta> MultiBettleConfigMetas;
+			Stream.LoadFile(L"../../MetaData/MultiBattleConfig.bin");
+			Stream >> MultiBettleConfigMetas;
 
-			ASSERTION(!Multis.empty());
-			pMultiBattleMeta = make_unique<SMultiBattleMeta>(milliseconds(Multis.front().DisconnectableSeconds * 1000), minutes(Multis.front().PunishMinutesForDisconnect));
+			ASSERTION(!MultiBettleConfigMetas.empty());
+			pMultiBattleConfig = make_unique<MultiBattleConfig>(MultiBettleConfigMetas.front(), milliseconds(MultiBettleConfigMetas.front().DisconnectableSeconds * 1000), minutes(MultiBettleConfigMetas.front().PunishMinutesForDisconnect));
+
+
+			// MultiBattleReward ///////////////////////////////////////
+			list<MultiBattleDiaRewardMeta> MultiBettleDiaRewardMetas;
+			Stream.LoadFile(L"../../MetaData/MultiBattleDiaReward.bin");
+			Stream >> MultiBettleDiaRewardMetas;
+
+			ASSERTION(!MultiBettleDiaRewardMetas.empty());
+			for (auto& i : MultiBettleDiaRewardMetas)
+				_multiBattleDiaRewardTypes.emplace(i.ratio, i.diaType);
 
 
 			// MultiMatchDeniedDuration ///////////////////////////////////
@@ -326,18 +245,18 @@ CMetaData::CMetaData() :
 			sort(MultiMatchDeniedDurationMeta.begin(), MultiMatchDeniedDurationMeta.end(), [](const SMultiMatchDeniedDurationMeta& a, const SMultiMatchDeniedDurationMeta& b) { return a.DisconnectedCount < b.DisconnectedCount; });
 
 			for (auto& i : MultiMatchDeniedDurationMeta)
-				pMultiBattleMeta->MatchDeniedSecondsSelector.emplace(i.DisconnectedCount, seconds(i.DeniedSeconds));
+				pMultiBattleConfig->MatchDeniedSecondsSelector.emplace(i.DisconnectedCount, seconds(i.DeniedSeconds));
 		}
 
 		{
 			// ArrowDodge ///////////////////////////////////////
-			list<SArrowDodgeMeta> ArrowDodges;
-			Stream.LoadFile(L"../../MetaData/ArrowDodge.bin");
-			Stream >> ArrowDodges;
+			list<ArrowDodgeConfigMeta> arrowDodgeConfigMetas;
+			Stream.LoadFile(L"../../MetaData/ArrowDodgeConfig.bin");
+			Stream >> arrowDodgeConfigMetas;
 
-			ASSERTION(!ArrowDodges.empty());
-			ArrowDodgeMeta = ArrowDodges.front();
-			ASSERTIONA(ArrowDodgeMeta.PlayCountMax > 0 && ArrowDodgeMeta.ChargeCostGold > 0, L"Invalid ArrowDodgeMeta");
+			ASSERTION(!arrowDodgeConfigMetas.empty());
+			arrowDodgeConfigMeta = arrowDodgeConfigMetas.front();
+			ASSERTIONA(arrowDodgeConfigMeta.PlayCountMax > 0 && arrowDodgeConfigMeta.ChargeCostGold > 0, L"Invalid ArrowDodgeMeta");
 
 
 			// ArrowDodgeItem ///////////////////////////////////
@@ -357,13 +276,13 @@ CMetaData::CMetaData() :
 
 		{
 			// FlyAway ////////////////////////////////////////////
-			list<SFlyAwayMeta> FlyAways;
-			Stream.LoadFile(L"../../MetaData/FlyAway.bin");
-			Stream >> FlyAways;
+			list<FlyAwayConfigMeta> flyAwayConfigMetas;
+			Stream.LoadFile(L"../../MetaData/FlyAwayConfig.bin");
+			Stream >> flyAwayConfigMetas;
 
-			ASSERTION(!FlyAways.empty());
-			FlyAwayMeta = FlyAways.front();
-			ASSERTIONA(FlyAwayMeta.PlayCountMax > 0 && FlyAwayMeta.ChargeCostGold > 0, L"Invalid FlyAwayMeta");
+			ASSERTION(!flyAwayConfigMetas.empty());
+			flyAwayConfigMeta = flyAwayConfigMetas.front();
+			ASSERTIONA(flyAwayConfigMeta.PlayCountMax > 0 && flyAwayConfigMeta.ChargeCostGold > 0, L"Invalid FlyAwayMeta");
 
 
 			// FlyAwayItem ///////////////////////////////////
@@ -391,11 +310,8 @@ CMetaData::CMetaData() :
 
 
 		// Check Map ///////////
-		for (auto& i : _BattleTypeInfos)
-		{
-			for (auto& m : MapMeta.OneOnOneMaps)
-				ASSERTIONA(m.Poses.size() >= 2, L"Invalid Poses Count [%d]", m.Poses.size());
-		}
+		for (auto& m : MapMeta.OneOnOneMaps)
+			ASSERTIONA(m.Poses.size() >= 2, L"Invalid Poses Count [%d]", m.Poses.size());
 
 
 		// Coupon //////////////////////////////////////////////////
@@ -404,16 +320,7 @@ CMetaData::CMetaData() :
 		Stream >> CouponMetas;
 		for (auto& i : CouponMetas)
 		{
-			auto Reward = _Rewards.find(i.RewardCode);
-			if (Reward == _Rewards.end())
-				THROWEX();
-
-			auto ib = _Coupons.emplace(i.Code,
-				SCoupon(
-					i.Code,
-					CDateTime(SDateTime(i.StartYear, i.StartMonth, i.StartDay, i.StartHour, 0, 0), true).ToTimePoint(),
-					CDateTime(SDateTime(i.EndYear, i.EndMonth, i.EndDay, i.EndHour, 0, 0), true).ToTimePoint(),
-					&Reward->second));
+			auto ib = _Coupons.emplace(i.Code, SCoupon(i));
 
 			ASSERTIONA(ib.second, L"Already used Coupon Code[%d]", i.Code);
 			ASSERTIONA(ib.first->second.StartTime < ib.first->second.EndTime, L"Invalid Coupont Start, End Time");
@@ -450,11 +357,7 @@ CMetaData::CMetaData() :
 			else
 				THROWEXA(L"Invalid RankingReward ModeName[%s]", i.Mode);
 
-			auto itReward = _Rewards.find(i.RewardCode);
-			if (itReward == _Rewards.end())
-				THROWEXA(L"Invalid Reward Code[%d]", i.RewardCode);
-
-			if (!RankingReward[(size_t)RankingType].emplace(i.End, itReward).second)
+			if (!RankingReward[(size_t)RankingType].emplace(i.End, SReward::create(i.rewardType, i.rewardValue)).second)
 				THROWEX();
 		}
 	}
@@ -496,22 +399,15 @@ int32 CMetaData::GetDefaultChar(void) const
 {
 	return DefaultChars[rand() % DefaultChars.size()];
 }
-CGacha* CMetaData::GetGacha(int32 Index_) const
-{
-	if (Index_ < 0 || Index_ >= _Gachas.size())
-		return nullptr;
-
-	return _Gachas[Index_].get();
-}
 const SReward* CMetaData::GetRankReward(int32 PointBest_, int32 RewardIndex_) const
 {
 	if (RewardIndex_ > _RankRewards.size() - 1)
 		return nullptr;
 
-	if (PointBest_ < _RankRewards[RewardIndex_].Point)
+	if (PointBest_ < _RankRewards[RewardIndex_].point)
 		return nullptr;
 
-	return _RankRewards[RewardIndex_].pReward;
+	return _RankRewards[RewardIndex_].pReward.get();
 }
 const CCharacter* CMetaData::GetCharacter(int32 Code_) const
 {
@@ -521,18 +417,16 @@ const CCharacter* CMetaData::GetCharacter(int32 Code_) const
 
 	return &it->second;
 }
-CMetaData::_TMapInfo CMetaData::GetMultiMap(void) const
+const SMultiMap* CMetaData::GetMultiMap(void) const
 {
 	auto MapIndex = (g_Option.Debug > 0 ? g_MapIndex : -1);
 
 	if (MapIndex < 0 || MapIndex >= MapMeta.OneOnOneMaps.size())
 		MapIndex = rand() % MapMeta.OneOnOneMaps.size();
 
-	auto& Map = MapMeta.OneOnOneMaps[MapIndex];
-	
-	return _TMapInfo(MapIndex, Map); // 체크 했으므로 BattleType 에 맞는 맵이라고 간주
+	return &MapMeta.OneOnOneMaps[MapIndex];
 }
-const SQuest* CMetaData::GetQuest(int32 Code_) const
+const Quest* CMetaData::GetQuest(int32 Code_) const
 {
 	auto it = _QuestsMap.find(Code_);
 	if (it == _QuestsMap.end())
@@ -567,4 +461,9 @@ optional<ExchangeValue> CMetaData::getExchangeValue(EResource targetResource)
 		return {};
 
 	return it->second;
+}
+EResource CMetaData::getMultiBattleDiaRewardType(void)
+{
+	auto randomValue = uniform_real_distribution(0.0, 1.0)(_randomEngine);
+	return _multiBattleDiaRewardTypes.get(randomValue)->second;
 }

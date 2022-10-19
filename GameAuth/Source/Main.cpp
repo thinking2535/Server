@@ -110,6 +110,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		wcout.imbue(std::locale("korean"));
 
+		LOG(L"Initializing GameData");
+		g_MetaData.reset(new TGameData::element_type());
+
 		LOG(L"Initializing");
 
 		g_Receipt.reset(new CReceiptToken(1, L"OptionReceipt.ini", ReceiveAccessTokenCallback, ReceiveAccessTokenFailCallback));

@@ -1,8 +1,8 @@
 #include "stdafx.h"
 
-void CBattle::_SyncMessage(int64 Tick_)
+void CBattle::_SyncMessage()
 {
-	BroadCast(SBattleSyncNetSc(Tick_));
+	_BroadCast(SBattleSyncNetSc(_pEngine->GetTick()));
 }
 void CBattle::_AddBattlePlayer(const shared_ptr<CBattlePlayer>& pBattlePlayer_)
 {
@@ -15,11 +15,12 @@ ERet CBattle::Touch(int32 PlayerIndex_, const SBattleTouchNetCs& Proto_)
 		return ERet::Ok; // MultiBattle 에서는 게임도중 Engine.Stop 될 수 있고, 시간차로 유저가 Touch를 보낼 수 있으므로 Ok처리
 
 	_pEngine->Update();
-	if (!_BattlePlayers[PlayerIndex_]->Touch(Proto_.Dir))
+
+	if (!_BattlePlayers[PlayerIndex_]->touch(Proto_.Dir))
 		return ERet::Ok;
 
 	_pEngine->Send();
-	BroadCast(SBattleTouchNetSc(_pEngine->GetTick(), PlayerIndex_, Proto_.Dir));
+	_BroadCast(SBattleDirectNetSc(_pEngine->GetTick(), PlayerIndex_, Proto_.Dir));
 
 	return ERet::Ok;
 }
@@ -29,24 +30,42 @@ ERet CBattle::Push(int32 PlayerIndex_, const SBattlePushNetCs& Proto_)
 		return ERet::Ok; // MultiBattle 에서는 게임도중 Engine.Stop 될 수 있고, 시간차로 유저가 Touch를 보낼 수 있으므로 Ok처리
 
 	_pEngine->Update();
-	if (!_BattlePlayers[PlayerIndex_]->Push(_pEngine->GetTick()))
+
+	auto pushType = _BattlePlayers[PlayerIndex_]->push(_pEngine->GetTick());
+	if (pushType == CBattlePlayer::PushType::null)
 		return ERet::Ok;
 
 	_pEngine->Send();
-	BroadCast(SBattlePushNetSc(_pEngine->GetTick(), PlayerIndex_));
+
+	switch (pushType)
+	{
+	case CBattlePlayer::PushType::flap:
+		_BroadCast(SBattleFlapNetSc(_pEngine->GetTick(), PlayerIndex_));
+		break;
+
+	case CBattlePlayer::PushType::pump:
+		_BroadCast(SBattlePumpNetSc(_pEngine->GetTick(), PlayerIndex_));
+		break;
+
+	default:
+		throw 0;
+	}
 
 	return ERet::Ok;
 }
 
-CBattle::CBattle(const SBattleType& BattleType_) :
+CBattle::CBattle(const SBattleType& BattleType_, const SPoint* pMap_) :
 	_pEngine(make_unique<CServerEngine>(
-		c_NetworkTickSync,
 		0,
 		c_ContactOffset,
 		c_FPS,
-		std::bind(&CBattle::_SyncMessage, this, _1))),
+		std::bind(&CBattle::_SyncMessage, this),
+		c_NetworkTickSync)),
 	_BattleType(BattleType_)
 {
+	_pEngine->fFixedUpdate = std::bind(&CBattle::_fixedUpdate, this);
+	_pMap = pMap_;
+	_pRootObject = make_shared<CObject2D>(GetDefaultTransform(*_pMap));
 }
 CBattle::~CBattle()
 {

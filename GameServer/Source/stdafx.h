@@ -7,7 +7,6 @@
 #include <optional>
 #include <iostream>
 #include <filesystem>
-#include <random>
 #include <Rso/Monitor/Proc.h>
 #include <Rso/Net/ClientKeepConnect.h>
 #include <Rso/Game/Server.h>
@@ -32,6 +31,7 @@
 #include <Rso/Net/IPInfo.h>
 #include <Rso/MobileUtil/ReceiptCheck.h>
 #include <GameServer/Common/Base.h>
+#include <Rso/GameUtil/EloController.h>
 
 using namespace std;
 using namespace experimental::filesystem;
@@ -53,6 +53,7 @@ using namespace mssql;
 #include "DBProtocol.h"
 #include <GameServer/Common/ServerToServerProtocol.h>
 #include "ToolProtocol.h"
+#include "NetProtocolOperator.h"
 
 #define LOG(...) g_Log.Push(GET_DEBUG_FORMAT(__VA_ARGS__))
 #ifdef _DEBUG
@@ -63,23 +64,19 @@ using namespace mssql;
 
 namespace bb
 {
-	struct SCharacterServerMeta;
-	struct SGachaMeta;
-	struct SCharacterGradeMeta;
-	struct SGachaRewardMeta;
-	struct SGachaServerMeta;
-
 	bool operator < (const SBattleType& Lhs_, const SBattleType& Rhs_);
 }
 
+struct ResourceTypeData;
+
 struct SReward;
-struct SQuest;
+struct Quest;
 
 class CCharacter;
-class CGacha;
-class CGachaNormal;
-class CGachaGuarantee;
+struct SCharacterMeta;
 class CQuest;
+class ShopItem;
+class ShopCharacter;
 class CMetaData;
 
 class CUser;
@@ -98,6 +95,7 @@ class CArrowDodgeCoin;
 class CArrowDodgeGoldBar;
 class CArrowDodgeShield;
 class CArrowDodgeStamina;
+class CFlyAwayObject;
 class CFlyAwayLand;
 class CFlyAwayItem;
 class CFlyAwayCoin;
@@ -113,27 +111,11 @@ class CEngineStructure;
 class CEnginePlayer;
 
 struct SArrowObject;
-struct SItemObject;
+struct SArrowDodgeItemObject;
 
 using TBattles = CList<unique_ptr<CBattle>>;
 using TBattlesIt = TBattles::iterator;
-using TPoints = vector<int32>;
-struct SBattleReward
-{
-	TResource Gold = 0;
-	TPoints Points;
-
-	SBattleReward(TResource Gold_, const TPoints& Points_) :
-		Gold(Gold_), Points(Points_)
-	{
-	}
-};
-using TBattleReward = vector<SBattleReward>;
-struct SBattleTypeInfo
-{
-	TBattleReward BattleReward;
-};
-using TMatch = unique_ptr<CMatch<TPeerCnt, SBattleType, const SBattleTypeInfo*>>;
+using TMatch = unique_ptr<CMatch<TPeerCnt, SBattleType>>;
 using TMatches = map<SBattleType, TMatch>;
 using TMetaData = unique_ptr<CMetaData>;
 using TServer = game::CServer;
@@ -155,10 +137,6 @@ using TUser = shared_ptr<CUser>;
 using TBulkCopyConnect = unique_ptr<bulkcopy::CBulkCopy<SConnectDBIn>>;
 using TTimers = CTimers<wstring>;
 using TCommand = CCommand<CUser>;
-using TProbabilityCharacter = pair<double, const CCharacter*>;
-using TProbabilityCharacters = list<TProbabilityCharacter>;
-using TProbabilityGrade = pair<double, TProbabilityCharacters>;
-using TProbabilityGrades = map<EGrade, TProbabilityGrade>;
 using TQuests = map<EQuestType, int32>;
 using TCouponSP = CStoredProcedure<CKey>;
 using TCouponDB = unique_ptr<TCouponSP>;
@@ -198,13 +176,13 @@ extern TBattles g_Battles;
 extern TBulkCopyConnect g_BulkCopyConnect;
 extern CIPInfo g_IPInfo;
 extern SOption g_Option;
-extern default_random_engine en;
 extern int32 g_MapIndex;
 extern TCouponDB g_pCouponDB;
+extern EloController eloController;
 
 #include "Character.h"
-#include "Gacha.h"
 #include "Quest.h"
+#include "Shop.h"
 #include "MetaData.h"
 #include "Network.h"
 #include "NetworkServerToServer.h"
@@ -222,6 +200,7 @@ extern TCouponDB g_pCouponDB;
 #include "Arrow.h"
 #include "ArrowDodgeItem.h"
 #include "FlyAwayBattle.h"
+#include "FlyAwayObject.h"
 #include "FlyAwayLand.h"
 #include "FlyAwayItem.h"
 
@@ -244,14 +223,12 @@ template<> struct SBinder<SSetCharNetSc> { static const int32 ProtoNum = int32(E
 template<> struct SBinder<SUnsetCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::UnsetChar); };
 template<> struct SBinder<SBuyNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Buy); };
 template<> struct SBinder<SBuyCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyChar); };
-template<> struct SBinder<SBuyPackageNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyPackage); };
 template<> struct SBinder<SBuyResourceNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyResource); };
-template<> struct SBinder<SDailyRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyReward); };
-template<> struct SBinder<SDailyRewardFailNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::DailyRewardFail); };
 
 template<> struct SBinder<SBattleSyncNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleSync); };
-template<> struct SBinder<SBattleTouchNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleTouch); };
-template<> struct SBinder<SBattlePushNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattlePush); };
+template<> struct SBinder<SBattleDirectNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleDirect); };
+template<> struct SBinder<SBattleFlapNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleFlap); };
+template<> struct SBinder<SBattlePumpNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattlePump); };
 template<> struct SBinder<SMultiBattleJoinNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleJoin); };
 template<> struct SBinder<SMultiBattleOutNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleOut); };
 template<> struct SBinder<SMultiBattleBeginNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::MultiBattleBegin); };
@@ -274,9 +251,6 @@ template<> struct SBinder<SFlyAwayBattleBeginNetSc> { static const int32 ProtoNu
 template<> struct SBinder<SFlyAwayBattleStartNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleStart); };
 template<> struct SBinder<SFlyAwayBattleEndNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::FlyAwayBattleEnd); };
 
-template<> struct SBinder<SGachaNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Gacha); };
-template<> struct SBinder<SGachaX10NetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaX10); };
-template<> struct SBinder<SGachaFailedNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::GachaFailed); };
 template<> struct SBinder<SRankRewardNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::RankReward); };
 template<> struct SBinder<SQuestGotNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestGot); };
 template<> struct SBinder<SQuestSetNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::QuestSet); };
@@ -311,8 +285,6 @@ template<> struct SDBBinder<SCanPushAtNightDBIn> { static const int32 SpNum = in
 template<> struct SDBBinder<SChangeLanguageDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeLanguage); };
 template<> struct SDBBinder<SBuyDBIn> { static const int32 SpNum = int32(EProtoDB::Buy); };
 template<> struct SDBBinder<SBuyCharDBIn> { static const int32 SpNum = int32(EProtoDB::BuyChar); };
-template<> struct SDBBinder<SBuyPackageDBIn> { static const int32 SpNum = int32(EProtoDB::BuyPackage); };
-template<> struct SDBBinder<SDailyRewardDBIn> { static const int32 SpNum = int32(EProtoDB::DailyReward); };
 
 template<> struct SDBBinder<SSelectCharDBIn> { static const int32 SpNum = int32(EProtoDB::SelectChar); };
 template<> struct SDBBinder<SBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::BattleEnd); };
@@ -323,7 +295,6 @@ template<> struct SDBBinder<SArrowDodgeBattleEndDBIn> { static const int32 SpNum
 template<> struct SDBBinder<SFlyAwayBattleStartDBIn> { static const int32 SpNum = int32(EProtoDB::FlyAwayBattleStart); };
 template<> struct SDBBinder<SFlyAwayBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::FlyAwayBattleEnd); };
 
-template<> struct SDBBinder<SGachaDBIn> { static const int32 SpNum = int32(EProtoDB::Gacha); };
 template<> struct SDBBinder<SRankRewardDBIn> { static const int32 SpNum = int32(EProtoDB::RankReward); };
 template<> struct SDBBinder<SQuestSetDBIn> { static const int32 SpNum = int32(EProtoDB::QuestSet); };
 template<> struct SDBBinder<SQuestNewDBIn> { static const int32 SpNum = int32(EProtoDB::QuestNew); };
@@ -397,13 +368,13 @@ void DBPush(const CKey& Key_, const _TParam& Param_, const _TParams&... Params_)
 }
 
 template<typename _TProto>
-void BroadCast(const _TProto& Proto_)
+void BroadCastAll(const _TProto& Proto_)
 {
 	for (auto& i : g_Users.get_users())
 		i->second.User->Send(Proto_);
 }
 template<typename _TProto>
-void BroadCastExcept(const _TProto& Proto_, TUID UID_)
+void BroadCastAllExcept(const _TProto& Proto_, TUID UID_)
 {
 	for (auto& i : g_Users.get_users())
 	{
@@ -426,13 +397,13 @@ TExp DurationToExp(const _TDuration& Duration_)
 
 	return TExp(sqrt(Seconds.count()));
 }
-bool HaveCost(const TResources& Resources_, EResource CostType_, TResource Cost_);
-bool HaveCost(const TResources& Resources_, const TResources& Cost_);
-TResources MakeResources(TResource Data_);
+bool doesHaveCost(const TResources& resources, const SResourceTypeData& cost);
+bool doesHaveCost(const TResources& resources, EResource costType, TResource costValue);
+bool doesHaveCost(const TResources& resources, const TResources& cost);
+TResources getFullResources(void);
 
-TResource GetResourceFreeSpace(TResource CurrentResource_, EResource ResourceType_);
-TResource GetResourceFreeSpace(TResource CurrentResource_, size_t Index_);
-TResources GetResourceFreeSpaces(const TResources& CurrentResources_, EResource ResourceType_);
+TResource getResourceFreeSpace(TResource currentResource, EResource resourceType);
+TResource getResourceFreeSpace(TResource currentResource, size_t index);
 
 void AddResource(TResources& Resources_, size_t Index_, TResource Data_);
 void AddResource(TResources& Resources_, EResource Resource_, TResource Data_);
@@ -442,23 +413,13 @@ TResource AddResource(TResource Resource_, size_t Index_, TResource Data_);
 TResource AddResource(TResource Resource_, EResource ResourceType_, TResource Data_);
 TResource AddResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_);
 
-void SubResource(TResources& Resources_, size_t Index_, TResource Data_);
-void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
-void SubResource(TResources& Resources_, EResource Resource_, TResource Data_);
-
-TResource SubResource(TResource Resource_, size_t Index_, TResource Data_);
-TResource SubResource(TResource Resource_, EResource ResourceType_, TResource Data_);
-TResource SubResource(TResource Resource_, const SResourceTypeData& ResourceTypeData_);
-
 void AddResources(TResources& Resources_, const TResources& Added_);
-void SubResources(TResources& Resources_, const TResources& Added_);
 void SetResource(TResources& Resources_, size_t Index_, TResource Data_);
 void SetResource(TResources& Resources_, EResource Resource_, TResource Data_);
 void SetResources(TResources& Resources_, const TResources& Set_);
+void CheckResource(EResource resourceType, TResource resourceValue);
 void CheckResourceTypeValue(const SResourceTypeData& Resource_);
-TResources GetResources(EResource Type_, TResource Data_);
-TResources GetResources(const SResourceTypeData& Resource_);
-TResources CheckAndGetResources(const SResourceTypeData& Resource_);
+
 void TimersCallback(wstring& Data_);
 SLoginDBIn GetLoginDBIn(TUID UID_, const SUserLoginInfo& Info_);
 ELocale LanguageToLocale(ELanguage Language_);
@@ -473,11 +434,8 @@ inline float GetS(float Acc_, float Vel_, float Duration_)
 	return 0.5f * Acc_ * Duration_ * Duration_ + Vel_ * Duration_;
 }
 float GetSOverMax(float Acc_, float Vel_, float MaxVel_, float Duration_);
-float GetMaxVelDown(const SCharacter& Char_, const SCharacterMeta* pMeta_);
-void Center(SCharacter& Char_);
-void LeftRight(SCharacter& Char_, const SCharacterMeta* pMeta_, int8 Dir_);
-void Fly(SCharacter& Char_);
-void Land(SCharacter& Char_, const SCharacterMeta* pMeta_);
+bool canFlap(const SCharacter& character);
+bool canPump(const SCharacter& character);
 bool IsValidRankingInfo(void);
 int32 GetAllMemberCount(const SBattleType& BattleType_);
 bool IsOneOnOneBattle(const SBattleType& BattleType_);

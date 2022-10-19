@@ -37,12 +37,12 @@ void CallbackStop(const wstring& Message_, const seconds& SecondLeft_)
 
 	g_Net->SetOpened(false);
 	g_Monitor->SetStat(SKeyData(L"Opened", L"false"));
-	BroadCast(SMsgNetSc(Message_));
+	BroadCastAll(SMsgNetSc(Message_));
 	g_Timers.emplace(SecondLeft_, Message_);
 }
 void CallbackMessage(const wstring& Message_)
 {
-	BroadCast(SMsgNetSc(Message_));
+	BroadCastAll(SMsgNetSc(Message_));
 }
 
 void Check(TSessionsIt itSession_, TSessionCode SessionCode_)
@@ -261,12 +261,12 @@ void ChangeNick(const CKey& ClientKey_, EGameRet GameRet_)
 	User->ChangeNickResult(GameRet_);
 }
 
-void Matched(const TMatch::element_type::TMatchedUsers& Users_, const SBattleType& BattleType_, const SBattleTypeInfo* pBattleTypeInfo_)
+void Matched(const TMatch::element_type::TMatchedUsers& Users_, const SBattleType& BattleType_)
 {
 	try
 	{
 		auto itBattle = g_Battles.emplace(nullptr);
-		itBattle->reset(new CMultiBattle(BattleType_, pBattleTypeInfo_, Users_, itBattle));
+		itBattle->reset(new CMultiBattle(BattleType_, Users_, itBattle));
 	}
 	catch (const ERet& Ret_)
 	{
@@ -352,14 +352,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		LOG(L"Initializing Match");
 
-		for (auto& i : g_MetaData->GetBattleTypeInfos())
-		{
-			auto AllMemberCount = GetAllMemberCount(i.first);
-			ASSERTION(AllMemberCount <= c_MaxPlayer && i.first.TeamCount > 1);
-			g_Matches.emplace(
-				i.first,
-				new TMatch::element_type(AllMemberCount, [](t_duration Elapsed_, double MyGrade_, double OppGrade_) { return true; }, Matched, i.first, &i.second));
-		}
+		SBattleType battleType(2, 1);
+		auto AllMemberCount = GetAllMemberCount(battleType);
+		ASSERTION(AllMemberCount <= c_MaxPlayer && battleType.TeamCount > 1);
+		g_Matches.emplace(
+			battleType,
+			new TMatch::element_type(AllMemberCount, [](t_duration Elapsed_, double MyGrade_, double OppGrade_) { return true; }, Matched, battleType));
 
 		LOG(L"Initializing BulkCopyConnect");
 		g_BulkCopyConnect.reset(new TBulkCopyConnect::element_type(DBOptions->Log, L"tConnect", L"000000"));
@@ -414,8 +412,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SChangeLanguageDBIn, SDummyDBOut>(L"dbo.spChangeLanguage", true, DummyDBOut);
 		DBAddCmd<SBuyDBIn, SDummyDBOut>(L"dbo.spBuy", true, DummyDBOut);
 		DBAddCmd<SBuyCharDBIn, SDummyDBOut>(L"dbo.spBuyChar", true, DummyDBOut);
-		DBAddCmd<SBuyPackageDBIn, SDummyDBOut>(L"dbo.spBuyPackage", true, DummyDBOut);
-		DBAddCmd<SDailyRewardDBIn, SDummyDBOut>(L"dbo.spDailyReward", true, DummyDBOut);
 		DBAddCmd<SSelectCharDBIn, SDummyDBOut>(L"dbo.spSelectChar", true, DummyDBOut);
 		DBAddCmd<SBattleEndDBIn, SDummyDBOut>(L"dbo.spBattleEnd", true, DummyDBOut);
 		DBAddCmd<SUpdateInvalidDisconnectInfoDBIn, SDummyDBOut>(L"dbo.spUpdateInvalidDisconnectInfo", true, DummyDBOut);
@@ -424,7 +420,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SArrowDodgeBattleEndDBIn, SDummyDBOut>(L"dbo.spArrowDodgeBattleEnd", true, DummyDBOut);
 		DBAddCmd<SFlyAwayBattleStartDBIn, SDummyDBOut>(L"dbo.spFlyAwayBattleStart", true, DummyDBOut);
 		DBAddCmd<SFlyAwayBattleEndDBIn, SDummyDBOut>(L"dbo.spFlyAwayBattleEnd", true, DummyDBOut);
-		DBAddCmd<SGachaDBIn, SDummyDBOut>(L"dbo.spGacha", true, DummyDBOut);
 		DBAddCmd<SRankRewardDBIn, SDummyDBOut>(L"dbo.spRankReward", true, DummyDBOut);
 		DBAddCmd<SQuestNewDBIn, SDummyDBOut>(L"dbo.spQuestNew", true, DummyDBOut);
 		DBAddCmd<SQuestSetDBIn, SDummyDBOut>(L"dbo.spQuestSet", true, DummyDBOut);
@@ -455,9 +450,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::ChangeLanguage, FCMCanPushAtNightNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Buy, BuyNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyChar, BuyCharNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyPackage, BuyPackageNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::BuyResource, BuyResourceNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::DailyReward, DailyRewardNetCs);
 
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::SelectChar, SelectCharNetCs);
 
@@ -474,8 +467,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::FlyAwayBattleJoin, FlyAwayBattleJoinNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::FlyAwayBattleEnd, FlyAwayBattleEndNetCs);
 
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::Gacha, GachaNetCs);
-		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::GachaX10, GachaX10NetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::RankReward, RankRewardNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::QuestReward, QuestRewardNetCs);
 		g_BinderRecvC.emplace_at((size_t)EProtoNetCs::QuestDailyCompleteReward, QuestDailyCompleteRewardNetCs);

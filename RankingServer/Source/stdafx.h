@@ -71,7 +71,7 @@ extern TNetBalance g_NetBalance;
 extern __int32 g_MaxList;
 extern SRankingConfigDB g_RankingConfig;
 extern TRankingMapArray g_RankingMapArray;
-extern TRankingRewardsArray g_RewardsArray;
+extern TRankingsArray g_RankingsArray;
 extern TDB g_DB;
 extern TRecvCFuncs g_BinderRecvC;
 extern TRecvSFuncs g_BinderRecvS;

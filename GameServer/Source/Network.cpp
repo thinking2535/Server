@@ -89,26 +89,12 @@ ERet BuyCharNetCs(CUser* User_, CStream& Stream_)
 
 	return User_->BuyChar(Proto);
 }
-ERet BuyPackageNetCs(CUser* User_, CStream& Stream_)
-{
-	SBuyPackageNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->BuyPackage(Proto);
-}
 ERet BuyResourceNetCs(CUser* User_, CStream& Stream_)
 {
 	SBuyResourceNetCs Proto;
 	Stream_ >> Proto;
 
 	return User_->BuyResource(Proto);
-}
-ERet DailyRewardNetCs(CUser* User_, CStream& Stream_)
-{
-	SDailyRewardNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->DailyReward(Proto);
 }
 
 ERet SelectCharNetCs(CUser* User_, CStream& Stream_)
@@ -215,21 +201,6 @@ ERet FlyAwayBattleEndNetCs(CUser* User_, CStream& Stream_)
 	return User_->FlyAwayBattleEnd(Proto);
 }
 
-ERet GachaNetCs(CUser* User_, CStream& Stream_)
-{
-	SGachaNetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->Gacha(Proto);
-}
-
-ERet GachaX10NetCs(CUser* User_, CStream& Stream_)
-{
-	SGachaX10NetCs Proto;
-	Stream_ >> Proto;
-
-	return User_->GachaX10(Proto);
-}
 ERet RankRewardNetCs(CUser* User_, CStream& Stream_)
 {
 	SRankRewardNetCs Proto;

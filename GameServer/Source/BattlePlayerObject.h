@@ -5,5 +5,5 @@ class CBattlePlayerObject : public CPlayerObject2D
 public:
 	CBattlePlayer* pBattlePlayer;
 
-	CBattlePlayerObject(const STransform& Transform_, const SPoint& Velocity_, CBattlePlayer* pBattlePlayer_);
+	CBattlePlayerObject(const STransform& Transform_, const list<shared_ptr<CCollider2D>>& Colliders_, const SPoint& Velocity_, CBattlePlayer* pBattlePlayer_);
 };

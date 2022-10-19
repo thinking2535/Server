@@ -7,82 +7,93 @@ void CBattlePlayer::_PumpDoneCallback(void)
 {
 	pCharacter->BalloonCount = c_BalloonCountForPump;
 	_PlayerCollider.pBalloon->SetSizeX(CEngineGlobal::BalloonWidth(pCharacter->BalloonCount));
-	_PlayerCollider.pBalloon->LocalEnabled = true;
-	pCharacter->Acc.Y = c_Gravity;
+	_PlayerCollider.pBalloon->SetEnabled(true);
 	_ParachuteControl.Clear();
 	++pPlayer->GetUserDB().BlowBalloonTotal;
 	QuestDone(EQuestType::BlowBalloon, 1);
 }
 void CBattlePlayer::_ParachuteOnCallback(bool On_)
 {
-	_PlayerCollider.pParachute->LocalEnabled = On_;
+	_PlayerCollider.pParachute->SetEnabled(On_);
 }
-void CBattlePlayer::_AttachGround(const shared_ptr<CCollider2D>& pOtherCollider_)
+void CBattlePlayer::_AttachGround(const CCollider2D* pOtherCollider_)
 {
 	if (!_AttachedGrounds.emplace(pOtherCollider_).second || _AttachedGrounds.size() != 1) // 최초 지형이 붙었을 때 한번만 코드 실행 위해 1과 비교
 		return;
 
 	pCharacter->IsGround = true;
-	pCharacter->Acc.X = pMeta->RunAcc * pCharacter->Dir;
 
 	if (pCharacter->BalloonCount == 0)
 		_ParachuteControl.Off();
 }
-void CBattlePlayer::_DetachGround(const shared_ptr<CCollider2D>& pOtherCollider_)
+void CBattlePlayer::_DetachGround(const CCollider2D* pOtherCollider_)
 {
 	if (_AttachedGrounds.erase(pOtherCollider_) == 0 || _AttachedGrounds.size() != 0) // 마지막 지형이 떨어졌을때 한번만 코드 실행 위해 0과 비교
 		return;
 
 	pCharacter->IsGround = false;
-
-	if (pCharacter->BalloonCount == 0)
-		pCharacter->Acc.X = c_ParachuteAccX * pCharacter->Dir;
-
 	_PumpControl.Clear();
 
 	if (pCharacter->BalloonCount == 0)
 		_ParachuteControl.On();
 }
-void CBattlePlayer::Bounce(const SPoint& Normal_)
+void CBattlePlayer::bounce(const SCollision2D& collision)
 {
-	if (Normal_.X != 0.0f)
+	if (collision.Normal.X != 0.0f)
 	{
-		if (pPlayerObject->Velocity.X > 0.0f && Normal_.X < 0.0f ||
-			pPlayerObject->Velocity.X < 0.0f && Normal_.X > 0.0f)
+		if (pPlayerObject->Velocity.X > 0.0f && collision.Normal.X < 0.0f ||
+			pPlayerObject->Velocity.X < 0.0f && collision.Normal.X > 0.0f)
 		{
 			pPlayerObject->Velocity.X = -pPlayerObject->Velocity.X;
 		}
 	}
-	else if (Normal_.Y != 0.0f)
+	else if (collision.Normal.Y != 0.0f)
 	{
-		if (pPlayerObject->Velocity.Y > 0.0f && Normal_.Y < 0.0f ||
-			pPlayerObject->Velocity.Y < 0.0f && Normal_.Y > 0.0f)
+		if (pPlayerObject->Velocity.Y > 0.0f && collision.Normal.Y < 0.0f ||
+			pPlayerObject->Velocity.Y < 0.0f && collision.Normal.Y > 0.0f)
 		{
 			pPlayerObject->Velocity.Y = -pPlayerObject->Velocity.Y;
 		}
 	}
+
+	return;
+
+	if (collision.pOtherMovingObject != nullptr)
+	{
+		auto multiplier = collision.pOtherMovingObject->GetPlayerObject2D() != nullptr ? 2.0f * collision.pOtherMovingObject->Mass / (pPlayerObject->Mass + collision.pOtherMovingObject->Mass) : 2.0f;
+
+		if (collision.Normal.X != 0.0f)
+			pPlayerObject->Velocity.X += collision.RelativeVelocity.X * multiplier;
+		else
+			pPlayerObject->Velocity.Y += collision.RelativeVelocity.Y * multiplier;
+	}
+	else
+	{
+		if (collision.Normal.X != 0.0f)
+			pPlayerObject->Velocity.X = -pPlayerObject->Velocity.X;
+		else
+			pPlayerObject->Velocity.Y = -pPlayerObject->Velocity.Y;
+	}
 }
-void CBattlePlayer::Die(int64 Tick_)
+void CBattlePlayer::Die(int64 tick)
 {
 	pCharacter->BalloonCount = -1;
-	_Die(Tick_);
+	_Die(tick);
 }
-void CBattlePlayer::_Die(int64 Tick_)
+void CBattlePlayer::_Die(int64 tick)
 {
+	pPlayerObject->SetEnabled(false);
 	pPlayerObject->Velocity.X = 0.0f;
 	pPlayerObject->Velocity.Y = c_DieUpVel;
+	pCharacter->IsGround = false;
 	pCharacter->Dir = 0;
-	pCharacter->Acc.X = 0.0f;
-	pCharacter->Acc.Y = (c_Gravity * c_GravityDeadRatio);
-	pCharacter->RegenTick = Tick_ + c_RegenDelayTickCount;
+	pCharacter->RegenTick = tick + c_RegenDelayTickCount;
 
 	_PumpControl.Clear();
 	_ParachuteControl.Clear();
-	_PlayerCollider.pBalloon->LocalEnabled = false;
-	_PlayerCollider.pBody->LocalEnabled = false;
-	_PlayerCollider.pParachute->LocalEnabled = false;
+	_AttachedGrounds.clear();
 }
-bool CBattlePlayer::_HitBalloon(int64 Tick_, const SPoint& Normal_) // return true : dead
+bool CBattlePlayer::_beHitBalloon(const SPoint& Normal_) // return true : dead
 {
 	--pCharacter->BalloonCount;
 
@@ -95,321 +106,290 @@ bool CBattlePlayer::_HitBalloon(int64 Tick_, const SPoint& Normal_) // return tr
 		else
 		{
 			if (!pCharacter->IsGround)
-			{
-				pCharacter->Acc.X = c_ParachuteAccX * pCharacter->Dir;
 				_ParachuteControl.On();
-			}
 
-			pCharacter->Acc.Y = (c_Gravity * c_GravityParachuteRatio);
-			_PlayerCollider.pBalloon->LocalEnabled = false;
+			_PlayerCollider.pBalloon->SetEnabled(false);
 		}
-
-		Bounce(Normal_);
 
 		return false;
 	}
 
 	return true;
 }
-void CBattlePlayer::_SetLandingVelocity(const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CBattlePlayer::_LandEnter(const SCollision2D& Collision_)
 {
-	auto ObjectVelocity = pOtherMovingObject_ == nullptr ? SPoint() : pOtherMovingObject_->Velocity;
-	if (ObjectVelocity.Y > pPlayerObject->Velocity.Y)
-		pPlayerObject->Velocity.Y = ObjectVelocity.Y;
-
-	if (pCharacter->Dir == 0)
-	{
-		auto DiffX = ObjectVelocity.X - pPlayerObject->Velocity.X;
-		if (DiffX > 0.0f)
-		{
-			if (DiffX > c_LandXDragPerFrame)
-				pPlayerObject->Velocity.X += c_LandXDragPerFrame;
-			else
-				pPlayerObject->Velocity.X = ObjectVelocity.X;
-		}
-		else
-		{
-			if (DiffX < -c_LandXDragPerFrame)
-				pPlayerObject->Velocity.X -= c_LandXDragPerFrame;
-			else
-				pPlayerObject->Velocity.X = ObjectVelocity.X;
-
-		}
-	}
-}
-bool CBattlePlayer::_CheckCollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
-{
-	if (pOtherCollider_->Number != CEngineGlobal::c_StructureNumber ||
-		pCollider_->Number != CEngineGlobal::c_BodyNumber ||
-		Normal_.Y <= 0.0f)
+	if (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber ||
+		Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber ||
+		Collision_.Normal.Y <= 0.0f)
 		return false;
 
-	_SetLandingVelocity(pOtherMovingObject_);
-	_AttachGround(pOtherCollider_);
+	_UpdateGroundPhysics(Collision_.pOtherMovingObject);
+	_AttachGround(Collision_.pOtherCollider);
 	return true;
 }
-void CBattlePlayer::_CollisionEnter(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
 {
-	if (_CheckCollisionEnter(Tick_, Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return;
-
-	Bounce(Normal_);
-}
-bool CBattlePlayer::_CheckCollisionStay(const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
-{
-	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_StructureNumber) // 몸이 지형에 안 닿았으면
+	if (_LandEnter(Collision_))
 		return false;
 
-	if (Normal_.Y > 0.0f)
+	bounce(Collision_);
+
+	return false;
+}
+void CBattlePlayer::_LandStay(const SCollision2D& Collision_)
+{
+	if (Collision_.Normal.Y > 0.0f)
 	{
-		_SetLandingVelocity(pOtherMovingObject_);
-		_AttachGround(pOtherCollider_);
+		_UpdateGroundPhysics(Collision_.pOtherMovingObject);
+		_AttachGround(Collision_.pOtherCollider);
 	}
 	else
 	{
-		_DetachGround(pOtherCollider_);
+		_DetachGround(Collision_.pOtherCollider);
 	}
-
-	return true;
 }
-void CBattlePlayer::_CollisionStay(int64 Tick_, const SPoint& Normal_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CBattlePlayer::_CollisionStay(int64 tick, const SCollision2D& Collision_)
 {
-	if (_CheckCollisionStay(Normal_, pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return;
-}
-bool CBattlePlayer::_CheckCollisionExit(const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
-{
-	if (pCollider_->Number != CEngineGlobal::c_BodyNumber || pOtherCollider_->Number != CEngineGlobal::c_StructureNumber)
+	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber) // 몸이 지형에 안 닿았으면
 		return false;
 
-	_DetachGround(pOtherCollider_);
+	_LandStay(Collision_);
 
-	return true;
+	return false;
 }
-void CBattlePlayer::_CollisionExit(int64 Tick_, const shared_ptr<CCollider2D>& pCollider_, const shared_ptr<CCollider2D>& pOtherCollider_, const shared_ptr<CMovingObject2D>& pOtherMovingObject_)
+bool CBattlePlayer::_CollisionExit(int64 tick, const SCollision2D& Collision_)
 {
-	if (_CheckCollisionExit(pCollider_, pOtherCollider_, pOtherMovingObject_))
-		return;
+	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber)
+		return false;
+
+	_DetachGround(Collision_.pOtherCollider);
+
+	return false;
 }
-void CBattlePlayer::_FixedUpdate(int64 Tick_)
+bool CBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
 {
-	_UpdateStamina(Tick_);
-	_UpdatePhysics(Tick_);
+	return false;
 }
-void CBattlePlayer::_UpdateStamina(int64 Tick_)
+void CBattlePlayer::_FixedUpdate(int64 tick)
 {
-	if (Tick_ > pCharacter->StaminaInfo.LastUsedTick + pMeta->StaminaRegenDelay)
+	_UpdateStamina(tick);
+	_UpdatePhysics();
+}
+void CBattlePlayer::_UpdateStamina(int64 tick)
+{
+	if (tick > pCharacter->StaminaInfo.LastUsedTick + c_StaminaRegenDelayTick)
 	{
-		pCharacter->StaminaInfo.Stamina += ((Tick_ - (pCharacter->StaminaInfo.LastUsedTick + pMeta->StaminaRegenDelay)) * pMeta->StaminaPerTick);
-		if (pCharacter->StaminaInfo.Stamina > pMeta->StaminaMax)
-			pCharacter->StaminaInfo.Stamina = pMeta->StaminaMax;
+		pCharacter->StaminaInfo.Stamina += ((pCharacter->IsGround ? c_StaminaRegenSpeedOnGround : c_StaminaRegenSpeedInAir) * CEngine::GetDeltaTime());
+		if (pCharacter->StaminaInfo.Stamina > pMeta->pCharacterTypeMeta->StaminaMax)
+			pCharacter->StaminaInfo.Stamina = pMeta->pCharacterTypeMeta->StaminaMax;
 	}
 }
-void CBattlePlayer::_UpdatePhysics(int64 Tick_)
+void CBattlePlayer::_UpdateGroundPhysics(const CMovingObject2D* pOtherMovingObject_)
 {
-	// 변위 = 0.5 * g * t*t + 현재v * t
-	//      = t * (0.5 * g * t + 현재v)
-	pPlayerObject->LocalPosition.X += (CEngine::GetDeltaTime() * (0.5f * pCharacter->Acc.X * CEngine::GetDeltaTime() + pPlayerObject->Velocity.X));
-	pPlayerObject->LocalPosition.Y += (CEngine::GetDeltaTime() * (0.5f * pCharacter->Acc.Y * CEngine::GetDeltaTime() + pPlayerObject->Velocity.Y));
+	auto OtherObjectXVelocity = pOtherMovingObject_ == nullptr ? 0.0f : pOtherMovingObject_->Velocity.X;
+	auto DestXVelocity = pCharacter->Dir > 0 ? pMeta->pCharacterTypeMeta->MaxVelXGround : pCharacter->Dir < 0 ? -pMeta->pCharacterTypeMeta->MaxVelXGround : 0.0f;
+	auto XVelocityOnGround = pPlayerObject->Velocity.X - OtherObjectXVelocity;
 
-	// X 속도 처리
+
+	auto DeltaX = (DestXVelocity - XVelocityOnGround) * c_GroundAccRatio * CEngine::GetDeltaTime();
+	if (abs(DeltaX) > c_IgnoredGroundMaxDeltaVelocity)
+		pPlayerObject->Velocity.X += DeltaX;
+	else
+		pPlayerObject->Velocity.X = OtherObjectXVelocity + DestXVelocity;
+}
+void CBattlePlayer::_UpdatePhysics()
+{
 	if (pCharacter->IsGround)
 	{
-		// X 축 속도 처리
-		if (pCharacter->Dir > 0)
-		{
-			if (pPlayerObject->Velocity.X < pMeta->MaxVelXGround) // 최고 속도가 아니면
-			{
-				pPlayerObject->Velocity.X += pCharacter->Acc.X * CEngine::GetDeltaTime();
-				if (pPlayerObject->Velocity.X > pMeta->MaxVelXGround)
-					pPlayerObject->Velocity.X = pMeta->MaxVelXGround;
-			}
-			else if (pPlayerObject->Velocity.X > pMeta->MaxVelXGround) // 점진적 감속
-			{
-				auto ReducedVel = (c_GroundResistance * CEngine::GetDeltaTime());
-				if (pPlayerObject->Velocity.X - ReducedVel > pMeta->MaxVelXGround)
-					pPlayerObject->Velocity.X -= ReducedVel;
-				else
-					pPlayerObject->Velocity.X = pMeta->MaxVelXGround;
-			}
-		}
-		else if (pCharacter->Dir < 0)
-		{
-			if (pPlayerObject->Velocity.X > -pMeta->MaxVelXGround) // 최고 속도가 아니면
-			{
-				pPlayerObject->Velocity.X += pCharacter->Acc.X * CEngine::GetDeltaTime();
-				if (pPlayerObject->Velocity.X < -pMeta->MaxVelXGround)
-					pPlayerObject->Velocity.X = -pMeta->MaxVelXGround;
-			}
-			else if (pPlayerObject->Velocity.X < -pMeta->MaxVelXGround) // 점진적 감속
-			{
-				auto ReducedVel = (c_GroundResistance * CEngine::GetDeltaTime());
-				if (pPlayerObject->Velocity.X + ReducedVel < -pMeta->MaxVelXGround)
-					pPlayerObject->Velocity.X += ReducedVel;
-				else
-					pPlayerObject->Velocity.X = -pMeta->MaxVelXGround;
-			}
-		}
-		else // 정지할 때 까지 감속
-		{
+		if (pCharacter->Dir == 0)
 			_PumpControl.FixedUpdate();
-		}
 	}
 	else
 	{
-		// X 축 속도 처리
-		if (pCharacter->BalloonCount == 0 && pCharacter->Dir != 0) // 최대 속도까지 가속
-		{
-			if (!(pCharacter->Dir == 1 && pPlayerObject->Velocity.X >= c_MaxVelParachuteX ||
-				pCharacter->Dir == -1 && pPlayerObject->Velocity.X <= -c_MaxVelParachuteX)) // 현재 최고가 아니면
-			{
-				pPlayerObject->Velocity.X += pCharacter->Acc.X * CEngine::GetDeltaTime();
-				if (pPlayerObject->Velocity.X > c_MaxVelParachuteX)
-					pPlayerObject->Velocity.X = c_MaxVelParachuteX;
-				else if (pPlayerObject->Velocity.X < -c_MaxVelParachuteX)
-					pPlayerObject->Velocity.X = -c_MaxVelParachuteX;
-			}
-		}
+		_updateXVelocityInAir();
+		_updateYVelocityInAir();
 	}
+
+	pPlayerObject->LocalPosition.X += (CEngine::GetDeltaTime() * pPlayerObject->Velocity.X);
+	pPlayerObject->LocalPosition.Y += (CEngine::GetDeltaTime() * pPlayerObject->Velocity.Y);
 
 	if (_ParachuteControl.FixedUpdate())
 		_PlayerCollider.pParachute->LocalScale.X = _PlayerCollider.pParachute->LocalScale.Y = pCharacter->ParachuteInfo.Scale;
-
-	// Y 축 속도 처리
-	pPlayerObject->Velocity.Y += pCharacter->Acc.Y * CEngine::GetDeltaTime();
-
-	auto MaxVelY = 0.0f;
-	if (pCharacter->BalloonCount > 0)
-		MaxVelY = -pMeta->MaxVelDown;
-	else if (pCharacter->BalloonCount == 0)
-		MaxVelY = -c_MaxVelParachuteY;
-	else
-		MaxVelY = -c_MaxVelDeadY;
-
-	if (pPlayerObject->Velocity.Y < MaxVelY)
-		pPlayerObject->Velocity.Y = MaxVelY;
 }
-bool CBattlePlayer::IsInvulerable(int64 Tick_)
+void CBattlePlayer::_updateXVelocityInAir()
 {
-	return (Tick_ < pCharacter->InvulnerableEndTick);
+	if (pCharacter->BalloonCount > 0)
+	{
+		if (pPlayerObject->Velocity.X > pMeta->pCharacterTypeMeta->MaxVelAir)
+			_approximateAirXVelocity(pMeta->pCharacterTypeMeta->MaxVelAir);
+		else if (pPlayerObject->Velocity.X < -pMeta->pCharacterTypeMeta->MaxVelAir)
+			_approximateAirXVelocity(-pMeta->pCharacterTypeMeta->MaxVelAir);
+	}
+	else if (pCharacter->BalloonCount == 0)
+	{
+		if (pCharacter->Dir > 0)
+			_approximateAirXVelocity(c_MaxVelParachuteX);
+		else if (pCharacter->Dir < 0)
+			_approximateAirXVelocity(-c_MaxVelParachuteX);
+		else
+			if (pPlayerObject->Velocity.X > c_MaxVelParachuteX)
+				_approximateAirXVelocity(c_MaxVelParachuteX);
+			else if (pPlayerObject->Velocity.X < -c_MaxVelParachuteX)
+				_approximateAirXVelocity(-c_MaxVelParachuteX);
+	}
+}
+void CBattlePlayer::_updateYVelocityInAir()
+{
+	auto YAcc = pCharacter->BalloonCount > 0 ? c_Gravity : pCharacter->BalloonCount == 0 ? (c_Gravity * c_GravityParachuteRatio) : (c_Gravity * c_GravityDeadRatio);
+
+	float MaxYVel;
+	if (pCharacter->BalloonCount > 0)
+		MaxYVel = -c_MaxVelDown;
+	else if (pCharacter->BalloonCount == 0)
+		MaxYVel = -c_MaxVelParachuteY;
+	else
+		MaxYVel = -c_MaxVelDeadY;
+
+	auto Diff = MaxYVel - pPlayerObject->Velocity.Y;
+	if (Diff > 0.0f) // 하강속도 초과
+	{
+		pPlayerObject->Velocity.Y += (Diff * c_AirAccRatio * CEngine::GetDeltaTime());
+		if (pPlayerObject->Velocity.Y > MaxYVel)
+			pPlayerObject->Velocity.Y = MaxYVel;
+	}
+	else
+	{
+		pPlayerObject->Velocity.Y += (YAcc * CEngine::GetDeltaTime());
+		if (pPlayerObject->Velocity.Y < MaxYVel)
+			pPlayerObject->Velocity.Y = MaxYVel;
+	}
+}
+void CBattlePlayer::_approximateAirXVelocity(float value)
+{
+	pPlayerObject->Velocity.X += ((value - pPlayerObject->Velocity.X) * c_AirAccRatio * CEngine::GetDeltaTime());
+}
+bool CBattlePlayer::IsInvulerable(int64 tick)
+{
+	return (tick < pCharacter->InvulnerableEndTick);
 }
 bool CBattlePlayer::IsAlive(void) const
 {
 	return pCharacter->BalloonCount >= 0;
 }
-bool CBattlePlayer::Touch(int8 Dir_)
+bool CBattlePlayer::touch(int8 dir)
 {
 	if (!IsAlive())
 		return false;
 
-	if (Dir_ == pCharacter->Dir || Dir_ < -1 || Dir_ > 1)
+	if (dir == pCharacter->Dir || dir < -1 || dir > 1)
 		return false;
 
-	if (Dir_ == 0)
-	{
-		pCharacter->Acc.X = 0.0f;
-	}
-	else
-	{
-		if (pCharacter->Face != Dir_)
-			pCharacter->Face = Dir_;
-
-		if (pCharacter->IsGround)
-		{
-			pCharacter->Acc.X = pMeta->RunAcc * Dir_;
-			_PumpControl.Clear();
-		}
-		else if (pCharacter->BalloonCount == 0)
-		{
-			pCharacter->Acc.X = c_ParachuteAccX * Dir_;
-		}
-	}
-
-	pCharacter->Dir = Dir_;
+	direct(dir);
 
 	return true;
 }
-bool CBattlePlayer::Push(int64 Tick_)
+void CBattlePlayer::direct(int8 dir)
+{
+	if (dir != 0)
+	{
+		if (pCharacter->Face != dir)
+			pCharacter->Face = dir;
+
+		if (pCharacter->IsGround)
+			_PumpControl.Clear();
+	}
+
+	pCharacter->Dir = dir;
+}
+CBattlePlayer::PushType CBattlePlayer::push(int64 tick)
 {
 	if (!IsAlive())
-		return false;
+		return PushType::null;
 
-	if (pCharacter->BalloonCount > 0) // Flap
+	if (canFlap(*pCharacter)) // Flap
 	{
-		if (!IsStaminaFree())
-		{
-			if (pCharacter->StaminaInfo.Stamina < 1.0f)
-				return false;
-
-			pCharacter->StaminaInfo.Stamina -= 1.0f;
-			pCharacter->StaminaInfo.LastUsedTick = Tick_;
-		}
-
-		pPlayerObject->Velocity.Y += pMeta->FlapDeltaVelUp;
-		if (pPlayerObject->Velocity.Y > pMeta->MaxVelUp)
-			pPlayerObject->Velocity.Y = pMeta->MaxVelUp;
-
-		if (pCharacter->Dir > 0)
-		{
-			if (pPlayerObject->Velocity.X + pMeta->FlapDeltaVelX > pMeta->MaxVelXAir)
-			{
-				if (pMeta->MaxVelXAir > pPlayerObject->Velocity.X)
-					pPlayerObject->Velocity.X = pMeta->MaxVelXAir;
-			}
-			else
-			{
-				pPlayerObject->Velocity.X += pMeta->FlapDeltaVelX;
-			}
-		}
-		else if (pCharacter->Dir < 0)
-		{
-			if (pPlayerObject->Velocity.X - pMeta->FlapDeltaVelX < -pMeta->MaxVelXAir)
-			{
-				if (-pMeta->MaxVelXAir < pPlayerObject->Velocity.X)
-					pPlayerObject->Velocity.X = -pMeta->MaxVelXAir;
-			}
-			else
-			{
-				pPlayerObject->Velocity.X -= pMeta->FlapDeltaVelX;
-			}
-		}
-
-		return true;
+		flap(tick);
+		return PushType::flap;
 	}
-	else if (pCharacter->BalloonCount == 0 && pCharacter->IsGround && pCharacter->Dir == 0)
+	else if (canPump(*pCharacter) && _PumpControl.canPump())
 	{
-		return _PumpControl.Pump();
+		pump();
+		return PushType::pump;
 	}
-
-	return false;
+	else
+	{
+		return PushType::null;
+	}
 }
-void CBattlePlayer::CheckRegen(int64 Tick_)
+void CBattlePlayer::flap(int64 tick)
 {
-	if (IsAlive() || Tick_ < pCharacter->RegenTick)
+	if (!IsStaminaFree() && pCharacter->StaminaInfo.Stamina >= 1.0f)
+	{
+		pCharacter->StaminaInfo.Stamina -= 1.0f;
+		pCharacter->StaminaInfo.LastUsedTick = tick;
+	}
+
+	auto YDiff = pMeta->pCharacterTypeMeta->MaxVelAir - pPlayerObject->Velocity.Y;
+	if (YDiff > 0.0f)
+	{
+		if (YDiff > c_FlapDeltaVelUp)
+			pPlayerObject->Velocity.Y += c_FlapDeltaVelUp;
+		else
+			pPlayerObject->Velocity.Y = pMeta->pCharacterTypeMeta->MaxVelAir;
+	}
+
+	if (pCharacter->Dir > 0)
+	{
+		auto XDiff = pMeta->pCharacterTypeMeta->MaxVelAir - pPlayerObject->Velocity.X;
+		if (XDiff > 0.0f)
+		{
+			if (XDiff > c_FlapDeltaVelX)
+				pPlayerObject->Velocity.X += c_FlapDeltaVelX;
+			else
+				pPlayerObject->Velocity.X = pMeta->pCharacterTypeMeta->MaxVelAir;
+		}
+	}
+	else if (pCharacter->Dir < 0)
+	{
+		auto XDiff = pMeta->pCharacterTypeMeta->MaxVelAir + pPlayerObject->Velocity.X;
+		if (XDiff > 0.0f)
+		{
+			if (XDiff > c_FlapDeltaVelX)
+				pPlayerObject->Velocity.X -= c_FlapDeltaVelX;
+			else
+				pPlayerObject->Velocity.X = -pMeta->pCharacterTypeMeta->MaxVelAir;
+		}
+	}
+}
+void CBattlePlayer::pump()
+{
+	_PumpControl.pump();
+}
+void CBattlePlayer::CheckRegen(int64 tick)
+{
+	if (IsAlive() || tick < pCharacter->RegenTick)
 		return;
 
 	pCharacter->IsGround = false;
 	pCharacter->Dir = 0;
 	pCharacter->BalloonCount = c_BalloonCountForRegen;
-	pCharacter->StaminaInfo.LastUsedTick = Tick_;
-	pCharacter->StaminaInfo.Stamina = pMeta->StaminaMax;
-	pCharacter->Face = CEngineGlobal::GetFaceWithPosition(InitialPos);
+	pCharacter->StaminaInfo.LastUsedTick = tick;
+	pCharacter->StaminaInfo.Stamina = pMeta->pCharacterTypeMeta->StaminaMax;
+	pCharacter->Face = CEngineGlobal::GetFaceWithX(InitialPos.X);
 	pPlayerObject->LocalPosition = InitialPos;
 	pPlayerObject->Velocity = SPoint();
-	pCharacter->Acc = SPoint(0.0f, c_Gravity);
-	pCharacter->InvulnerableEndTick = CEngineGlobal::GetInvulnerableEndTick(Tick_);
+	pCharacter->InvulnerableEndTick = CEngineGlobal::GetInvulnerableEndTick(tick);
 	pCharacter->ChainKillCount = 0;
 	pCharacter->LastKillTick = 0;
 	pCharacter->RegenTick = 0;
 
-	_PlayerCollider.pBody->LocalEnabled = true;
+	_PlayerCollider.pBody->SetEnabled(true);
 	_PlayerCollider.pBalloon->SetSizeX(CEngineGlobal::BalloonWidth(pCharacter->BalloonCount));
-	_PlayerCollider.pBalloon->LocalEnabled = true;
-	_fRegen(PlayerIndex);
+	_PlayerCollider.pBalloon->SetEnabled(true);
+	pPlayerObject->SetEnabled(true);
 }
 CBattlePlayer::CBattlePlayer(
 	const SBattlePlayer Super_,
-	FRegen fRegen_,
 	const int32 PlayerIndex_,
 	const SPoint& InitialPos_,
 	const SCharacterMeta* const pMeta_,
@@ -419,7 +399,6 @@ CBattlePlayer::CBattlePlayer(
 	CUser* Player_,
 	CBattlePlayer* pVirtualBattlePlayer_) :
 	SBattlePlayer(Super_),
-	_fRegen(fRegen_),
 	PlayerIndex(PlayerIndex_),
 	InitialPos(InitialPos_),
 	pMeta(pMeta_),
@@ -428,28 +407,33 @@ CBattlePlayer::CBattlePlayer(
 	itBattle(itBattle_),
 	pPlayer(Player_),
 	_PlayerCollider(pCharacter.get()),
-	pPlayerObject(make_shared<CBattlePlayerObject>(GetDefaultTransform(InitialPos_), SPoint(), pVirtualBattlePlayer_)),
+	pPlayerObject(make_shared<CBattlePlayerObject>(GetDefaultTransform(InitialPos_), _PlayerCollider.Colliders, SPoint(), pVirtualBattlePlayer_)),
 	_PumpControl(
 		std::bind(&CBattlePlayer::_PumpCallback, this),
 		std::bind(&CBattlePlayer::_PumpDoneCallback, this),
-		pMeta->PumpSpeed,
+		pMeta->pCharacterTypeMeta->PumpSpeed,
 		pCharacter->PumpInfo),
 	_ParachuteControl(
 		std::bind(&CBattlePlayer::_ParachuteOnCallback, this, _1),
 		pCharacter->ParachuteInfo)
 {
-	_PlayerCollider.pBody->LocalEnabled = IsAlive();
-	_PlayerCollider.pBalloon->LocalEnabled = (pCharacter->BalloonCount > 0);
-	_PlayerCollider.pParachute->LocalEnabled = CEngineGlobal::IsScaling(pCharacter->ParachuteInfo);
+	_PlayerCollider.pBody->SetEnabled(IsAlive());
+	_PlayerCollider.pBalloon->SetEnabled(pCharacter->BalloonCount > 0);
+	_PlayerCollider.pParachute->SetEnabled(CEngineGlobal::IsScaling(pCharacter->ParachuteInfo));
 
-	SetColliderToMovingObject2D(_PlayerCollider.pPlayer, pPlayerObject);
-	pPlayerObject->fCollisionEnter = std::bind(&CBattlePlayer::_CollisionEnter, this, _1, _2, _3, _4, _5);
-	pPlayerObject->fCollisionStay = std::bind(&CBattlePlayer::_CollisionStay, this, _1, _2, _3, _4, _5);
-	pPlayerObject->fCollisionExit = std::bind(&CBattlePlayer::_CollisionExit, this, _1, _2, _3, _4);
+	pPlayerObject->fCollisionEnter = std::bind(&CBattlePlayer::_CollisionEnter, this, _1, _2);
+	pPlayerObject->fCollisionStay = std::bind(&CBattlePlayer::_CollisionStay, this, _1, _2);
+	pPlayerObject->fCollisionExit = std::bind(&CBattlePlayer::_CollisionExit, this, _1, _2);
 	pPlayerObject->fFixedUpdate = std::bind(&CBattlePlayer::_FixedUpdate, this, _1);
 
 	pPlayer->BattleBegin(this);
 	g_Net->SessionHold(pPlayer->GetSession());
+}
+CBattlePlayer::~CBattlePlayer()
+{
+	auto itSession = pPlayer->GetSession();
+	g_Users.battle_end(itSession->first);
+	g_Net->SessionUnHold(itSession); // SessionUnHold 하면 itSession 이 삭제되므로 마지막에 호출
 }
 void CBattlePlayer::Link(void)
 {
@@ -464,12 +448,6 @@ ERet CBattlePlayer::Touch(const SBattleTouchNetCs& Proto_)
 ERet CBattlePlayer::Push(const SBattlePushNetCs& Proto_)
 {
 	return itBattle->get()->Push(PlayerIndex, Proto_);
-}
-void CBattlePlayer::BattleEndSession(void)
-{
-	auto itSession = pPlayer->GetSession();
-	g_Users.battle_end(itSession->first);
-	g_Net->SessionUnHold(itSession); // SessionUnHold 하면 itSession 이 삭제되므로 마지막에 호출
 }
 void CBattlePlayer::QuestDone(EQuestType QuestType_, int32 Count_)
 {
