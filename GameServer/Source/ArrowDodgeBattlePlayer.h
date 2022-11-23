@@ -30,7 +30,7 @@ protected:
 	bool IsStaminaFree(void) const override;
 	void _FixedUpdate(int64 tick) override;
 	bool _CollisionEnter(int64 tick, const SCollision2D& Collision_) override;
-	bool _TriggerEnter(const CCollider2D* pCollider_) override;
+	bool _TriggerEnter(int64 tick, const CCollider2D* pCollider_) override;
 public:
 	void SetItem(const SArrowDodgeItemMeta& Meta_);
 	void SetShieldItem(int64 tick, const CArrowDodgeShield* pShield_);

@@ -82,21 +82,35 @@ void CUser::SetLoginDBOutCore(SLoginDBOut& Out_)
 		throw ERet::UserDoesNotExist;
 
 	_User = Out_.Users.front();
-	_Chars = std::move(Out_.Chars);
+	_pFatigueUpdater = make_unique<FatigueUpdater>(g_MetaData->ConfigMeta.fatigueHoursPeriod, _User.fatigueLastUpdateTime);
+
+	for (auto& i : Out_.characterDBs)
+		_characterInfos.emplace(i.first, CharacterInfo(i.second, TokenIDs()));
+
+	for (auto& i : Out_.characterCodeTokenIDs)
+	{
+		auto itCharacterInfo = _characterInfos.find(i.code);
+		if (itCharacterInfo == _characterInfos.end())
+			continue;
+
+		itCharacterInfo->second.tokenIDs.emplace(i.tokenID);
+	}
 
 	_pSelectedChar = g_MetaData->GetCharacter(_User.SelectedCharCode);
+	_itSelectedCharInfo = _characterInfos.find(_User.SelectedCharCode);
+
 	if (_pSelectedChar == nullptr ||
-		_Chars.find(_User.SelectedCharCode) == _Chars.end())
+		_itSelectedCharInfo == _characterInfos.end())
 	{
-		auto itBeginChar = _Chars.begin();
-		if (itBeginChar == _Chars.end())
+		_itSelectedCharInfo = _characterInfos.begin();
+		if (_itSelectedCharInfo == _characterInfos.end())
 			throw ERet::InvalidCharCode;
 
-		_pSelectedChar = g_MetaData->GetCharacter(*itBeginChar);
+		_pSelectedChar = g_MetaData->GetCharacter(_itSelectedCharInfo->first);
 		if (_pSelectedChar == nullptr)
 			throw ERet::InvalidCharCode;
 
-		_User.SelectedCharCode = *itBeginChar;
+		_User.SelectedCharCode = _itSelectedCharInfo->first;
 	}
 
 	list<TQuestSlotIndex> QuestsNotExist;
@@ -131,13 +145,19 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 	{
 		auto Now = system_clock::now();
 
+		auto defaultCharacters = g_MetaData->getDefaultCharacters();
+		auto defaultCharacterCode = defaultCharacters[rand() % defaultCharacters.size()].code;
+
+		TResources resources{};
+		AddResource(resources, EResource::Ticket, g_MetaData->ConfigMeta.freeTicket);
+
 		Push(SJoinDBIn(
 			GetUID(),
 			SJoinDB(
 				SUserCore(
-					TResources{},
+					resources,
 					0,
-					g_MetaData->GetDefaultChar(),
+					defaultCharacterCode,
 					g_MetaData->arrowDodgeConfigMeta.PlayCountMax,
 					Now,
 					g_MetaData->flyAwayConfigMeta.PlayCountMax,
@@ -145,10 +165,11 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 					Now,
 					g_MetaData->ConfigMeta.ChangeNickFreeCount)),
 			Now,
+			Now,
 			_User.Language,
 			_LoginInfo.Option.OS,
 			_LoginInfo.CountryCodeMinuteOffset.CountryCode,
-			g_MetaData->DefaultChars));
+			defaultCharacters));
 	}
 	else
 	{
@@ -158,7 +179,13 @@ void CUser::SetLoginDBOut(SLoginDBOut& Out_)
 
 void CUser::_SendLogin(void)
 {
-	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _Chars, system_clock::now(), _Quest.GetQuestDBs()));
+	Send(SLoginNetSc(SUserNet(_User, GetCountryCode()), _characterInfos, system_clock::now(), _Quest.GetQuestDBs()));
+}
+void CUser::_addCharacter(int32 code, const TokenID& tokenID)
+{
+	auto ib = _characterInfos.emplace(code, CharacterInfo());
+	if (!ib.first->second.tokenIDs.emplace(tokenID).second)
+		THROWEXA(L"Already have character tokenID [%s]", tokenID);
 }
 ERet CUser::Buy(const SBuyNetCs& Proto_)
 {
@@ -185,17 +212,9 @@ ERet CUser::buyCharacter(const CCharacter* pCharacter)
 	if (!pCharacter->canBuy())
 		return ERet::InvalidProtocol;
 
-	if (_Chars.find(pCharacter->Code) != _Chars.end())
-		return ERet::InvalidProtocol;
-
 	if (pCharacter->isNFTCharacter())
 	{
-		_Chars.emplace(pCharacter->Code);
-
-		Push(SBuyCharDBIn(GetUID(), _User.Resources, pCharacter->Code));
-		Send(SBuyCharNetSc(pCharacter->Code));
-
-		return ERet::Ok;
+		_requestNFTCharacter(pCharacter->Code);
 	}
 	else
 	{
@@ -204,13 +223,27 @@ ERet CUser::buyCharacter(const CCharacter* pCharacter)
 			return ERet::NotEnoughMoney;
 
 		AddResourceCore(-cost);
-		_Chars.emplace(pCharacter->Code);
 
-		Push(SBuyCharDBIn(GetUID(), _User.Resources, pCharacter->Code));
-		Send(SBuyCharNetSc(pCharacter->Code));
+		auto tokenID = newGuid();
+		_addCharacter(pCharacter->Code, tokenID);
 
-		return ERet::Ok;
+		Push(SBuyCharDBIn(GetUID(), _User.Resources, pCharacter->Code, tokenID));
+		Send(SBuyCharNetSc(CodeTokenID(pCharacter->Code, tokenID)));
 	}
+
+	return ERet::Ok;
+}
+void CUser::_requestNFTCharacter(int32 code)
+{
+	// todo api »£√‚
+	_responseNFTCharacter(code, newGuid());
+}
+void CUser::_responseNFTCharacter(int32 code, const TokenID& tokenID)
+{
+	_addCharacter(code, tokenID);
+
+	Push(SBuyNFTCharDBIn(GetUID(), code, tokenID));
+	Send(SBuyNFTCharNetSc(CodeTokenID(code, tokenID)));
 }
 ERet CUser::BuyResource(const SBuyResourceNetCs& Proto_)
 {
@@ -345,49 +378,46 @@ void CUser::setPoint(int32 point)
 }
 void CUser::SetChar(list<int32>& CharCodes_)
 {
+	CodeTokenIDs addedCharacters;
+
 	if (CharCodes_.empty())
 	{
 		for (auto& i : g_MetaData->GetCharacters())
 		{
-			auto ib = _Chars.emplace(i.first);
-			if (!ib.second)
-				continue;
-
-			CharCodes_.emplace_back(i.first);
+			auto tokenID = newGuid();
+			_addCharacter(i.first, tokenID);
+			addedCharacters.emplace_back(i.first, tokenID);
 		}
 	}
 	else
 	{
-		for (auto it = CharCodes_.begin(); it != CharCodes_.end(); )
+		for (auto& i : CharCodes_)
 		{
-			auto itCheck = it;
-			++it;
-
-			auto ib = _Chars.emplace(*itCheck);
-			if (!ib.second)
-				CharCodes_.erase(itCheck);
+			auto tokenID = newGuid();
+			_addCharacter(i, tokenID);
+			addedCharacters.emplace_back(i, tokenID);
 		}
 	}
 
-	if (!CharCodes_.empty())
-		Push(SSetCharDBIn(GetUID(), CharCodes_));
+	if (!addedCharacters.empty())
+		Push(SSetCharDBIn(GetUID(), addedCharacters));
 
-	Send(SSetCharNetSc(CharCodes_));
+	Send(SSetCharNetSc(addedCharacters));
 }
 void CUser::UnsetChar(list<int32>& CharCodes_)
 {
 	if (CharCodes_.empty())
 	{
-		for (auto it = _Chars.begin(); it != _Chars.end(); )
+		for (auto it = _characterInfos.begin(); it != _characterInfos.end(); )
 		{
 			auto itCheck = it;
 			++it;
 
-			if (*itCheck == _User.SelectedCharCode)
+			if (itCheck->first == _User.SelectedCharCode)
 				continue;
 
-			CharCodes_.emplace_back(*itCheck);
-			_Chars.erase(itCheck);
+			CharCodes_.emplace_back(itCheck->first);
+			_characterInfos.erase(itCheck);
 		}
 	}
 	else
@@ -400,7 +430,7 @@ void CUser::UnsetChar(list<int32>& CharCodes_)
 			if (_User.SelectedCharCode == *itCheck)
 				continue;
 
-			if (_Chars.erase(*itCheck) <= 0)
+			if (_characterInfos.erase(*itCheck) <= 0)
 				CharCodes_.erase(itCheck);
 		}
 	}
@@ -446,11 +476,14 @@ ERet CUser::ChangeLanguage(const SChangeLanguageNetCs& Proto_)
 }
 ERet CUser::SelectChar(const SSelectCharNetCs& Proto_)
 {
+	if (InBattle())
+		return ERet::InvalidProtocol;
+
 	if (Proto_.Code == _User.SelectedCharCode)
 		return ERet::SameCode;
 
-	auto it = _Chars.find(Proto_.Code);
-	if (it == _Chars.end())
+	auto itChar = _characterInfos.find(Proto_.Code);
+	if (itChar == _characterInfos.end())
 		return ERet::InvalidCharCode;
 
 	auto pChar = g_MetaData->GetCharacter(Proto_.Code);
@@ -459,6 +492,7 @@ ERet CUser::SelectChar(const SSelectCharNetCs& Proto_)
 
 	_User.SelectedCharCode = Proto_.Code;
 	_pSelectedChar = pChar;
+	_itSelectedCharInfo = itChar;
 	Push(SSelectCharDBIn(GetUID(), _User.SelectedCharCode));
 
 	return ERet::Ok;
@@ -501,6 +535,9 @@ ERet CUser::MultiBattleJoin(void)
 	if (InBattle())
 		return ERet::AlreadyInBattle;
 
+	if (!_updateFatigueAndHasFreeFatigue(g_MetaData->pMultiBattleConfig->addedFatigue))
+		return ERet::InvalidProtocol;
+
 	if (!_CanMatchable(system_clock::now()))
 		return ERet::InvalidProtocol;
 
@@ -532,6 +569,10 @@ SBattleEndInfo CUser::GetSBattleEndInfo(void) const
 		GetUID(), _User.Resources, _User.eloPoint, _User.Point, _User.PointBest,
 		_User.WinCountSolo, _User.LoseCountSolo, _User.WinCountMulti, _User.LoseCountMulti,
 		_User.BattlePointBest, _User.KillTotal, _User.ChainKillTotal, _User.BlowBalloonTotal);
+}
+BattleEndCharacterInfo CUser::GetBattleEndCharacterInfo(void) const
+{
+	return BattleEndCharacterInfo(GetUID(), _itSelectedCharInfo->first, _itSelectedCharInfo->second.fatigue);
 }
 TDoneQuests CUser::_MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
 {
@@ -584,10 +625,14 @@ void CUser::MultiBattleEnd(TTime Now_, const BattleEndInfo& battleEndInfo, int32
 	auto DoneQeusts = _MultiBattleEnd(battleEndInfo.battlePoint, DoneQuests_, DoneQuestDBs_);
 
 	_addEloPoint(battleEndInfo.addedEloPoint);
-	AddResourceCore(g_MetaData->ConfigMeta.BattleCostType, -g_MetaData->ConfigMeta.BattleCostValue);
 
+	AddResourceCore(g_MetaData->ConfigMeta.BattleCostType, -g_MetaData->ConfigMeta.BattleCostValue);
 	AddResourcesCore(battleEndInfo.addedResources);
+
+	_itSelectedCharInfo->second.fatigue += g_MetaData->pMultiBattleConfig->addedFatigue;
+
 	_BattleEndAndUpdateMatchBlockEndTime(Now_);
+
 	Send(SMultiBattleEndNetSc(SMultiBattleEndNet(_User.InvalidDisconnectInfo), myTeamRanking, _User.Resources, _User.eloPoint, _User.Point, battleEndInfo.battlePoint, DoneQeusts));
 }
 void CUser::MultiBattleEndDraw(TTime Now_, int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_)
@@ -636,6 +681,9 @@ ERet CUser::ArrowDodgeBattleJoin(void)
 
 	if (InBattle())
 		return ERet::AlreadyInBattle;
+
+	if (!_updateFatigueAndHasFreeFatigue(g_MetaData->arrowDodgeConfigMeta.addedFatigue))
+		return ERet::InvalidProtocol;
 
 	auto NewPlayCount = _User.SinglePlayCount;
 	auto NewRefreshTime = _User.SingleRefreshTime;
@@ -730,11 +778,13 @@ void CUser::ArrowDodgeBattleEnd(int64 tick, const SArrowDodgeBattleInfo& BattleI
 	::AddResource(Added, EResource::Gold, addedGold);
 	AddResourcesCore(Added);
 
+	_itSelectedCharInfo->second.fatigue += g_MetaData->arrowDodgeConfigMeta.addedFatigue;
+
 	TDoneQuestDBs DoneQuestDBs;
 	TDoneQuests DoneQuestNets;
-
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, std::move(DoneQuestDBs)));
+
+	Push(SArrowDodgeBattleEndDBIn(GetUID(), _User.Resources, _User.SinglePointBest, std::move(DoneQuestDBs), _itSelectedCharInfo->first, _itSelectedCharInfo->second.fatigue));
 	Send(SArrowDodgeBattleEndNetSc(SingleBattleEndNetSc(tick, _User.Resources, std::move(DoneQuestNets))));
 	_BattleEnd();
 }
@@ -746,6 +796,9 @@ ERet CUser::FlyAwayBattleJoin(void)
 
 	if (InBattle())
 		return ERet::AlreadyInBattle;
+
+	if (!_updateFatigueAndHasFreeFatigue(g_MetaData->flyAwayConfigMeta.addedFatigue))
+		return ERet::InvalidProtocol;
 
 	auto NewPlayCount = _User.IslandPlayCount;
 	auto NewRefreshTime = _User.IslandRefreshTime;
@@ -840,43 +893,44 @@ void CUser::FlyAwayBattleEnd(int64 tick, const SFlyAwayBattleInfo& BattleInfo_, 
 	::AddResource(Added, EResource::Gold, addedGold);
 	AddResourcesCore(Added);
 
+	_itSelectedCharInfo->second.fatigue += g_MetaData->flyAwayConfigMeta.addedFatigue;
+
 	TDoneQuestDBs DoneQuestDBs;
 	TDoneQuests DoneQuestNets;
-
 	QuestDone(DoneQuests_, DoneQuestDBs, DoneQuestNets);
-	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandComboBest, std::move(DoneQuestDBs)));
+
+	Push(SFlyAwayBattleEndDBIn(GetUID(), _User.Resources, _User.IslandPointBest, _User.IslandComboBest, std::move(DoneQuestDBs), _itSelectedCharInfo->first, _itSelectedCharInfo->second.fatigue));
 	Send(SFlyAwayBattleEndNetSc(SingleBattleEndNetSc(tick, _User.Resources, std::move(DoneQuestNets))));
 	_BattleEnd();
 }
 
-void CUser::_RewardCore(const SReward& Reward_, list<int32>& CharsAdded_)
+void CUser::_RewardCore(const SReward& Reward_, CodeTokenIDs& CharsAdded_)
 {
 	AddResourcesCore(Reward_.Resources);
 
 	for (auto& i : Reward_.Chars)
 	{
-		if (_Chars.emplace(i->Code).second)
-			CharsAdded_.emplace_back(i->Code);
-		else
-			AddResourceCore(i->pCharacterTypeMeta->RefundType, i->pCharacterTypeMeta->RefundValue);
+		auto tokenID = newGuid();
+		_addCharacter(i->Code, tokenID);
+		CharsAdded_.emplace_back(i->Code, tokenID);
 	}
 }
 SRewardDB CUser::RewardCore(const SReward& Reward_)
 {
-	list<int32> CharsAdded;
+	CodeTokenIDs CharsAdded;
 
 	_RewardCore(Reward_, CharsAdded);
 
-	return SRewardDB(GetUID(), _User.Resources, std::move(CharsAdded));
+	return SRewardDB(GetUID(), SRewardCore(_User.Resources, std::move(CharsAdded)));
 }
 SRewardDB CUser::RewardsCore(const list<const SReward*>& Rewards_)
 {
-	list<int32> CharsAdded;
+	CodeTokenIDs CharsAdded;
 
 	for (auto& i : Rewards_)
 		_RewardCore(*i, CharsAdded);
 
-	return SRewardDB(GetUID(), _User.Resources, std::move(CharsAdded));
+	return SRewardDB(GetUID(), SRewardCore(_User.Resources, std::move(CharsAdded)));
 }
 ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 {
@@ -888,7 +942,7 @@ ERet CUser::RankReward(const SRankRewardNetCs& Proto_)
 	auto RewardDB = RewardCore(*pRankReward);
 	Push(SRankRewardDBIn(RewardDB, _User.NextRewardRankIndex));
 	Send(SRankRewardNetSc(
-		SRewardInfo(GetUID(), _User.Resources, pRankReward->getCharacterCodes()),
+		RewardDB.Core,
 		_User.NextRewardRankIndex));
 
 	return ERet::Ok;
@@ -976,7 +1030,7 @@ ERet CUser::QuestReward(const SQuestRewardNetCs& Proto_)
 
 	Push(SQuestRewardDBIn(RewardDB, Proto_.SlotIndex, newCode, newCoolEndTime, _User.QuestDailyCompleteCount, _User.QuestDailyCompleteRefreshTime));
 	Send(SQuestRewardNetSc(
-		SRewardInfo(GetUID(), _User.Resources, Reward->second->getCharacterCodes()),
+		RewardDB.Core,
 		Proto_.SlotIndex,
 		newCode,
 		newCoolEndTime,
@@ -1015,7 +1069,7 @@ ERet CUser::QuestDailyCompleteReward(const SQuestDailyCompleteRewardNetCs& Proto
 	auto RewardDB = RewardCore(*g_MetaData->questConfig.pReward);
 	Push(SQuestDailyCompleteRewardDBIn(RewardDB, _User.QuestDailyCompleteRefreshTime));
 	Send(SQuestDailyCompleteRewardNetSc(
-		SRewardInfo(GetUID(), _User.Resources, g_MetaData->questConfig.pReward->getCharacterCodes()),
+		RewardDB.Core,
 		_User.QuestDailyCompleteRefreshTime));
 
 	return ERet::Ok;
@@ -1096,7 +1150,7 @@ void CUser::CouponUseOut(const SCouponUseCouponDBIn& In_, int32 Code_)
 	auto RewardDB = RewardCore(*pCoupon->pReward);
 	Push(SCouponUseDBIn(RewardDB, In_.Key));
 	Send(SCouponUseNetSc(
-		SRewardInfo(GetUID(), _User.Resources, pCoupon->pReward->getCharacterCodes()),
+		RewardDB.Core,
 		pCoupon->pReward->Resources));
 }
 ERet CUser::TutorialReward(const STutorialRewardNetCs& Proto_)
@@ -1176,7 +1230,7 @@ ERet CUser::RankingReward(const SRankingRewardNetCs& Proto_)
 		auto RewardDB = RewardsCore(Rewards);
 		Push(SRankingRewardDBIn(RewardDB, _User.RankingRewardedCounter));
 		Send(SRankingRewardNetSc(
-			SRewardInfo(GetUID(), _User.Resources, getCharacterCodesWithRewards(Rewards)),
+			RewardDB.Core,
 			_User.RankingRewardedCounter,
 			std::move(myRankingArray)));
 	}
@@ -1198,6 +1252,27 @@ bool CUser::_IsInPunished(TTime Now_) const
 bool CUser::_CanMatchable(TTime Now_) const
 {
 	return (_User.InvalidDisconnectInfo.MatchBlockEndTime <= Now_);
+}
+bool CUser::_updateFatigueAndHasFreeFatigue(int32 addedFatigue)
+{
+	_updateFatigue();
+
+	auto freeFatigueCapacity = (_itSelectedCharInfo->second.tokenIDs.size() * _pSelectedChar->fatigueCapacity) - _itSelectedCharInfo->second.fatigue;
+	return freeFatigueCapacity >= addedFatigue;
+}
+void CUser::_updateFatigue()
+{
+	auto now = system_clock::now();
+
+	if (!_pFatigueUpdater->update(now))
+		return;
+
+	_User.fatigueLastUpdateTime = _pFatigueUpdater->getLastUpdatedTime();
+
+	for (auto& i : _characterInfos)
+		i.second.fatigue = 0;
+
+	Push(UpdateFatigueDBIn(GetUID(), now));
 }
 void CUser::_FixMatchBLockEndTime(void)
 {

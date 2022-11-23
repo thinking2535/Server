@@ -306,10 +306,17 @@ CMultiBattle::~CMultiBattle()
 
 		vector<SBattleEndInfo> BattleEndInfos; // for DB Push
 		BattleEndInfos.reserve(_MultiBattlePlayers.size());
-		for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
-			BattleEndInfos.emplace_back(_MultiBattlePlayers[i]->pPlayer->GetSBattleEndInfo());
 
-		DBPush(CKey(), SBattleEndDBIn(BattleEndInfos, DoneQuestDBs));
+		vector<BattleEndCharacterInfo> battleEndCharacterInfos; // for DB Push
+		battleEndCharacterInfos.reserve(_MultiBattlePlayers.size());
+
+		for (size_t i = 0; i < _MultiBattlePlayers.size(); ++i)
+		{
+			BattleEndInfos.emplace_back(_MultiBattlePlayers[i]->pPlayer->GetSBattleEndInfo());
+			battleEndCharacterInfos.emplace_back(_MultiBattlePlayers[i]->pPlayer->GetBattleEndCharacterInfo());
+		}
+
+		DBPush(CKey(), SBattleEndDBIn(BattleEndInfos, battleEndCharacterInfos, DoneQuestDBs));
 
 
 		// Ranking /////////////////////////////////////

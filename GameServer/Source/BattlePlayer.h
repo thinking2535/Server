@@ -44,16 +44,17 @@ protected:
 	void _DetachGround(const CCollider2D* pOtherCollider_);
 public:
 	void bounce(const SCollision2D& collision);
+	void bounce(const SPoint& normal);
 	void Die(int64 tick);
 protected:
 	void _Die(int64 tick);
 	bool _beHitBalloon(const SPoint& Normal_);
 	bool _LandEnter(const SCollision2D& Collision_);
 	virtual bool _CollisionEnter(int64 tick, const SCollision2D& Collision_);
-	virtual void _LandStay(const SCollision2D& Collision_);
+	virtual bool _LandStay(const SCollision2D& Collision_);
 	virtual bool _CollisionStay(int64 tick, const SCollision2D& Collision_);
 	virtual bool _CollisionExit(int64 tick, const SCollision2D& Collision_);
-	virtual bool _TriggerEnter(const CCollider2D* pCollider_);
+	virtual bool _TriggerEnter(int64 tick, const CCollider2D* pCollider_);
 	virtual void _FixedUpdate(int64 tick);
 	virtual void _UpdateStamina(int64 tick);
 	void _UpdateGroundPhysics(const CMovingObject2D* pOtherMovingObject_);

@@ -223,6 +223,7 @@ template<> struct SBinder<SSetCharNetSc> { static const int32 ProtoNum = int32(E
 template<> struct SBinder<SUnsetCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::UnsetChar); };
 template<> struct SBinder<SBuyNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::Buy); };
 template<> struct SBinder<SBuyCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyChar); };
+template<> struct SBinder<SBuyNFTCharNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyNFTChar); };
 template<> struct SBinder<SBuyResourceNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BuyResource); };
 
 template<> struct SBinder<SBattleSyncNetSc> { static const int32 ProtoNum = int32(EProtoNetSc::BattleSync); };
@@ -285,6 +286,7 @@ template<> struct SDBBinder<SCanPushAtNightDBIn> { static const int32 SpNum = in
 template<> struct SDBBinder<SChangeLanguageDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeLanguage); };
 template<> struct SDBBinder<SBuyDBIn> { static const int32 SpNum = int32(EProtoDB::Buy); };
 template<> struct SDBBinder<SBuyCharDBIn> { static const int32 SpNum = int32(EProtoDB::BuyChar); };
+template<> struct SDBBinder<SBuyNFTCharDBIn> { static const int32 SpNum = int32(EProtoDB::BuyNFTChar); };
 
 template<> struct SDBBinder<SSelectCharDBIn> { static const int32 SpNum = int32(EProtoDB::SelectChar); };
 template<> struct SDBBinder<SBattleEndDBIn> { static const int32 SpNum = int32(EProtoDB::BattleEnd); };
@@ -302,6 +304,8 @@ template<> struct SDBBinder<SQuestDelDBIn> { static const int32 SpNum = int32(EP
 template<> struct SDBBinder<SQuestDoneDBIn> { static const int32 SpNum = int32(EProtoDB::QuestDone); };
 template<> struct SDBBinder<SQuestRewardDBIn> { static const int32 SpNum = int32(EProtoDB::QuestReward); };
 template<> struct SDBBinder<SQuestDailyCompleteRewardDBIn> { static const int32 SpNum = int32(EProtoDB::QuestDailyCompleteReward); };
+template<> struct SDBBinder<UpdateFatigueDBIn> { static const int32 SpNum = int32(EProtoDB::updateFatigue); };
+
 template<> struct SDBBinder<SChangeNickBeginDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeNickBegin); };
 template<> struct SDBBinder<SChangeNickEndDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeNickEnd); };
 template<> struct SDBBinder<SChangeNickEndFailDBIn> { static const int32 SpNum = int32(EProtoDB::ChangeNickEndFail); };

@@ -42,6 +42,7 @@ namespace bb
 	}
 	struct SConfigMeta
 	{
+		TResource freeTicket
 		int32 BattleDurationSec
 		int32 BattleOneOnOneDurationSec
 		int32 GhostDelaySec
@@ -57,6 +58,7 @@ namespace bb
 		TResource MaxTicket
 		EResource BattleCostType
 		TResource BattleCostValue
+		hours fatigueHoursPeriod
 	}
 	struct SForbiddenWordMeta
 	{
@@ -85,7 +87,7 @@ namespace bb
 		float MaxVelXGround
 		float StaminaMax
 		float PumpSpeed
-		float Weight
+		float BodyWeight
 	}
 	struct CharacterTypeKeyValueMeta
 	{
@@ -96,6 +98,7 @@ namespace bb
 	{
 		int32 Code
 		wstring type
+		int32 fatigueCapacity
 		bool isDefault
 	}
 	typedef vector<SPoint> TPoses
@@ -183,7 +186,11 @@ namespace bb
 		minutes dailyRefreshMinutes
 	}
 
-	struct MultiBattleConfigMeta
+	struct BattleConfigMeta
+	{
+		int32 addedFatigue
+	}
+	struct MultiBattleConfigMeta : BattleConfigMeta
 	{
 		int32 DisconnectableSeconds
 		int32 PunishMinutesForDisconnect
@@ -202,7 +209,7 @@ namespace bb
 		int32 DisconnectedCount
 		int32 DeniedSeconds
 	}
-	struct ArrowDodgeConfigMeta
+	struct ArrowDodgeConfigMeta : BattleConfigMeta
 	{
 		int32 ArrowDodgePoint
 		int32 ArrowGetPoint
@@ -221,7 +228,7 @@ namespace bb
 		TResource AddedGold
 	}
 
-	struct FlyAwayConfigMeta
+	struct FlyAwayConfigMeta : BattleConfigMeta
 	{
 		int32 maxComboMultiplier
 		float landingAddedStamina

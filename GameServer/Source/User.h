@@ -1,5 +1,9 @@
 #pragma once
 
+#include <Rso/GameUtil/PeriodicUpdater.h>
+
+using namespace gameutil;
+
 struct SUserLoginInfo
 {
 	CKey Key;
@@ -15,13 +19,18 @@ struct SUserLoginInfo
 	{
 	}
 };
+
+using FatigueUpdater = PeriodicUpdater<hours>;
+
 class CUser
 {
 	CTimeSync _TimeSync{ c_NetworkDelayTimeSync }; // 클라의 시간이 c_NetworkDelayTimeSync 이상 빨라지면 에러
 	TSessionsIt _itSession;
 	bool _IsDataLoaded = false;
 	SUserDB _User;
-	TChars _Chars;
+	unique_ptr<FatigueUpdater> _pFatigueUpdater;
+	CharacterInfos _characterInfos;
+	CharacterInfos::iterator _itSelectedCharInfo;
 	const CCharacter* _pSelectedChar = nullptr;
 	CQuest _Quest;
 	SUserLoginInfo _LoginInfo;
@@ -78,10 +87,15 @@ public:
 	void SetLoginDBOut(SLoginDBOut& Out_);
 private:
 	void _SendLogin(void);
+	void _addCharacter(int32 code, const TokenID& tokenID);
 public:
 	ERet Buy(const SBuyNetCs& Proto_);
 	ERet BuyChar(const SBuyCharNetCs& Proto_);
 	ERet buyCharacter(const CCharacter* pCharacter);
+private:
+	void _requestNFTCharacter(int32 code);
+	void _responseNFTCharacter(int32 code, const TokenID& tokenID);
+public:
 	ERet BuyResource(const SBuyResourceNetCs& Proto_);
 	ERet Purchase(void);
 	ERet ReceiptCheck(const TOrder& Order_, const string& OrderID_, int64 PurchaseTime_, int32 PurchaseType_);
@@ -121,6 +135,7 @@ public:
 	ERet MultiBattleJoin(void);
 	ERet MultiBattleOut(void);
 	SBattleEndInfo GetSBattleEndInfo(void) const;
+	BattleEndCharacterInfo GetBattleEndCharacterInfo(void) const;
 private:
 	TDoneQuests _MultiBattleEnd(int32 BattlePoint_, const TQuests& DoneQuests_, TDoneQuestDBs& DoneQuestDBs_);
 	void _addEloPoint(double addedEloPoint);
@@ -139,7 +154,7 @@ public:
 	ERet FlyAwayBattleEnd(const SFlyAwayBattleEndNetCs& Proto_);
 	void FlyAwayBattleEnd(int64 tick, const SFlyAwayBattleInfo& BattleInfo_, const TQuests& DoneQuests_);
 
-	void _RewardCore(const SReward& Reward_, list<int32>& CharsAdded_);
+	void _RewardCore(const SReward& Reward_, CodeTokenIDs& CharsAdded_);
 	SRewardDB RewardCore(const SReward& Reward_);
 	SRewardDB RewardsCore(const list<const SReward*>& Rewards_);
 	ERet RankReward(const SRankRewardNetCs& Proto_);
@@ -163,7 +178,8 @@ public:
 private:
 	bool _IsInPunished(TTime Now_) const;
 	bool _CanMatchable(TTime Now_) const;
-private:
+	bool _updateFatigueAndHasFreeFatigue(int32 addedFatigue);
+	void _updateFatigue();
 	void _FixMatchBLockEndTime(void);
 	void _UpdateMatchBlockEndTime(TTime Now_);
 public:

@@ -412,6 +412,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SChangeLanguageDBIn, SDummyDBOut>(L"dbo.spChangeLanguage", true, DummyDBOut);
 		DBAddCmd<SBuyDBIn, SDummyDBOut>(L"dbo.spBuy", true, DummyDBOut);
 		DBAddCmd<SBuyCharDBIn, SDummyDBOut>(L"dbo.spBuyChar", true, DummyDBOut);
+		DBAddCmd<SBuyNFTCharDBIn, SDummyDBOut>(L"dbo.spBuyNFTChar", true, DummyDBOut);
 		DBAddCmd<SSelectCharDBIn, SDummyDBOut>(L"dbo.spSelectChar", true, DummyDBOut);
 		DBAddCmd<SBattleEndDBIn, SDummyDBOut>(L"dbo.spBattleEnd", true, DummyDBOut);
 		DBAddCmd<SUpdateInvalidDisconnectInfoDBIn, SDummyDBOut>(L"dbo.spUpdateInvalidDisconnectInfo", true, DummyDBOut);
@@ -427,6 +428,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		DBAddCmd<SQuestDoneDBIn, SDummyDBOut>(L"dbo.spQuestDone", true, DummyDBOut);
 		DBAddCmd<SQuestRewardDBIn, SDummyDBOut>(L"dbo.spQuestReward", true, DummyDBOut);
 		DBAddCmd<SQuestDailyCompleteRewardDBIn, SDummyDBOut>(L"dbo.spQuestDailyCompleteReward", true, DummyDBOut);
+		DBAddCmd<UpdateFatigueDBIn, SDummyDBOut>(L"dbo.spUpdateFatigue", true, DummyDBOut);
 		DBAddCmd<SChangeNickBeginDBIn, SDummyDBOut>(L"dbo.spChangeNickBegin", true, ChangeNickBeginDBOut);
 		DBAddCmd<SChangeNickEndDBIn, SDummyDBOut>(L"dbo.spChangeNickEnd", true, ChangeNickEndDBOut);
 		DBAddCmd<SChangeNickEndFailDBIn, SDummyDBOut>(L"dbo.spChangeNickEndFail", true, ChangeNickEndFailDBOut);

@@ -33,7 +33,7 @@ protected:
 	bool _CollisionEnter(int64 tick, const SCollision2D& Collision_) override;
 	bool _CollisionStay(int64 tick, const SCollision2D& Collision_) override;
 	bool _CollisionExit(int64 tick, const SCollision2D& Collision_) override;
-	bool _TriggerEnter(const CCollider2D* pCollider_) override;
+	bool _TriggerEnter(int64 tick, const CCollider2D* pCollider_) override;
 public:
 	void SetItem(const SFlyAwayItemMeta& Meta_);
 	void addStamina(float stamina);

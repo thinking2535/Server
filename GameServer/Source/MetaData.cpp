@@ -18,21 +18,6 @@ unique_ptr<SReward> SReward::create(const wstring& type, int32 value)
 
 	return pReward;
 }
-list<int32> SReward::getCharacterCodes(void) const
-{
-	list<int32> characterCodes;
-	std::transform(Chars.cbegin(), Chars.cend(), back_inserter(characterCodes), [](const CCharacter* pCharacter) { return pCharacter->Code; });
-	return characterCodes;
-}
-list<int32> getCharacterCodesWithRewards(const list<const SReward*>& rewards)
-{
-	list<int32> characterCodes;
-
-	for (auto& i : rewards)
-		std::transform(i->Chars.cbegin(), i->Chars.cend(), back_inserter(characterCodes), [](const CCharacter* pCharacter) { return pCharacter->Code; });
-
-	return characterCodes;
-}
 
 CMetaData::CMetaData() :
 	_QuestTypes((size_t)EQuestType::Max),
@@ -119,10 +104,10 @@ CMetaData::CMetaData() :
 					}
 
 					if (i.second.isDefault)
-						DefaultChars.emplace_back(i.first);
+						_defaultChars.emplace_back(i.first);
 				}
 
-				ASSERTIONA(!DefaultChars.empty(), L"Default Char Not Found");
+				ASSERTIONA(!_defaultChars.empty(), L"Default Char Not Found");
 			}
 		}
 
@@ -395,10 +380,6 @@ TExp CMetaData::GetMaxExp(void) const
 
 	return ExpMetas.back();
 }
-int32 CMetaData::GetDefaultChar(void) const
-{
-	return DefaultChars[rand() % DefaultChars.size()];
-}
 const SReward* CMetaData::GetRankReward(int32 PointBest_, int32 RewardIndex_) const
 {
 	if (RewardIndex_ > _RankRewards.size() - 1)
@@ -466,4 +447,13 @@ EResource CMetaData::getMultiBattleDiaRewardType(void)
 {
 	auto randomValue = uniform_real_distribution(0.0, 1.0)(_randomEngine);
 	return _multiBattleDiaRewardTypes.get(randomValue)->second;
+}
+vector<CodeTokenID> CMetaData::getDefaultCharacters() const
+{
+	vector<CodeTokenID> defaultCharacters;
+
+	for (auto& i : _defaultChars)
+		defaultCharacters.emplace_back(i, newGuid());
+
+	return defaultCharacters;
 }

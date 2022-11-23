@@ -6,10 +6,8 @@ struct SReward
 
 	TResources Resources{};
 	set<const CCharacter*> Chars;
-
-	list<int32> getCharacterCodes(void) const;
 };
-list<int32> getCharacterCodesWithRewards(const list<const SReward*>& rewards);
+
 struct SRankReward : public SRankRewardMeta
 {
 	unique_ptr<SReward> pReward;
@@ -144,8 +142,8 @@ public:
 	map<int32, unique_ptr<const ShopItem>> shopItems;
 private:
 	map<EResource, ExchangeValue> _exchangeValues;
+	vector<int32> _defaultChars;
 public:
-	vector<int32> DefaultChars;
 	TCoreCheckSum CheckSumMeta = 0;
 	SRankingConfigMeta RankingConfigMeta;
 	vector<CRank<int32, shared_ptr<SReward>>> RankingReward; // IndexOrder (Multi, Arrow, Island), second { first : Ranking, second : RewardCode }
@@ -154,7 +152,6 @@ public:
 	TLevel ExpToLevel(TExp Exp_) const;
 	TExp LevelToExp(TLevel Level_) const;
 	TExp GetMaxExp(void) const;
-	int32 GetDefaultChar(void) const;
 	const SReward* GetRankReward(int32 PointBest_, int32 RewardIndex_) const;
 	const CCharacter* GetCharacter(int32 Code_) const;
 	const map<int32, CCharacter>& GetCharacters(void) const { return _Characters; }
@@ -172,4 +169,5 @@ public:
 	const SCoupon* GetCoupon(const wstring& Key_) const;
 	optional<ExchangeValue> getExchangeValue(EResource targetResource);
 	EResource getMultiBattleDiaRewardType(void);
+	vector<CodeTokenID> getDefaultCharacters() const;
 };

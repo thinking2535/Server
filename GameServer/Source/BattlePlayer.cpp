@@ -39,41 +39,32 @@ void CBattlePlayer::_DetachGround(const CCollider2D* pOtherCollider_)
 }
 void CBattlePlayer::bounce(const SCollision2D& collision)
 {
-	if (collision.Normal.X != 0.0f)
-	{
-		if (pPlayerObject->Velocity.X > 0.0f && collision.Normal.X < 0.0f ||
-			pPlayerObject->Velocity.X < 0.0f && collision.Normal.X > 0.0f)
-		{
-			pPlayerObject->Velocity.X = -pPlayerObject->Velocity.X;
-		}
-	}
-	else if (collision.Normal.Y != 0.0f)
-	{
-		if (pPlayerObject->Velocity.Y > 0.0f && collision.Normal.Y < 0.0f ||
-			pPlayerObject->Velocity.Y < 0.0f && collision.Normal.Y > 0.0f)
-		{
-			pPlayerObject->Velocity.Y = -pPlayerObject->Velocity.Y;
-		}
-	}
+	// 멀어지고 있는 상태의 충돌에 대해서는 처리하지 않음
+	if (collision.Normal.X * collision.RelativeVelocity.X <= 0.0f &&
+		collision.Normal.Y * collision.RelativeVelocity.Y <= 0.0f)
+		return;
 
-	return;
-
-	if (collision.pOtherMovingObject != nullptr)
+	if (collision.pOtherMovingObject == nullptr || collision.pOtherMovingObject->isKinematic)
 	{
-		auto multiplier = collision.pOtherMovingObject->GetPlayerObject2D() != nullptr ? 2.0f * collision.pOtherMovingObject->Mass / (pPlayerObject->Mass + collision.pOtherMovingObject->Mass) : 2.0f;
-
 		if (collision.Normal.X != 0.0f)
-			pPlayerObject->Velocity.X += collision.RelativeVelocity.X * multiplier;
+			pPlayerObject->Velocity.X = pPlayerObject->Velocity.X + collision.RelativeVelocity.X;
 		else
-			pPlayerObject->Velocity.Y += collision.RelativeVelocity.Y * multiplier;
+			pPlayerObject->Velocity.Y = pPlayerObject->Velocity.Y + collision.RelativeVelocity.Y;
 	}
 	else
 	{
 		if (collision.Normal.X != 0.0f)
-			pPlayerObject->Velocity.X = -pPlayerObject->Velocity.X;
+			pPlayerObject->Velocity.X += collision.RelativeVelocity.X * collision.pOtherMovingObject->Mass / (pPlayerObject->Mass + collision.pOtherMovingObject->Mass);
 		else
-			pPlayerObject->Velocity.Y = -pPlayerObject->Velocity.Y;
+			pPlayerObject->Velocity.Y += collision.RelativeVelocity.Y * collision.pOtherMovingObject->Mass / (pPlayerObject->Mass + collision.pOtherMovingObject->Mass);
 	}
+}
+void CBattlePlayer::bounce(const SPoint& normal)
+{
+	if (normal.X != 0.0f)
+		pPlayerObject->Velocity.X *= -1.0f;
+	else
+		pPlayerObject->Velocity.Y *= -1.0f;
 }
 void CBattlePlayer::Die(int64 tick)
 {
@@ -83,8 +74,6 @@ void CBattlePlayer::Die(int64 tick)
 void CBattlePlayer::_Die(int64 tick)
 {
 	pPlayerObject->SetEnabled(false);
-	pPlayerObject->Velocity.X = 0.0f;
-	pPlayerObject->Velocity.Y = c_DieUpVel;
 	pCharacter->IsGround = false;
 	pCharacter->Dir = 0;
 	pCharacter->RegenTick = tick + c_RegenDelayTickCount;
@@ -119,13 +108,19 @@ bool CBattlePlayer::_beHitBalloon(const SPoint& Normal_) // return true : dead
 bool CBattlePlayer::_LandEnter(const SCollision2D& Collision_)
 {
 	if (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber ||
-		Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber ||
-		Collision_.Normal.Y <= 0.0f)
+		Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber)
 		return false;
 
-	_UpdateGroundPhysics(Collision_.pOtherMovingObject);
-	_AttachGround(Collision_.pOtherCollider);
-	return true;
+	if (Collision_.Normal.Y > 0.0f)
+	{
+		_UpdateGroundPhysics(Collision_.pOtherMovingObject);
+		_AttachGround(Collision_.pOtherCollider);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 bool CBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
 {
@@ -136,24 +131,30 @@ bool CBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
 
 	return false;
 }
-void CBattlePlayer::_LandStay(const SCollision2D& Collision_)
+bool CBattlePlayer::_LandStay(const SCollision2D& Collision_)
 {
+	if (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber ||
+		Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber)
+		return false;
+
 	if (Collision_.Normal.Y > 0.0f)
 	{
 		_UpdateGroundPhysics(Collision_.pOtherMovingObject);
 		_AttachGround(Collision_.pOtherCollider);
+		return true;
 	}
 	else
 	{
 		_DetachGround(Collision_.pOtherCollider);
+		return false;
 	}
 }
 bool CBattlePlayer::_CollisionStay(int64 tick, const SCollision2D& Collision_)
 {
-	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber) // 몸이 지형에 안 닿았으면
+	if (_LandStay(Collision_))
 		return false;
 
-	_LandStay(Collision_);
+	bounce(Collision_);
 
 	return false;
 }
@@ -166,7 +167,7 @@ bool CBattlePlayer::_CollisionExit(int64 tick, const SCollision2D& Collision_)
 
 	return false;
 }
-bool CBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
+bool CBattlePlayer::_TriggerEnter(int64 tick, const CCollider2D* pCollider_)
 {
 	return false;
 }
@@ -240,15 +241,23 @@ void CBattlePlayer::_updateXVelocityInAir()
 }
 void CBattlePlayer::_updateYVelocityInAir()
 {
-	auto YAcc = pCharacter->BalloonCount > 0 ? c_Gravity : pCharacter->BalloonCount == 0 ? (c_Gravity * c_GravityParachuteRatio) : (c_Gravity * c_GravityDeadRatio);
-
+	float YAcc;
 	float MaxYVel;
 	if (pCharacter->BalloonCount > 0)
+	{
+		YAcc = c_Gravity;
 		MaxYVel = -c_MaxVelDown;
+	}
 	else if (pCharacter->BalloonCount == 0)
+	{
+		YAcc = c_Gravity * c_GravityParachuteRatio;
 		MaxYVel = -c_MaxVelParachuteY;
+	}
 	else
+	{
+		YAcc = c_Gravity * c_GravityDeadRatio;
 		MaxYVel = -c_MaxVelDeadY;
+	}
 
 	auto Diff = MaxYVel - pPlayerObject->Velocity.Y;
 	if (Diff > 0.0f) // 하강속도 초과

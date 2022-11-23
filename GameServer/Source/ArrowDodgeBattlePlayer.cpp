@@ -24,7 +24,7 @@ CArrowDodgeBattlePlayer::CArrowDodgeBattlePlayer(
 	_fGetItem(fGetItem_),
 	pArrowDodgeBattle(pArrowDodgeBattle_)
 {
-	pPlayerObject->fTriggerEnter = std::bind(&CArrowDodgeBattlePlayer::_TriggerEnter, this, _1);
+	pPlayerObject->fTriggerEnter = std::bind(&CArrowDodgeBattlePlayer::_TriggerEnter, this, _1, _2);
 }
 void CArrowDodgeBattlePlayer::Link(void)
 {
@@ -39,7 +39,7 @@ void CArrowDodgeBattlePlayer::BattleEnd(int64 tick)
 
 	switch (pPlayer->GetSelectedChar()->pCharacterTypeMeta->grade)
 	{
-	case EGrade::Normal:
+	case EGrade::Common:
 		QuestDone(EQuestType::PlayNormal, 1);
 		break;
 
@@ -68,17 +68,23 @@ void CArrowDodgeBattlePlayer::_FixedUpdate(int64 tick)
 	if (Bufs.Stamina.Enabled && Bufs.Stamina.EndTick < tick)
 		Bufs.Stamina.Enabled = false;
 }
-bool CArrowDodgeBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collision_)
+bool CArrowDodgeBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& collision)
 {
-	if (_LandEnter(Collision_))
+	if (_LandEnter(collision))
 		return false;
 
 	bool isHitArrow = false;
 
-	if (Collision_.pOtherCollider->Number == CEngineGlobal::c_ArrowNumber &&
-		Collision_.pOtherMovingObject != nullptr)
+	// 원래 속도 복원
+	if (collision.Normal.X != 0.0f)
+		pPlayerObject->Velocity.X -= collision.RelativeVelocity.X;
+	else
+		pPlayerObject->Velocity.Y -= collision.RelativeVelocity.Y;
+
+	if (collision.pOtherCollider->Number == CEngineGlobal::c_ArrowNumber &&
+		collision.pOtherMovingObject != nullptr)
 	{
-		auto pArrow = dynamic_cast<const CArrow*>(Collision_.pOtherMovingObject);
+		auto pArrow = dynamic_cast<const CArrow*>(collision.pOtherMovingObject);
 
 		if (Bufs.Shield.Enabled)
 		{
@@ -86,19 +92,17 @@ bool CArrowDodgeBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Co
 			return true;
 		}
 
-		if (pArrow->Velocity.X > 0.0f && Collision_.Normal.X > 0.0f ||
-			pArrow->Velocity.X < 0.0f && Collision_.Normal.X < 0.0f ||
-			pArrow->Velocity.Y > 0.0f && Collision_.Normal.Y > 0.0f ||
-			pArrow->Velocity.Y < 0.0f && Collision_.Normal.Y < 0.0f)
+		if (pArrow->Velocity.X * collision.Normal.X > 0.0f ||
+			pArrow->Velocity.Y * collision.Normal.Y > 0.0f)
 		{
 			isHitArrow = true;
 
-			if (Collision_.pCollider->Number == CEngineGlobal::c_BalloonNumber)
+			if (collision.pCollider->Number == CEngineGlobal::c_BalloonNumber)
 			{
-				if (_beHitBalloon(Collision_.Normal))
+				if (_beHitBalloon(collision.Normal))
 					_Die(tick);
 			}
-			else if (Collision_.pCollider->Number == CEngineGlobal::c_BodyNumber || Collision_.pCollider->Number == CEngineGlobal::c_ParachuteNumber)
+			else if (collision.pCollider->Number == CEngineGlobal::c_BodyNumber || collision.pCollider->Number == CEngineGlobal::c_ParachuteNumber)
 			{
 				Die(tick);
 			}
@@ -106,17 +110,18 @@ bool CArrowDodgeBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Co
 			_fHitArrow(pArrow, false);
 		}
 	}
-
-	if (IsAlive())
-		bounce(Collision_);
+	else
+	{
+		bounce(collision.Normal);
+	}
 
 	return isHitArrow;
 }
-bool CArrowDodgeBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
+bool CArrowDodgeBattlePlayer::_TriggerEnter(int64 tick, const CCollider2D* pCollider)
 {
-	if (pCollider_->Number == CEngineGlobal::c_ItemNumber)
+	if (pCollider->Number == CEngineGlobal::c_ItemNumber)
 	{
-		_fGetItem(dynamic_cast<const CArrowDodgeItem*>(pCollider_));
+		_fGetItem(dynamic_cast<const CArrowDodgeItem*>(pCollider));
 		return true;
 	}
 

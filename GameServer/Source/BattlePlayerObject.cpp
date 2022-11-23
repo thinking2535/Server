@@ -4,5 +4,5 @@ CBattlePlayerObject::CBattlePlayerObject(const STransform& Transform_, const lis
 	CPlayerObject2D(Transform_, Colliders_, Velocity_),
 	pBattlePlayer(pBattlePlayer_)
 {
-	Mass = pBattlePlayer->pMeta->pCharacterTypeMeta->Weight;
+	Mass = pBattlePlayer->pMeta->pCharacterTypeMeta->BodyWeight;
 }

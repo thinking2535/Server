@@ -26,6 +26,7 @@ namespace bb
 		ChangeLanguage,
 		Buy,
 		BuyChar,
+		BuyNFTChar,
 		SelectChar,
 		BattleEnd,
 		UpdateInvalidDisconnectInfo,
@@ -44,6 +45,7 @@ namespace bb
 		ChangeNickBegin,
 		ChangeNickEnd,
 		ChangeNickEndFail,
+		updateFatigue,
 		CouponUse,
 		TutorialReward,
 		RankingReward,
@@ -115,17 +117,18 @@ namespace bb
 		TUID UID{};
 		SJoinDB Info{};
 		system_clock::time_point InsertedTimePoint{};
+		system_clock::time_point fatigueLastUpdateTime{};
 		ELanguage Language{};
 		EOS OS{};
 		string CountryCode{};
-		vector<int32> CharCodes{};
+		vector<CodeTokenID> characterAdded{};
 		SJoinDBIn()
 		{
 		}
-		SJoinDBIn(const TUID& UID_, const SJoinDB& Info_, const system_clock::time_point& InsertedTimePoint_, const ELanguage& Language_, const EOS& OS_, const string& CountryCode_, const vector<int32>& CharCodes_) : UID(UID_), Info(Info_), InsertedTimePoint(InsertedTimePoint_), Language(Language_), OS(OS_), CountryCode(CountryCode_), CharCodes(CharCodes_)
+		SJoinDBIn(const TUID& UID_, const SJoinDB& Info_, const system_clock::time_point& InsertedTimePoint_, const system_clock::time_point& fatigueLastUpdateTime_, const ELanguage& Language_, const EOS& OS_, const string& CountryCode_, const vector<CodeTokenID>& characterAdded_) : UID(UID_), Info(Info_), InsertedTimePoint(InsertedTimePoint_), fatigueLastUpdateTime(fatigueLastUpdateTime_), Language(Language_), OS(OS_), CountryCode(CountryCode_), characterAdded(characterAdded_)
 		{
 		}
-		SJoinDBIn(TUID&& UID_, SJoinDB&& Info_, system_clock::time_point&& InsertedTimePoint_, ELanguage&& Language_, EOS&& OS_, string&& CountryCode_, vector<int32>&& CharCodes_) : UID(std::move(UID_)), Info(std::move(Info_)), InsertedTimePoint(std::move(InsertedTimePoint_)), Language(std::move(Language_)), OS(std::move(OS_)), CountryCode(std::move(CountryCode_)), CharCodes(std::move(CharCodes_))
+		SJoinDBIn(TUID&& UID_, SJoinDB&& Info_, system_clock::time_point&& InsertedTimePoint_, system_clock::time_point&& fatigueLastUpdateTime_, ELanguage&& Language_, EOS&& OS_, string&& CountryCode_, vector<CodeTokenID>&& characterAdded_) : UID(std::move(UID_)), Info(std::move(Info_)), InsertedTimePoint(std::move(InsertedTimePoint_)), fatigueLastUpdateTime(std::move(fatigueLastUpdateTime_)), Language(std::move(Language_)), OS(std::move(OS_)), CountryCode(std::move(CountryCode_)), characterAdded(std::move(characterAdded_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -133,40 +136,44 @@ namespace bb
 			Stream_ >> UID;
 			Stream_ >> Info;
 			Stream_ >> InsertedTimePoint;
+			Stream_ >> fatigueLastUpdateTime;
 			Stream_ >> Language;
 			Stream_ >> OS;
 			Stream_ >> CountryCode;
-			Stream_ >> CharCodes;
+			Stream_ >> characterAdded;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["UID"] >> UID;
 			Value_["Info"] >> Info;
 			Value_["InsertedTimePoint"] >> InsertedTimePoint;
+			Value_["fatigueLastUpdateTime"] >> fatigueLastUpdateTime;
 			Value_["Language"] >> Language;
 			Value_["OS"] >> OS;
 			Value_["CountryCode"] >> CountryCode;
-			Value_["CharCodes"] >> CharCodes;
+			Value_["characterAdded"] >> characterAdded;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << UID;
 			Stream_ << Info;
 			Stream_ << InsertedTimePoint;
+			Stream_ << fatigueLastUpdateTime;
 			Stream_ << Language;
 			Stream_ << OS;
 			Stream_ << CountryCode;
-			Stream_ << CharCodes;
+			Stream_ << characterAdded;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["UID"] = UID;
 			Value_["Info"] = Info;
 			Value_["InsertedTimePoint"] = InsertedTimePoint;
+			Value_["fatigueLastUpdateTime"] = fatigueLastUpdateTime;
 			Value_["Language"] = Language;
 			Value_["OS"] = OS;
 			Value_["CountryCode"] = CountryCode;
-			Value_["CharCodes"] = CharCodes;
+			Value_["characterAdded"] = characterAdded;
 		}
 		static wstring StdName(void)
 		{
@@ -174,10 +181,11 @@ namespace bb
 				GetStdName(TUID()) + L"," + 
 				GetStdName(SJoinDB()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
+				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(ELanguage()) + L"," + 
 				GetStdName(EOS()) + L"," + 
 				GetStdName(string()) + L"," + 
-				GetStdName(vector<int32>());
+				GetStdName(vector<CodeTokenID>());
 		}
 		static wstring MemberName(void)
 		{
@@ -185,10 +193,11 @@ namespace bb
 				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(SJoinDB(), L"Info") + L"," + 
 				GetMemberName(system_clock::time_point(), L"InsertedTimePoint") + L"," + 
+				GetMemberName(system_clock::time_point(), L"fatigueLastUpdateTime") + L"," + 
 				GetMemberName(ELanguage(), L"Language") + L"," + 
 				GetMemberName(EOS(), L"OS") + L"," + 
 				GetMemberName(string(), L"CountryCode") + L"," + 
-				GetMemberName(vector<int32>(), L"CharCodes");
+				GetMemberName(vector<CodeTokenID>(), L"characterAdded");
 		}
 	};
 	struct SLoginDBIn : public SProto
@@ -292,43 +301,48 @@ namespace bb
 	struct SLoginDBOut : public SProto
 	{
 		list<SUserDB> Users{};
-		TChars Chars{};
+		CharacterDBs characterDBs{};
+		CodeTokenIDs characterCodeTokenIDs{};
 		TQuestDBs Quests{};
 		set<wstring> Coupons{};
 		SLoginDBOut()
 		{
 		}
-		SLoginDBOut(const list<SUserDB>& Users_, const TChars& Chars_, const TQuestDBs& Quests_, const set<wstring>& Coupons_) : Users(Users_), Chars(Chars_), Quests(Quests_), Coupons(Coupons_)
+		SLoginDBOut(const list<SUserDB>& Users_, const CharacterDBs& characterDBs_, const CodeTokenIDs& characterCodeTokenIDs_, const TQuestDBs& Quests_, const set<wstring>& Coupons_) : Users(Users_), characterDBs(characterDBs_), characterCodeTokenIDs(characterCodeTokenIDs_), Quests(Quests_), Coupons(Coupons_)
 		{
 		}
-		SLoginDBOut(list<SUserDB>&& Users_, TChars&& Chars_, TQuestDBs&& Quests_, set<wstring>&& Coupons_) : Users(std::move(Users_)), Chars(std::move(Chars_)), Quests(std::move(Quests_)), Coupons(std::move(Coupons_))
+		SLoginDBOut(list<SUserDB>&& Users_, CharacterDBs&& characterDBs_, CodeTokenIDs&& characterCodeTokenIDs_, TQuestDBs&& Quests_, set<wstring>&& Coupons_) : Users(std::move(Users_)), characterDBs(std::move(characterDBs_)), characterCodeTokenIDs(std::move(characterCodeTokenIDs_)), Quests(std::move(Quests_)), Coupons(std::move(Coupons_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> Users;
-			Stream_ >> Chars;
+			Stream_ >> characterDBs;
+			Stream_ >> characterCodeTokenIDs;
 			Stream_ >> Quests;
 			Stream_ >> Coupons;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["Users"] >> Users;
-			Value_["Chars"] >> Chars;
+			Value_["characterDBs"] >> characterDBs;
+			Value_["characterCodeTokenIDs"] >> characterCodeTokenIDs;
 			Value_["Quests"] >> Quests;
 			Value_["Coupons"] >> Coupons;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << Users;
-			Stream_ << Chars;
+			Stream_ << characterDBs;
+			Stream_ << characterCodeTokenIDs;
 			Stream_ << Quests;
 			Stream_ << Coupons;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["Users"] = Users;
-			Value_["Chars"] = Chars;
+			Value_["characterDBs"] = characterDBs;
+			Value_["characterCodeTokenIDs"] = characterCodeTokenIDs;
 			Value_["Quests"] = Quests;
 			Value_["Coupons"] = Coupons;
 		}
@@ -336,7 +350,8 @@ namespace bb
 		{
 			return 
 				GetStdName(list<SUserDB>()) + L"," + 
-				GetStdName(TChars()) + L"," + 
+				GetStdName(CharacterDBs()) + L"," + 
+				GetStdName(CodeTokenIDs()) + L"," + 
 				GetStdName(TQuestDBs()) + L"," + 
 				GetStdName(set<wstring>());
 		}
@@ -344,7 +359,8 @@ namespace bb
 		{
 			return 
 				GetMemberName(list<SUserDB>(), L"Users") + L"," + 
-				GetMemberName(TChars(), L"Chars") + L"," + 
+				GetMemberName(CharacterDBs(), L"characterDBs") + L"," + 
+				GetMemberName(CodeTokenIDs(), L"characterCodeTokenIDs") + L"," + 
 				GetMemberName(TQuestDBs(), L"Quests") + L"," + 
 				GetMemberName(set<wstring>(), L"Coupons");
 		}
@@ -589,47 +605,47 @@ namespace bb
 	struct SSetCharDBIn : public SProto
 	{
 		TUID UID{};
-		list<int32> CharCodes{};
+		CodeTokenIDs characters{};
 		SSetCharDBIn()
 		{
 		}
-		SSetCharDBIn(const TUID& UID_, const list<int32>& CharCodes_) : UID(UID_), CharCodes(CharCodes_)
+		SSetCharDBIn(const TUID& UID_, const CodeTokenIDs& characters_) : UID(UID_), characters(characters_)
 		{
 		}
-		SSetCharDBIn(TUID&& UID_, list<int32>&& CharCodes_) : UID(std::move(UID_)), CharCodes(std::move(CharCodes_))
+		SSetCharDBIn(TUID&& UID_, CodeTokenIDs&& characters_) : UID(std::move(UID_)), characters(std::move(characters_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> UID;
-			Stream_ >> CharCodes;
+			Stream_ >> characters;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["UID"] >> UID;
-			Value_["CharCodes"] >> CharCodes;
+			Value_["characters"] >> characters;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << UID;
-			Stream_ << CharCodes;
+			Stream_ << characters;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["UID"] = UID;
-			Value_["CharCodes"] = CharCodes;
+			Value_["characters"] = characters;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(TUID()) + L"," + 
-				GetStdName(list<int32>());
+				GetStdName(CodeTokenIDs());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(list<int32>(), L"CharCodes");
+				GetMemberName(CodeTokenIDs(), L"characters");
 		}
 	};
 	struct SUnsetCharDBIn : public SProto
@@ -773,54 +789,47 @@ namespace bb
 	struct SRewardDB : public SProto
 	{
 		TUID UID{};
-		TResources ResourcesLeft{};
-		list<int32> CharsAdded{};
+		SRewardCore Core{};
 		SRewardDB()
 		{
 		}
-		SRewardDB(const TUID& UID_, const TResources& ResourcesLeft_, const list<int32>& CharsAdded_) : UID(UID_), ResourcesLeft(ResourcesLeft_), CharsAdded(CharsAdded_)
+		SRewardDB(const TUID& UID_, const SRewardCore& Core_) : UID(UID_), Core(Core_)
 		{
 		}
-		SRewardDB(TUID&& UID_, TResources&& ResourcesLeft_, list<int32>&& CharsAdded_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), CharsAdded(std::move(CharsAdded_))
+		SRewardDB(TUID&& UID_, SRewardCore&& Core_) : UID(std::move(UID_)), Core(std::move(Core_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> UID;
-			Stream_ >> ResourcesLeft;
-			Stream_ >> CharsAdded;
+			Stream_ >> Core;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["UID"] >> UID;
-			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["CharsAdded"] >> CharsAdded;
+			Value_["Core"] >> Core;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << UID;
-			Stream_ << ResourcesLeft;
-			Stream_ << CharsAdded;
+			Stream_ << Core;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["UID"] = UID;
-			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["CharsAdded"] = CharsAdded;
+			Value_["Core"] = Core;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(TUID()) + L"," + 
-				GetStdName(TResources()) + L"," + 
-				GetStdName(list<int32>());
+				GetStdName(SRewardCore());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(TUID(), L"UID") + L"," + 
-				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(list<int32>(), L"CharsAdded");
+				GetMemberName(SRewardCore(), L"Core");
 		}
 	};
 	struct SBuyDBIn : public SProto
@@ -874,13 +883,14 @@ namespace bb
 		TUID UID{};
 		TResources ResourcesLeft{};
 		int32 CharCode{};
+		TokenID tokenID{};
 		SBuyCharDBIn()
 		{
 		}
-		SBuyCharDBIn(const TUID& UID_, const TResources& ResourcesLeft_, const int32& CharCode_) : UID(UID_), ResourcesLeft(ResourcesLeft_), CharCode(CharCode_)
+		SBuyCharDBIn(const TUID& UID_, const TResources& ResourcesLeft_, const int32& CharCode_, const TokenID& tokenID_) : UID(UID_), ResourcesLeft(ResourcesLeft_), CharCode(CharCode_), tokenID(tokenID_)
 		{
 		}
-		SBuyCharDBIn(TUID&& UID_, TResources&& ResourcesLeft_, int32&& CharCode_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), CharCode(std::move(CharCode_))
+		SBuyCharDBIn(TUID&& UID_, TResources&& ResourcesLeft_, int32&& CharCode_, TokenID&& tokenID_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), CharCode(std::move(CharCode_)), tokenID(std::move(tokenID_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -888,38 +898,97 @@ namespace bb
 			Stream_ >> UID;
 			Stream_ >> ResourcesLeft;
 			Stream_ >> CharCode;
+			Stream_ >> tokenID;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["UID"] >> UID;
 			Value_["ResourcesLeft"] >> ResourcesLeft;
 			Value_["CharCode"] >> CharCode;
+			Value_["tokenID"] >> tokenID;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << UID;
 			Stream_ << ResourcesLeft;
 			Stream_ << CharCode;
+			Stream_ << tokenID;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["UID"] = UID;
 			Value_["ResourcesLeft"] = ResourcesLeft;
 			Value_["CharCode"] = CharCode;
+			Value_["tokenID"] = tokenID;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(TUID()) + L"," + 
 				GetStdName(TResources()) + L"," + 
-				GetStdName(int32());
+				GetStdName(int32()) + L"," + 
+				GetStdName(TokenID());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(int32(), L"CharCode");
+				GetMemberName(int32(), L"CharCode") + L"," + 
+				GetMemberName(TokenID(), L"tokenID");
+		}
+	};
+	struct SBuyNFTCharDBIn : public SProto
+	{
+		TUID UID{};
+		int32 CharCode{};
+		TokenID tokenID{};
+		SBuyNFTCharDBIn()
+		{
+		}
+		SBuyNFTCharDBIn(const TUID& UID_, const int32& CharCode_, const TokenID& tokenID_) : UID(UID_), CharCode(CharCode_), tokenID(tokenID_)
+		{
+		}
+		SBuyNFTCharDBIn(TUID&& UID_, int32&& CharCode_, TokenID&& tokenID_) : UID(std::move(UID_)), CharCode(std::move(CharCode_)), tokenID(std::move(tokenID_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> UID;
+			Stream_ >> CharCode;
+			Stream_ >> tokenID;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["UID"] >> UID;
+			Value_["CharCode"] >> CharCode;
+			Value_["tokenID"] >> tokenID;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << UID;
+			Stream_ << CharCode;
+			Stream_ << tokenID;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["UID"] = UID;
+			Value_["CharCode"] = CharCode;
+			Value_["tokenID"] = tokenID;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TokenID());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(int32(), L"CharCode") + L"," + 
+				GetMemberName(TokenID(), L"tokenID");
 		}
 	};
 	struct SConnectDBIn : public SProto
@@ -1165,49 +1234,109 @@ namespace bb
 				GetMemberName(int32(), L"BlowBalloonTotal");
 		}
 	};
+	struct BattleEndCharacterInfo : public SProto
+	{
+		TUID UID{};
+		int32 code{};
+		int32 fatigue{};
+		BattleEndCharacterInfo()
+		{
+		}
+		BattleEndCharacterInfo(const TUID& UID_, const int32& code_, const int32& fatigue_) : UID(UID_), code(code_), fatigue(fatigue_)
+		{
+		}
+		BattleEndCharacterInfo(TUID&& UID_, int32&& code_, int32&& fatigue_) : UID(std::move(UID_)), code(std::move(code_)), fatigue(std::move(fatigue_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> UID;
+			Stream_ >> code;
+			Stream_ >> fatigue;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["UID"] >> UID;
+			Value_["code"] >> code;
+			Value_["fatigue"] >> fatigue;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << UID;
+			Stream_ << code;
+			Stream_ << fatigue;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["UID"] = UID;
+			Value_["code"] = code;
+			Value_["fatigue"] = fatigue;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"UID") + L"," + 
+				GetMemberName(int32(), L"code") + L"," + 
+				GetMemberName(int32(), L"fatigue");
+		}
+	};
 	struct SBattleEndDBIn : public SProto
 	{
 		vector<SBattleEndInfo> BattleEndInfos{};
+		vector<BattleEndCharacterInfo> BattleEndCharacterInfos{};
 		TDoneQuestDBs DoneQuests{};
 		SBattleEndDBIn()
 		{
 		}
-		SBattleEndDBIn(const vector<SBattleEndInfo>& BattleEndInfos_, const TDoneQuestDBs& DoneQuests_) : BattleEndInfos(BattleEndInfos_), DoneQuests(DoneQuests_)
+		SBattleEndDBIn(const vector<SBattleEndInfo>& BattleEndInfos_, const vector<BattleEndCharacterInfo>& BattleEndCharacterInfos_, const TDoneQuestDBs& DoneQuests_) : BattleEndInfos(BattleEndInfos_), BattleEndCharacterInfos(BattleEndCharacterInfos_), DoneQuests(DoneQuests_)
 		{
 		}
-		SBattleEndDBIn(vector<SBattleEndInfo>&& BattleEndInfos_, TDoneQuestDBs&& DoneQuests_) : BattleEndInfos(std::move(BattleEndInfos_)), DoneQuests(std::move(DoneQuests_))
+		SBattleEndDBIn(vector<SBattleEndInfo>&& BattleEndInfos_, vector<BattleEndCharacterInfo>&& BattleEndCharacterInfos_, TDoneQuestDBs&& DoneQuests_) : BattleEndInfos(std::move(BattleEndInfos_)), BattleEndCharacterInfos(std::move(BattleEndCharacterInfos_)), DoneQuests(std::move(DoneQuests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> BattleEndInfos;
+			Stream_ >> BattleEndCharacterInfos;
 			Stream_ >> DoneQuests;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["BattleEndInfos"] >> BattleEndInfos;
+			Value_["BattleEndCharacterInfos"] >> BattleEndCharacterInfos;
 			Value_["DoneQuests"] >> DoneQuests;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << BattleEndInfos;
+			Stream_ << BattleEndCharacterInfos;
 			Stream_ << DoneQuests;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["BattleEndInfos"] = BattleEndInfos;
+			Value_["BattleEndCharacterInfos"] = BattleEndCharacterInfos;
 			Value_["DoneQuests"] = DoneQuests;
 		}
 		static wstring StdName(void)
 		{
 			return 
 				GetStdName(vector<SBattleEndInfo>()) + L"," + 
+				GetStdName(vector<BattleEndCharacterInfo>()) + L"," + 
 				GetStdName(TDoneQuestDBs());
 		}
 		static wstring MemberName(void)
 		{
 			return 
 				GetMemberName(vector<SBattleEndInfo>(), L"BattleEndInfos") + L"," + 
+				GetMemberName(vector<BattleEndCharacterInfo>(), L"BattleEndCharacterInfos") + L"," + 
 				GetMemberName(TDoneQuestDBs(), L"DoneQuests");
 		}
 	};
@@ -1376,13 +1505,15 @@ namespace bb
 		TResources Resources{};
 		int32 PointBest{};
 		TDoneQuestDBs DoneQuests{};
+		int32 selectedCharacterCode{};
+		int32 fatigue{};
 		SArrowDodgeBattleEndDBIn()
 		{
 		}
-		SArrowDodgeBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const TDoneQuestDBs& DoneQuests_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), DoneQuests(DoneQuests_)
+		SArrowDodgeBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const TDoneQuestDBs& DoneQuests_, const int32& selectedCharacterCode_, const int32& fatigue_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), DoneQuests(DoneQuests_), selectedCharacterCode(selectedCharacterCode_), fatigue(fatigue_)
 		{
 		}
-		SArrowDodgeBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, TDoneQuestDBs&& DoneQuests_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), DoneQuests(std::move(DoneQuests_))
+		SArrowDodgeBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, TDoneQuestDBs&& DoneQuests_, int32&& selectedCharacterCode_, int32&& fatigue_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), DoneQuests(std::move(DoneQuests_)), selectedCharacterCode(std::move(selectedCharacterCode_)), fatigue(std::move(fatigue_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1391,6 +1522,8 @@ namespace bb
 			Stream_ >> Resources;
 			Stream_ >> PointBest;
 			Stream_ >> DoneQuests;
+			Stream_ >> selectedCharacterCode;
+			Stream_ >> fatigue;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -1398,6 +1531,8 @@ namespace bb
 			Value_["Resources"] >> Resources;
 			Value_["PointBest"] >> PointBest;
 			Value_["DoneQuests"] >> DoneQuests;
+			Value_["selectedCharacterCode"] >> selectedCharacterCode;
+			Value_["fatigue"] >> fatigue;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -1405,6 +1540,8 @@ namespace bb
 			Stream_ << Resources;
 			Stream_ << PointBest;
 			Stream_ << DoneQuests;
+			Stream_ << selectedCharacterCode;
+			Stream_ << fatigue;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -1412,6 +1549,8 @@ namespace bb
 			Value_["Resources"] = Resources;
 			Value_["PointBest"] = PointBest;
 			Value_["DoneQuests"] = DoneQuests;
+			Value_["selectedCharacterCode"] = selectedCharacterCode;
+			Value_["fatigue"] = fatigue;
 		}
 		static wstring StdName(void)
 		{
@@ -1419,7 +1558,9 @@ namespace bb
 				GetStdName(TUID()) + L"," + 
 				GetStdName(TResources()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(TDoneQuestDBs());
+				GetStdName(TDoneQuestDBs()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
@@ -1427,7 +1568,9 @@ namespace bb
 				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(TResources(), L"Resources") + L"," + 
 				GetMemberName(int32(), L"PointBest") + L"," + 
-				GetMemberName(TDoneQuestDBs(), L"DoneQuests");
+				GetMemberName(TDoneQuestDBs(), L"DoneQuests") + L"," + 
+				GetMemberName(int32(), L"selectedCharacterCode") + L"," + 
+				GetMemberName(int32(), L"fatigue");
 		}
 	};
 	struct SFlyAwayBattleStartDBIn : public SProto
@@ -1504,13 +1647,15 @@ namespace bb
 		int32 PointBest{};
 		int32 ComboBest{};
 		TDoneQuestDBs DoneQuests{};
+		int32 selectedCharacterCode{};
+		int32 fatigue{};
 		SFlyAwayBattleEndDBIn()
 		{
 		}
-		SFlyAwayBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const int32& ComboBest_, const TDoneQuestDBs& DoneQuests_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), ComboBest(ComboBest_), DoneQuests(DoneQuests_)
+		SFlyAwayBattleEndDBIn(const TUID& UID_, const TResources& Resources_, const int32& PointBest_, const int32& ComboBest_, const TDoneQuestDBs& DoneQuests_, const int32& selectedCharacterCode_, const int32& fatigue_) : UID(UID_), Resources(Resources_), PointBest(PointBest_), ComboBest(ComboBest_), DoneQuests(DoneQuests_), selectedCharacterCode(selectedCharacterCode_), fatigue(fatigue_)
 		{
 		}
-		SFlyAwayBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, int32&& ComboBest_, TDoneQuestDBs&& DoneQuests_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), ComboBest(std::move(ComboBest_)), DoneQuests(std::move(DoneQuests_))
+		SFlyAwayBattleEndDBIn(TUID&& UID_, TResources&& Resources_, int32&& PointBest_, int32&& ComboBest_, TDoneQuestDBs&& DoneQuests_, int32&& selectedCharacterCode_, int32&& fatigue_) : UID(std::move(UID_)), Resources(std::move(Resources_)), PointBest(std::move(PointBest_)), ComboBest(std::move(ComboBest_)), DoneQuests(std::move(DoneQuests_)), selectedCharacterCode(std::move(selectedCharacterCode_)), fatigue(std::move(fatigue_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -1520,6 +1665,8 @@ namespace bb
 			Stream_ >> PointBest;
 			Stream_ >> ComboBest;
 			Stream_ >> DoneQuests;
+			Stream_ >> selectedCharacterCode;
+			Stream_ >> fatigue;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -1528,6 +1675,8 @@ namespace bb
 			Value_["PointBest"] >> PointBest;
 			Value_["ComboBest"] >> ComboBest;
 			Value_["DoneQuests"] >> DoneQuests;
+			Value_["selectedCharacterCode"] >> selectedCharacterCode;
+			Value_["fatigue"] >> fatigue;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -1536,6 +1685,8 @@ namespace bb
 			Stream_ << PointBest;
 			Stream_ << ComboBest;
 			Stream_ << DoneQuests;
+			Stream_ << selectedCharacterCode;
+			Stream_ << fatigue;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -1544,6 +1695,8 @@ namespace bb
 			Value_["PointBest"] = PointBest;
 			Value_["ComboBest"] = ComboBest;
 			Value_["DoneQuests"] = DoneQuests;
+			Value_["selectedCharacterCode"] = selectedCharacterCode;
+			Value_["fatigue"] = fatigue;
 		}
 		static wstring StdName(void)
 		{
@@ -1552,7 +1705,9 @@ namespace bb
 				GetStdName(TResources()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(int32()) + L"," + 
-				GetStdName(TDoneQuestDBs());
+				GetStdName(TDoneQuestDBs()) + L"," + 
+				GetStdName(int32()) + L"," + 
+				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
@@ -1561,7 +1716,9 @@ namespace bb
 				GetMemberName(TResources(), L"Resources") + L"," + 
 				GetMemberName(int32(), L"PointBest") + L"," + 
 				GetMemberName(int32(), L"ComboBest") + L"," + 
-				GetMemberName(TDoneQuestDBs(), L"DoneQuests");
+				GetMemberName(TDoneQuestDBs(), L"DoneQuests") + L"," + 
+				GetMemberName(int32(), L"selectedCharacterCode") + L"," + 
+				GetMemberName(int32(), L"fatigue");
 		}
 	};
 	struct SRankRewardDBIn : public SRewardDB
@@ -1923,6 +2080,52 @@ namespace bb
 			return 
 				GetMemberName(SRewardDB(), L"") + L"," + 
 				GetMemberName(system_clock::time_point(), L"RefreshTime");
+		}
+	};
+	struct UpdateFatigueDBIn : public SProto
+	{
+		TUID uid{};
+		system_clock::time_point time{};
+		UpdateFatigueDBIn()
+		{
+		}
+		UpdateFatigueDBIn(const TUID& uid_, const system_clock::time_point& time_) : uid(uid_), time(time_)
+		{
+		}
+		UpdateFatigueDBIn(TUID&& uid_, system_clock::time_point&& time_) : uid(std::move(uid_)), time(std::move(time_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> uid;
+			Stream_ >> time;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["uid"] >> uid;
+			Value_["time"] >> time;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << uid;
+			Stream_ << time;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["uid"] = uid;
+			Value_["time"] = time;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(TUID()) + L"," + 
+				GetStdName(system_clock::time_point());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(TUID(), L"uid") + L"," + 
+				GetMemberName(system_clock::time_point(), L"time");
 		}
 	};
 	struct SChangeNickBeginDBIn : public SProto

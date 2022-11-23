@@ -28,7 +28,8 @@ namespace bb
 	using TTeamCnt = int8;
 	using TQuestSlotIndex = uint8;
 	using TForbiddenWords = vector<wstring>;
-	const TVer c_Ver_Main = 47;
+	using TokenID = wstring;
+	const TVer c_Ver_Main = 49;
 	const int32 c_FPS = 60;
 	const int64 c_NetworkTickSync = 500000;
 	const int64 c_NetworkTickBuffer = c_NetworkTickSync+500000;
@@ -40,9 +41,9 @@ namespace bb
 	const float c_ScreenHeight = 2.0f;
 	const float c_ScreenWidth_2 = c_ScreenWidth*0.5f;
 	const float c_ScreenHeight_2 = c_ScreenHeight*0.5f;
-	const int64 c_StaminaRegenDelayTick = 8000000;
-	const float c_StaminaRegenSpeedInAir = 13.0f;
-	const float c_StaminaRegenSpeedOnGround = 13.0f;
+	const int64 c_StaminaRegenDelayTick = 10000000;
+	const float c_StaminaRegenSpeedInAir = 10.0f;
+	const float c_StaminaRegenSpeedOnGround = 10.0f;
 	const float c_FlapDeltaVelUp = 0.19f;
 	const float c_FlapDeltaVelX = 0.19f;
 	const float c_MaxVelDown = 0.56f;
@@ -65,6 +66,7 @@ namespace bb
 	const float c_ParachuteHeight = 0.25f;
 	const float c_ParachuteOffsetY = 0.37f;
 	const float c_ParachuteLocalScale = 0.5f;
+	const float c_BalloonExplosionVelocity = 0.5f;
 	const int32 c_MaxPlayer = 6;
 	const int8 c_BalloonCountForRegen = 2;
 	const int8 c_BalloonCountForPump = 1;
@@ -151,6 +153,7 @@ namespace bb
 		UnsetChar,
 		Buy,
 		BuyChar,
+		BuyNFTChar,
 		BuyResource,
 		BattleSync,
 		BattleDirect,
@@ -249,7 +252,7 @@ namespace bb
 	};
 	enum class EGrade : uint8
 	{
-		Normal,
+		Common,
 		Rare,
 		Epic,
 		Unique,
@@ -833,13 +836,14 @@ namespace bb
 		int64 RankingRewardedCounter{};
 		TNick NewNick{};
 		SInvalidDisconnectInfo InvalidDisconnectInfo{};
+		system_clock::time_point fatigueLastUpdateTime{};
 		SUserBase()
 		{
 		}
-		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const double& eloPoint_, const int32& Point_, const int32& PointBest_, const int32& NextRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int32& IslandComboBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const int64& RankingRewardedCounter_, const TNick& NewNick_, const SInvalidDisconnectInfo& InvalidDisconnectInfo_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), eloPoint(eloPoint_), Point(Point_), PointBest(PointBest_), NextRewardRankIndex(NextRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), IslandComboBest(IslandComboBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_), InvalidDisconnectInfo(InvalidDisconnectInfo_)
+		SUserBase(const SUserCore& Super_, const TExp& Exp_, const bool& CanPushAtNight_, const double& eloPoint_, const int32& Point_, const int32& PointBest_, const int32& NextRewardRankIndex_, const int32& WinCountSolo_, const int32& LoseCountSolo_, const int32& WinCountMulti_, const int32& LoseCountMulti_, const int32& BattlePointBest_, const int32& SinglePointBest_, const int32& IslandPointBest_, const int32& IslandComboBest_, const int32& KillTotal_, const int32& ChainKillTotal_, const int32& BlowBalloonTotal_, const int32& QuestDailyCompleteCount_, const bool& TutorialReward_, const int64& RankingRewardedCounter_, const TNick& NewNick_, const SInvalidDisconnectInfo& InvalidDisconnectInfo_, const system_clock::time_point& fatigueLastUpdateTime_) : SUserCore(Super_), Exp(Exp_), CanPushAtNight(CanPushAtNight_), eloPoint(eloPoint_), Point(Point_), PointBest(PointBest_), NextRewardRankIndex(NextRewardRankIndex_), WinCountSolo(WinCountSolo_), LoseCountSolo(LoseCountSolo_), WinCountMulti(WinCountMulti_), LoseCountMulti(LoseCountMulti_), BattlePointBest(BattlePointBest_), SinglePointBest(SinglePointBest_), IslandPointBest(IslandPointBest_), IslandComboBest(IslandComboBest_), KillTotal(KillTotal_), ChainKillTotal(ChainKillTotal_), BlowBalloonTotal(BlowBalloonTotal_), QuestDailyCompleteCount(QuestDailyCompleteCount_), TutorialReward(TutorialReward_), RankingRewardedCounter(RankingRewardedCounter_), NewNick(NewNick_), InvalidDisconnectInfo(InvalidDisconnectInfo_), fatigueLastUpdateTime(fatigueLastUpdateTime_)
 		{
 		}
-		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, double&& eloPoint_, int32&& Point_, int32&& PointBest_, int32&& NextRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int32&& IslandComboBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, int64&& RankingRewardedCounter_, TNick&& NewNick_, SInvalidDisconnectInfo&& InvalidDisconnectInfo_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), eloPoint(std::move(eloPoint_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), NextRewardRankIndex(std::move(NextRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), IslandComboBest(std::move(IslandComboBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_)), InvalidDisconnectInfo(std::move(InvalidDisconnectInfo_))
+		SUserBase(SUserCore&& Super_, TExp&& Exp_, bool&& CanPushAtNight_, double&& eloPoint_, int32&& Point_, int32&& PointBest_, int32&& NextRewardRankIndex_, int32&& WinCountSolo_, int32&& LoseCountSolo_, int32&& WinCountMulti_, int32&& LoseCountMulti_, int32&& BattlePointBest_, int32&& SinglePointBest_, int32&& IslandPointBest_, int32&& IslandComboBest_, int32&& KillTotal_, int32&& ChainKillTotal_, int32&& BlowBalloonTotal_, int32&& QuestDailyCompleteCount_, bool&& TutorialReward_, int64&& RankingRewardedCounter_, TNick&& NewNick_, SInvalidDisconnectInfo&& InvalidDisconnectInfo_, system_clock::time_point&& fatigueLastUpdateTime_) : SUserCore(std::move(Super_)), Exp(std::move(Exp_)), CanPushAtNight(std::move(CanPushAtNight_)), eloPoint(std::move(eloPoint_)), Point(std::move(Point_)), PointBest(std::move(PointBest_)), NextRewardRankIndex(std::move(NextRewardRankIndex_)), WinCountSolo(std::move(WinCountSolo_)), LoseCountSolo(std::move(LoseCountSolo_)), WinCountMulti(std::move(WinCountMulti_)), LoseCountMulti(std::move(LoseCountMulti_)), BattlePointBest(std::move(BattlePointBest_)), SinglePointBest(std::move(SinglePointBest_)), IslandPointBest(std::move(IslandPointBest_)), IslandComboBest(std::move(IslandComboBest_)), KillTotal(std::move(KillTotal_)), ChainKillTotal(std::move(ChainKillTotal_)), BlowBalloonTotal(std::move(BlowBalloonTotal_)), QuestDailyCompleteCount(std::move(QuestDailyCompleteCount_)), TutorialReward(std::move(TutorialReward_)), RankingRewardedCounter(std::move(RankingRewardedCounter_)), NewNick(std::move(NewNick_)), InvalidDisconnectInfo(std::move(InvalidDisconnectInfo_)), fatigueLastUpdateTime(std::move(fatigueLastUpdateTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
@@ -867,6 +871,7 @@ namespace bb
 			Stream_ >> RankingRewardedCounter;
 			Stream_ >> NewNick;
 			Stream_ >> InvalidDisconnectInfo;
+			Stream_ >> fatigueLastUpdateTime;
 		}
 		void operator << (const Value& Value_) override
 		{
@@ -893,6 +898,7 @@ namespace bb
 			Value_["RankingRewardedCounter"] >> RankingRewardedCounter;
 			Value_["NewNick"] >> NewNick;
 			Value_["InvalidDisconnectInfo"] >> InvalidDisconnectInfo;
+			Value_["fatigueLastUpdateTime"] >> fatigueLastUpdateTime;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
@@ -919,6 +925,7 @@ namespace bb
 			Stream_ << RankingRewardedCounter;
 			Stream_ << NewNick;
 			Stream_ << InvalidDisconnectInfo;
+			Stream_ << fatigueLastUpdateTime;
 		}
 		void operator >> (Value& Value_) const override
 		{
@@ -945,6 +952,7 @@ namespace bb
 			Value_["RankingRewardedCounter"] = RankingRewardedCounter;
 			Value_["NewNick"] = NewNick;
 			Value_["InvalidDisconnectInfo"] = InvalidDisconnectInfo;
+			Value_["fatigueLastUpdateTime"] = fatigueLastUpdateTime;
 		}
 		static wstring StdName(void)
 		{
@@ -971,7 +979,8 @@ namespace bb
 				GetStdName(bool()) + L"," + 
 				GetStdName(int64()) + L"," + 
 				GetStdName(TNick()) + L"," + 
-				GetStdName(SInvalidDisconnectInfo());
+				GetStdName(SInvalidDisconnectInfo()) + L"," + 
+				GetStdName(system_clock::time_point());
 		}
 		static wstring MemberName(void)
 		{
@@ -998,7 +1007,8 @@ namespace bb
 				GetMemberName(bool(), L"TutorialReward") + L"," + 
 				GetMemberName(int64(), L"RankingRewardedCounter") + L"," + 
 				GetMemberName(TNick(), L"NewNick") + L"," + 
-				GetMemberName(SInvalidDisconnectInfo(), L"InvalidDisconnectInfo");
+				GetMemberName(SInvalidDisconnectInfo(), L"InvalidDisconnectInfo") + L"," + 
+				GetMemberName(system_clock::time_point(), L"fatigueLastUpdateTime");
 		}
 	};
 	struct SUserNet : public SUserBase
@@ -1046,7 +1056,93 @@ namespace bb
 				GetMemberName(wstring(), L"CountryCode");
 		}
 	};
-	using TChars = set<int32>;
+	struct CharacterDB : public SProto
+	{
+		int32 fatigue{};
+		CharacterDB()
+		{
+		}
+		CharacterDB(const int32& fatigue_) : fatigue(fatigue_)
+		{
+		}
+		CharacterDB(int32&& fatigue_) : fatigue(std::move(fatigue_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> fatigue;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["fatigue"] >> fatigue;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << fatigue;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["fatigue"] = fatigue;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"fatigue");
+		}
+	};
+	using CharacterDBs = map<int32,CharacterDB>;
+	struct CodeTokenID : public SProto
+	{
+		int32 code{};
+		TokenID tokenID{};
+		CodeTokenID()
+		{
+		}
+		CodeTokenID(const int32& code_, const TokenID& tokenID_) : code(code_), tokenID(tokenID_)
+		{
+		}
+		CodeTokenID(int32&& code_, TokenID&& tokenID_) : code(std::move(code_)), tokenID(std::move(tokenID_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			Stream_ >> code;
+			Stream_ >> tokenID;
+		}
+		void operator << (const Value& Value_) override
+		{
+			Value_["code"] >> code;
+			Value_["tokenID"] >> tokenID;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			Stream_ << code;
+			Stream_ << tokenID;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			Value_["code"] = code;
+			Value_["tokenID"] = tokenID;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(int32()) + L"," + 
+				GetStdName(TokenID());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(int32(), L"code") + L"," + 
+				GetMemberName(TokenID(), L"tokenID");
+		}
+	};
+	using CodeTokenIDs = list<CodeTokenID>;
 	struct SQuestBase : public SProto
 	{
 		int32 Code{};
@@ -1101,46 +1197,93 @@ namespace bb
 		}
 	};
 	using TQuestDBs = map<TQuestSlotIndex,SQuestBase>;
+	using TokenIDs = set<TokenID>;
+	struct CharacterInfo : public CharacterDB
+	{
+		TokenIDs tokenIDs{};
+		CharacterInfo()
+		{
+		}
+		CharacterInfo(const CharacterDB& Super_, const TokenIDs& tokenIDs_) : CharacterDB(Super_), tokenIDs(tokenIDs_)
+		{
+		}
+		CharacterInfo(CharacterDB&& Super_, TokenIDs&& tokenIDs_) : CharacterDB(std::move(Super_)), tokenIDs(std::move(tokenIDs_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			CharacterDB::operator << (Stream_);
+			Stream_ >> tokenIDs;
+		}
+		void operator << (const Value& Value_) override
+		{
+			CharacterDB::operator << (Value_);
+			Value_["tokenIDs"] >> tokenIDs;
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			CharacterDB::operator >> (Stream_);
+			Stream_ << tokenIDs;
+		}
+		void operator >> (Value& Value_) const override
+		{
+			CharacterDB::operator >> (Value_);
+			Value_["tokenIDs"] = tokenIDs;
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(CharacterDB()) + L"," + 
+				GetStdName(TokenIDs());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(CharacterDB(), L"") + L"," + 
+				GetMemberName(TokenIDs(), L"tokenIDs");
+		}
+	};
+	using CharacterInfos = map<int32,CharacterInfo>;
 	struct SLoginNetSc : public SProto
 	{
 		SUserNet User{};
-		TChars Chars{};
+		CharacterInfos characterInfos{};
 		system_clock::time_point ServerTime{};
 		TQuestDBs Quests{};
 		SLoginNetSc()
 		{
 		}
-		SLoginNetSc(const SUserNet& User_, const TChars& Chars_, const system_clock::time_point& ServerTime_, const TQuestDBs& Quests_) : User(User_), Chars(Chars_), ServerTime(ServerTime_), Quests(Quests_)
+		SLoginNetSc(const SUserNet& User_, const CharacterInfos& characterInfos_, const system_clock::time_point& ServerTime_, const TQuestDBs& Quests_) : User(User_), characterInfos(characterInfos_), ServerTime(ServerTime_), Quests(Quests_)
 		{
 		}
-		SLoginNetSc(SUserNet&& User_, TChars&& Chars_, system_clock::time_point&& ServerTime_, TQuestDBs&& Quests_) : User(std::move(User_)), Chars(std::move(Chars_)), ServerTime(std::move(ServerTime_)), Quests(std::move(Quests_))
+		SLoginNetSc(SUserNet&& User_, CharacterInfos&& characterInfos_, system_clock::time_point&& ServerTime_, TQuestDBs&& Quests_) : User(std::move(User_)), characterInfos(std::move(characterInfos_)), ServerTime(std::move(ServerTime_)), Quests(std::move(Quests_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
 			Stream_ >> User;
-			Stream_ >> Chars;
+			Stream_ >> characterInfos;
 			Stream_ >> ServerTime;
 			Stream_ >> Quests;
 		}
 		void operator << (const Value& Value_) override
 		{
 			Value_["User"] >> User;
-			Value_["Chars"] >> Chars;
+			Value_["characterInfos"] >> characterInfos;
 			Value_["ServerTime"] >> ServerTime;
 			Value_["Quests"] >> Quests;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
 			Stream_ << User;
-			Stream_ << Chars;
+			Stream_ << characterInfos;
 			Stream_ << ServerTime;
 			Stream_ << Quests;
 		}
 		void operator >> (Value& Value_) const override
 		{
 			Value_["User"] = User;
-			Value_["Chars"] = Chars;
+			Value_["characterInfos"] = characterInfos;
 			Value_["ServerTime"] = ServerTime;
 			Value_["Quests"] = Quests;
 		}
@@ -1148,7 +1291,7 @@ namespace bb
 		{
 			return 
 				GetStdName(SUserNet()) + L"," + 
-				GetStdName(TChars()) + L"," + 
+				GetStdName(CharacterInfos()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
 				GetStdName(TQuestDBs());
 		}
@@ -1156,7 +1299,7 @@ namespace bb
 		{
 			return 
 				GetMemberName(SUserNet(), L"User") + L"," + 
-				GetMemberName(TChars(), L"Chars") + L"," + 
+				GetMemberName(CharacterInfos(), L"characterInfos") + L"," + 
 				GetMemberName(system_clock::time_point(), L"ServerTime") + L"," + 
 				GetMemberName(TQuestDBs(), L"Quests");
 		}
@@ -1303,41 +1446,41 @@ namespace bb
 	};
 	struct SSetCharNetSc : public SProto
 	{
-		list<int32> CharCodes{};
+		CodeTokenIDs characters{};
 		SSetCharNetSc()
 		{
 		}
-		SSetCharNetSc(const list<int32>& CharCodes_) : CharCodes(CharCodes_)
+		SSetCharNetSc(const CodeTokenIDs& characters_) : characters(characters_)
 		{
 		}
-		SSetCharNetSc(list<int32>&& CharCodes_) : CharCodes(std::move(CharCodes_))
+		SSetCharNetSc(CodeTokenIDs&& characters_) : characters(std::move(characters_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> CharCodes;
+			Stream_ >> characters;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["CharCodes"] >> CharCodes;
+			Value_["characters"] >> characters;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << CharCodes;
+			Stream_ << characters;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["CharCodes"] = CharCodes;
+			Value_["characters"] = characters;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(list<int32>());
+				GetStdName(CodeTokenIDs());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(list<int32>(), L"CharCodes");
+				GetMemberName(CodeTokenIDs(), L"characters");
 		}
 	};
 	struct SUnsetCharNetSc : public SProto
@@ -1636,57 +1779,50 @@ namespace bb
 				GetMemberName(int32(), L"Code");
 		}
 	};
-	struct SRewardInfo : public SProto
+	struct SRewardCore : public SProto
 	{
-		TUID UID{};
 		TResources ResourcesLeft{};
-		list<int32> Chars{};
-		SRewardInfo()
+		CodeTokenIDs CharsAdded{};
+		SRewardCore()
 		{
 		}
-		SRewardInfo(const TUID& UID_, const TResources& ResourcesLeft_, const list<int32>& Chars_) : UID(UID_), ResourcesLeft(ResourcesLeft_), Chars(Chars_)
+		SRewardCore(const TResources& ResourcesLeft_, const CodeTokenIDs& CharsAdded_) : ResourcesLeft(ResourcesLeft_), CharsAdded(CharsAdded_)
 		{
 		}
-		SRewardInfo(TUID&& UID_, TResources&& ResourcesLeft_, list<int32>&& Chars_) : UID(std::move(UID_)), ResourcesLeft(std::move(ResourcesLeft_)), Chars(std::move(Chars_))
+		SRewardCore(TResources&& ResourcesLeft_, CodeTokenIDs&& CharsAdded_) : ResourcesLeft(std::move(ResourcesLeft_)), CharsAdded(std::move(CharsAdded_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> UID;
 			Stream_ >> ResourcesLeft;
-			Stream_ >> Chars;
+			Stream_ >> CharsAdded;
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["UID"] >> UID;
 			Value_["ResourcesLeft"] >> ResourcesLeft;
-			Value_["Chars"] >> Chars;
+			Value_["CharsAdded"] >> CharsAdded;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << UID;
 			Stream_ << ResourcesLeft;
-			Stream_ << Chars;
+			Stream_ << CharsAdded;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["UID"] = UID;
 			Value_["ResourcesLeft"] = ResourcesLeft;
-			Value_["Chars"] = Chars;
+			Value_["CharsAdded"] = CharsAdded;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(TUID()) + L"," + 
 				GetStdName(TResources()) + L"," + 
-				GetStdName(list<int32>());
+				GetStdName(CodeTokenIDs());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(TUID(), L"UID") + L"," + 
 				GetMemberName(TResources(), L"ResourcesLeft") + L"," + 
-				GetMemberName(list<int32>(), L"Chars");
+				GetMemberName(CodeTokenIDs(), L"CharsAdded");
 		}
 	};
 	struct SBuyNetSc : public SProto
@@ -1774,43 +1910,80 @@ namespace bb
 				GetMemberName(int32(), L"Code");
 		}
 	};
-	struct SBuyCharNetSc : public SProto
+	struct SBuyCharNetSc : public CodeTokenID
 	{
-		int32 Code{};
 		SBuyCharNetSc()
 		{
 		}
-		SBuyCharNetSc(const int32& Code_) : Code(Code_)
+		SBuyCharNetSc(const CodeTokenID& Super_) : CodeTokenID(Super_)
 		{
 		}
-		SBuyCharNetSc(int32&& Code_) : Code(std::move(Code_))
+		SBuyCharNetSc(CodeTokenID&& Super_) : CodeTokenID(std::move(Super_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			Stream_ >> Code;
+			CodeTokenID::operator << (Stream_);
 		}
 		void operator << (const Value& Value_) override
 		{
-			Value_["Code"] >> Code;
+			CodeTokenID::operator << (Value_);
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			Stream_ << Code;
+			CodeTokenID::operator >> (Stream_);
 		}
 		void operator >> (Value& Value_) const override
 		{
-			Value_["Code"] = Code;
+			CodeTokenID::operator >> (Value_);
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(int32());
+				GetStdName(CodeTokenID());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(int32(), L"Code");
+				GetMemberName(CodeTokenID(), L"");
+		}
+	};
+	struct SBuyNFTCharNetSc : public CodeTokenID
+	{
+		SBuyNFTCharNetSc()
+		{
+		}
+		SBuyNFTCharNetSc(const CodeTokenID& Super_) : CodeTokenID(Super_)
+		{
+		}
+		SBuyNFTCharNetSc(CodeTokenID&& Super_) : CodeTokenID(std::move(Super_))
+		{
+		}
+		void operator << (CStream& Stream_) override
+		{
+			CodeTokenID::operator << (Stream_);
+		}
+		void operator << (const Value& Value_) override
+		{
+			CodeTokenID::operator << (Value_);
+		}
+		void operator >> (CStream& Stream_) const override
+		{
+			CodeTokenID::operator >> (Stream_);
+		}
+		void operator >> (Value& Value_) const override
+		{
+			CodeTokenID::operator >> (Value_);
+		}
+		static wstring StdName(void)
+		{
+			return 
+				GetStdName(CodeTokenID());
+		}
+		static wstring MemberName(void)
+		{
+			return 
+				GetMemberName(CodeTokenID(), L"");
 		}
 	};
 	struct SBuyResourceNetCs : public SProto
@@ -4782,48 +4955,48 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SRankRewardNetSc : public SRewardInfo
+	struct SRankRewardNetSc : public SRewardCore
 	{
 		int32 NextRewardRankIndex{};
 		SRankRewardNetSc()
 		{
 		}
-		SRankRewardNetSc(const SRewardInfo& Super_, const int32& NextRewardRankIndex_) : SRewardInfo(Super_), NextRewardRankIndex(NextRewardRankIndex_)
+		SRankRewardNetSc(const SRewardCore& Super_, const int32& NextRewardRankIndex_) : SRewardCore(Super_), NextRewardRankIndex(NextRewardRankIndex_)
 		{
 		}
-		SRankRewardNetSc(SRewardInfo&& Super_, int32&& NextRewardRankIndex_) : SRewardInfo(std::move(Super_)), NextRewardRankIndex(std::move(NextRewardRankIndex_))
+		SRankRewardNetSc(SRewardCore&& Super_, int32&& NextRewardRankIndex_) : SRewardCore(std::move(Super_)), NextRewardRankIndex(std::move(NextRewardRankIndex_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardInfo::operator << (Stream_);
+			SRewardCore::operator << (Stream_);
 			Stream_ >> NextRewardRankIndex;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardInfo::operator << (Value_);
+			SRewardCore::operator << (Value_);
 			Value_["NextRewardRankIndex"] >> NextRewardRankIndex;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardInfo::operator >> (Stream_);
+			SRewardCore::operator >> (Stream_);
 			Stream_ << NextRewardRankIndex;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardInfo::operator >> (Value_);
+			SRewardCore::operator >> (Value_);
 			Value_["NextRewardRankIndex"] = NextRewardRankIndex;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardInfo()) + L"," + 
+				GetStdName(SRewardCore()) + L"," + 
 				GetStdName(int32());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(SRewardCore(), L"") + L"," + 
 				GetMemberName(int32(), L"NextRewardRankIndex");
 		}
 	};
@@ -5044,7 +5217,7 @@ namespace bb
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex");
 		}
 	};
-	struct SQuestRewardNetSc : public SRewardInfo
+	struct SQuestRewardNetSc : public SRewardCore
 	{
 		TQuestSlotIndex SlotIndex{};
 		int32 newCode{};
@@ -5054,15 +5227,15 @@ namespace bb
 		SQuestRewardNetSc()
 		{
 		}
-		SQuestRewardNetSc(const SRewardInfo& Super_, const TQuestSlotIndex& SlotIndex_, const int32& newCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardInfo(Super_), SlotIndex(SlotIndex_), newCode(newCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
+		SQuestRewardNetSc(const SRewardCore& Super_, const TQuestSlotIndex& SlotIndex_, const int32& newCode_, const system_clock::time_point& CoolEndTime_, const int32& DailyCompleteCount_, const system_clock::time_point& DailyCompleteRefreshTime_) : SRewardCore(Super_), SlotIndex(SlotIndex_), newCode(newCode_), CoolEndTime(CoolEndTime_), DailyCompleteCount(DailyCompleteCount_), DailyCompleteRefreshTime(DailyCompleteRefreshTime_)
 		{
 		}
-		SQuestRewardNetSc(SRewardInfo&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& newCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardInfo(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), newCode(std::move(newCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
+		SQuestRewardNetSc(SRewardCore&& Super_, TQuestSlotIndex&& SlotIndex_, int32&& newCode_, system_clock::time_point&& CoolEndTime_, int32&& DailyCompleteCount_, system_clock::time_point&& DailyCompleteRefreshTime_) : SRewardCore(std::move(Super_)), SlotIndex(std::move(SlotIndex_)), newCode(std::move(newCode_)), CoolEndTime(std::move(CoolEndTime_)), DailyCompleteCount(std::move(DailyCompleteCount_)), DailyCompleteRefreshTime(std::move(DailyCompleteRefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardInfo::operator << (Stream_);
+			SRewardCore::operator << (Stream_);
 			Stream_ >> SlotIndex;
 			Stream_ >> newCode;
 			Stream_ >> CoolEndTime;
@@ -5071,7 +5244,7 @@ namespace bb
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardInfo::operator << (Value_);
+			SRewardCore::operator << (Value_);
 			Value_["SlotIndex"] >> SlotIndex;
 			Value_["newCode"] >> newCode;
 			Value_["CoolEndTime"] >> CoolEndTime;
@@ -5080,7 +5253,7 @@ namespace bb
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardInfo::operator >> (Stream_);
+			SRewardCore::operator >> (Stream_);
 			Stream_ << SlotIndex;
 			Stream_ << newCode;
 			Stream_ << CoolEndTime;
@@ -5089,7 +5262,7 @@ namespace bb
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardInfo::operator >> (Value_);
+			SRewardCore::operator >> (Value_);
 			Value_["SlotIndex"] = SlotIndex;
 			Value_["newCode"] = newCode;
 			Value_["CoolEndTime"] = CoolEndTime;
@@ -5099,7 +5272,7 @@ namespace bb
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardInfo()) + L"," + 
+				GetStdName(SRewardCore()) + L"," + 
 				GetStdName(TQuestSlotIndex()) + L"," + 
 				GetStdName(int32()) + L"," + 
 				GetStdName(system_clock::time_point()) + L"," + 
@@ -5109,7 +5282,7 @@ namespace bb
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(SRewardCore(), L"") + L"," + 
 				GetMemberName(TQuestSlotIndex(), L"SlotIndex") + L"," + 
 				GetMemberName(int32(), L"newCode") + L"," + 
 				GetMemberName(system_clock::time_point(), L"CoolEndTime") + L"," + 
@@ -5140,48 +5313,48 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SQuestDailyCompleteRewardNetSc : public SRewardInfo
+	struct SQuestDailyCompleteRewardNetSc : public SRewardCore
 	{
 		system_clock::time_point RefreshTime{};
 		SQuestDailyCompleteRewardNetSc()
 		{
 		}
-		SQuestDailyCompleteRewardNetSc(const SRewardInfo& Super_, const system_clock::time_point& RefreshTime_) : SRewardInfo(Super_), RefreshTime(RefreshTime_)
+		SQuestDailyCompleteRewardNetSc(const SRewardCore& Super_, const system_clock::time_point& RefreshTime_) : SRewardCore(Super_), RefreshTime(RefreshTime_)
 		{
 		}
-		SQuestDailyCompleteRewardNetSc(SRewardInfo&& Super_, system_clock::time_point&& RefreshTime_) : SRewardInfo(std::move(Super_)), RefreshTime(std::move(RefreshTime_))
+		SQuestDailyCompleteRewardNetSc(SRewardCore&& Super_, system_clock::time_point&& RefreshTime_) : SRewardCore(std::move(Super_)), RefreshTime(std::move(RefreshTime_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardInfo::operator << (Stream_);
+			SRewardCore::operator << (Stream_);
 			Stream_ >> RefreshTime;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardInfo::operator << (Value_);
+			SRewardCore::operator << (Value_);
 			Value_["RefreshTime"] >> RefreshTime;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardInfo::operator >> (Stream_);
+			SRewardCore::operator >> (Stream_);
 			Stream_ << RefreshTime;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardInfo::operator >> (Value_);
+			SRewardCore::operator >> (Value_);
 			Value_["RefreshTime"] = RefreshTime;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardInfo()) + L"," + 
+				GetStdName(SRewardCore()) + L"," + 
 				GetStdName(system_clock::time_point());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(SRewardCore(), L"") + L"," + 
 				GetMemberName(system_clock::time_point(), L"RefreshTime");
 		}
 	};
@@ -5426,48 +5599,48 @@ namespace bb
 				GetMemberName(wstring(), L"Key");
 		}
 	};
-	struct SCouponUseNetSc : public SRewardInfo
+	struct SCouponUseNetSc : public SRewardCore
 	{
 		TResources ResourcesAdded{};
 		SCouponUseNetSc()
 		{
 		}
-		SCouponUseNetSc(const SRewardInfo& Super_, const TResources& ResourcesAdded_) : SRewardInfo(Super_), ResourcesAdded(ResourcesAdded_)
+		SCouponUseNetSc(const SRewardCore& Super_, const TResources& ResourcesAdded_) : SRewardCore(Super_), ResourcesAdded(ResourcesAdded_)
 		{
 		}
-		SCouponUseNetSc(SRewardInfo&& Super_, TResources&& ResourcesAdded_) : SRewardInfo(std::move(Super_)), ResourcesAdded(std::move(ResourcesAdded_))
+		SCouponUseNetSc(SRewardCore&& Super_, TResources&& ResourcesAdded_) : SRewardCore(std::move(Super_)), ResourcesAdded(std::move(ResourcesAdded_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardInfo::operator << (Stream_);
+			SRewardCore::operator << (Stream_);
 			Stream_ >> ResourcesAdded;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardInfo::operator << (Value_);
+			SRewardCore::operator << (Value_);
 			Value_["ResourcesAdded"] >> ResourcesAdded;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardInfo::operator >> (Stream_);
+			SRewardCore::operator >> (Stream_);
 			Stream_ << ResourcesAdded;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardInfo::operator >> (Value_);
+			SRewardCore::operator >> (Value_);
 			Value_["ResourcesAdded"] = ResourcesAdded;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardInfo()) + L"," + 
+				GetStdName(SRewardCore()) + L"," + 
 				GetStdName(TResources());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(SRewardCore(), L"") + L"," + 
 				GetMemberName(TResources(), L"ResourcesAdded");
 		}
 	};
@@ -5625,54 +5798,54 @@ namespace bb
 			return L"";
 		}
 	};
-	struct SRankingRewardNetSc : public SRewardInfo
+	struct SRankingRewardNetSc : public SRewardCore
 	{
 		int64 Counter{};
 		TRankingArray myRankingArray{};
 		SRankingRewardNetSc()
 		{
 		}
-		SRankingRewardNetSc(const SRewardInfo& Super_, const int64& Counter_, const TRankingArray& myRankingArray_) : SRewardInfo(Super_), Counter(Counter_), myRankingArray(myRankingArray_)
+		SRankingRewardNetSc(const SRewardCore& Super_, const int64& Counter_, const TRankingArray& myRankingArray_) : SRewardCore(Super_), Counter(Counter_), myRankingArray(myRankingArray_)
 		{
 		}
-		SRankingRewardNetSc(SRewardInfo&& Super_, int64&& Counter_, TRankingArray&& myRankingArray_) : SRewardInfo(std::move(Super_)), Counter(std::move(Counter_)), myRankingArray(std::move(myRankingArray_))
+		SRankingRewardNetSc(SRewardCore&& Super_, int64&& Counter_, TRankingArray&& myRankingArray_) : SRewardCore(std::move(Super_)), Counter(std::move(Counter_)), myRankingArray(std::move(myRankingArray_))
 		{
 		}
 		void operator << (CStream& Stream_) override
 		{
-			SRewardInfo::operator << (Stream_);
+			SRewardCore::operator << (Stream_);
 			Stream_ >> Counter;
 			Stream_ >> myRankingArray;
 		}
 		void operator << (const Value& Value_) override
 		{
-			SRewardInfo::operator << (Value_);
+			SRewardCore::operator << (Value_);
 			Value_["Counter"] >> Counter;
 			Value_["myRankingArray"] >> myRankingArray;
 		}
 		void operator >> (CStream& Stream_) const override
 		{
-			SRewardInfo::operator >> (Stream_);
+			SRewardCore::operator >> (Stream_);
 			Stream_ << Counter;
 			Stream_ << myRankingArray;
 		}
 		void operator >> (Value& Value_) const override
 		{
-			SRewardInfo::operator >> (Value_);
+			SRewardCore::operator >> (Value_);
 			Value_["Counter"] = Counter;
 			Value_["myRankingArray"] = myRankingArray;
 		}
 		static wstring StdName(void)
 		{
 			return 
-				GetStdName(SRewardInfo()) + L"," + 
+				GetStdName(SRewardCore()) + L"," + 
 				GetStdName(int64()) + L"," + 
 				GetStdName(TRankingArray());
 		}
 		static wstring MemberName(void)
 		{
 			return 
-				GetMemberName(SRewardInfo(), L"") + L"," + 
+				GetMemberName(SRewardCore(), L"") + L"," + 
 				GetMemberName(int64(), L"Counter") + L"," + 
 				GetMemberName(TRankingArray(), L"myRankingArray");
 		}

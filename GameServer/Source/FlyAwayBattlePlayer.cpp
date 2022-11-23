@@ -26,7 +26,7 @@ CFlyAwayBattlePlayer::CFlyAwayBattlePlayer(
 	_fDead(fDead),
 	pFlyAwayBattle(pFlyAwayBattle_)
 {
-	pPlayerObject->fTriggerEnter = std::bind(&CFlyAwayBattlePlayer::_TriggerEnter, this, _1);
+	pPlayerObject->fTriggerEnter = std::bind(&CFlyAwayBattlePlayer::_TriggerEnter, this, _1, _2);
 }
 void CFlyAwayBattlePlayer::Link(void)
 {
@@ -41,7 +41,7 @@ void CFlyAwayBattlePlayer::BattleEnd(int64 tick)
 
 	switch (pPlayer->GetSelectedChar()->pCharacterTypeMeta->grade)
 	{
-	case EGrade::Normal:
+	case EGrade::Common:
 		QuestDone(EQuestType::PlayNormal, 1);
 		break;
 
@@ -93,11 +93,6 @@ bool CFlyAwayBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Colli
 }
 bool CFlyAwayBattlePlayer::_CollisionStay(int64 tick, const SCollision2D& Collision_)
 {
-	if (Collision_.pCollider->Number != CEngineGlobal::c_BodyNumber || (Collision_.pOtherCollider->Number != CEngineGlobal::c_StructureNumber && Collision_.pOtherCollider->Number != CEngineGlobal::c_LandNumber))
-		return false;
-
-	_LandStay(Collision_);
-
 	return false;
 }
 bool CFlyAwayBattlePlayer::_CollisionExit(int64 tick, const SCollision2D& Collision_)
@@ -109,7 +104,7 @@ bool CFlyAwayBattlePlayer::_CollisionExit(int64 tick, const SCollision2D& Collis
 
 	return false;
 }
-bool CFlyAwayBattlePlayer::_TriggerEnter(const CCollider2D* pCollider_)
+bool CFlyAwayBattlePlayer::_TriggerEnter(int64 tick, const CCollider2D* pCollider_)
 {
 	if (pCollider_->Number == CEngineGlobal::c_ItemNumber)
 	{

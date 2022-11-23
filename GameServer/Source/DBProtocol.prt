@@ -16,6 +16,7 @@ namespace bb
 		ChangeLanguage
 		Buy
 		BuyChar
+		BuyNFTChar
 		SelectChar
 		BattleEnd
 		UpdateInvalidDisconnectInfo
@@ -34,6 +35,7 @@ namespace bb
 		ChangeNickBegin
 		ChangeNickEnd
 		ChangeNickEndFail
+		updateFatigue
 		CouponUse
 		TutorialReward
 		RankingReward
@@ -52,10 +54,11 @@ namespace bb
 		TUID UID
 		SJoinDB Info
 		time_point InsertedTimePoint
+		time_point fatigueLastUpdateTime
 		ELanguage Language
 		EOS OS
 		string CountryCode
-		vector<int32> CharCodes
+		vector<CodeTokenID> characterAdded
 	}
 	struct SLoginDBIn
 	{
@@ -71,7 +74,8 @@ namespace bb
 	struct SLoginDBOut
 	{
 		list<SUserDB> Users
-		TChars Chars
+		CharacterDBs characterDBs
+		CodeTokenIDs characterCodeTokenIDs
 		TQuestDBs Quests
 		set<wstring> Coupons
 	}
@@ -106,7 +110,7 @@ namespace bb
 	struct SSetCharDBIn
 	{
 		TUID UID
-		list<int32> CharCodes
+		CodeTokenIDs characters
 	}
 	struct SUnsetCharDBIn
 	{
@@ -128,8 +132,7 @@ namespace bb
 	struct SRewardDB
 	{
 		TUID UID
-		TResources ResourcesLeft
-		list<int32> CharsAdded
+		SRewardCore Core
 	}
 	struct SBuyDBIn
 	{
@@ -141,6 +144,13 @@ namespace bb
 		TUID UID
 		TResources ResourcesLeft
 		int32 CharCode
+		TokenID tokenID
+	}
+	struct SBuyNFTCharDBIn
+	{
+		TUID UID
+		int32 CharCode
+		TokenID tokenID
 	}
 
 	struct SConnectDBIn
@@ -175,9 +185,16 @@ namespace bb
 		int32 ChainKillTotal
 		int32 BlowBalloonTotal
 	}
+	struct BattleEndCharacterInfo
+	{
+		TUID UID
+		int32 code
+		int32 fatigue
+	}
 	struct SBattleEndDBIn
 	{
 		vector<SBattleEndInfo> BattleEndInfos
+		vector<BattleEndCharacterInfo> BattleEndCharacterInfos
 		TDoneQuestDBs DoneQuests
 	}
 	struct SUpdateInvalidDisconnectInfoDBIn
@@ -205,6 +222,8 @@ namespace bb
 		TResources Resources
 		int32 PointBest
 		TDoneQuestDBs DoneQuests
+		int32 selectedCharacterCode
+		int32 fatigue
 	}
 	struct SFlyAwayBattleStartDBIn
 	{
@@ -221,6 +240,8 @@ namespace bb
 		int32 PointBest
 		int32 ComboBest
 		TDoneQuestDBs DoneQuests
+		int32 selectedCharacterCode
+		int32 fatigue
 	}
 
 	struct SRankRewardDBIn : SRewardDB
@@ -261,6 +282,11 @@ namespace bb
 	{
 		time_point RefreshTime
 	}
+	struct UpdateFatigueDBIn
+	{
+		TUID uid
+		time_point time
+	}
 	struct SChangeNickBeginDBIn
 	{
 		TUID UID
@@ -284,8 +310,6 @@ namespace bb
 	{
 		TUID UID
 	}
-
-
 
 
 	struct SCouponUseCouponDBIn

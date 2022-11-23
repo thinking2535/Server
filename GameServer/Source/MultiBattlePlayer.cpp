@@ -49,7 +49,7 @@ void CMultiBattlePlayer::_BattleEnd(const SBattleType& BattleType_, bool IsBestP
 
 	switch (pMeta->pCharacterTypeMeta->grade)
 	{
-	case EGrade::Normal:
+	case EGrade::Common:
 		QuestDone(EQuestType::PlayNormal, 1);
 		break;
 
@@ -149,6 +149,10 @@ bool CMultiBattlePlayer::_CollisionEnter(int64 tick, const SCollision2D& Collisi
 
 				pOtherBattlePlayer->pCharacter->LastKillTick = tick;
 				_Die(tick);
+			}
+			else
+			{
+				pOtherBattlePlayer->pPlayerObject->Velocity += (Collision_.Normal * -c_BalloonExplosionVelocity);
 			}
 
 			_fHit(pOtherBattlePlayer->PlayerIndex, PlayerIndex);

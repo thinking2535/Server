@@ -29,7 +29,6 @@ bool CCharacter::canBuy(void) const
 {
 	return isShopCharacter() || isNFTCharacter();
 }
-
 EResource CCharacter::_getCostType(void) const
 {
 	if (pCharacterTypeMeta->howToGet == L"Ticket")
